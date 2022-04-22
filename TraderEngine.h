@@ -23,6 +23,17 @@ public:
 protected:
     void RegisterClient(const char *ip, unsigned int port);
     void RegisterRiskClient(const char *ip, unsigned int port);
+    void ReadRequestFromMemory();
+    void ReadRequestFromClient();
+    void HandleRequestMessage();
+    void HandleRiskResponse();
+    void HandleExecuteReport();
+    void HandleCommand(const Message::PackMessage& msg);
+    void WriteExecuteReportToMemory();
+    void SendRequest(const Message::PackMessage& request);
+    void SendRiskCheckReqeust(const Message::PackMessage& request);
+    void SendMonitorMessage(const Message::PackMessage& msg);
+    void InitRiskCheck();
 
     bool IsTrading()const;
     void CheckTrading();
@@ -39,6 +50,10 @@ private:
     int m_CloseTime;
     TradeGateWay* m_TradeGateWay;
     std::string m_Command;
+    Utils::IPCLockFreeQueue<Message::PackMessage, 1000> m_OrderChannelQueue;
+    Utils::IPCLockFreeQueue<Message::PackMessage, 1000> m_ReportChannelQueue;
+    Utils::RingBuffer<Message::PackMessage> m_RequestMessageQueue;
+    Utils::RingBuffer<Message::PackMessage> m_ReportMessageQueue;
 };
 
 #endif // TRADERENGINE_HPP

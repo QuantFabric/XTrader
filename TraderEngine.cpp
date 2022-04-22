@@ -64,6 +64,14 @@ void TraderEngine::Run()
     sprintf(buffer, "OrderChnnel:0X%X ReportChannel:0X%X", m_XTraderConfig.OrderChannelKey, m_XTraderConfig.ReportChannelKey);
     Utils::gLogger->Log->info("TraderEngine::Run {}", buffer);
 
+    // Init Order Channel Queue
+    m_OrderChannelQueue.Init(m_XTraderConfig.OrderChannelKey);
+    m_OrderChannelQueue.RegisterChannel(m_XTraderConfig.Account.c_str());
+    // Init Report Channel Queue
+    m_ReportChannelQueue.Init(m_XTraderConfig.ReportChannelKey);
+    m_ReportChannelQueue.RegisterChannel(m_XTraderConfig.Account.c_str());
+    m_ReportChannelQueue.ResetChannel(m_XTraderConfig.Account.c_str());
+
     // Connect to XWatcher
     RegisterClient(m_XTraderConfig.ServerIP.c_str(), m_XTraderConfig.Port);
     // Connect to Risk Server
@@ -79,13 +87,27 @@ void TraderEngine::Run()
     // 查询Order、Trade、Fund、Position信息
     m_TradeGateWay->Qry();
 
+    // 风控初始化检查
+    InitRiskCheck();
+
     // start 
     while(true)
     {
         CheckTrading();
         if(m_Trading)
         {
-            // Handle Message
+            // 从Order通道内存队列读取报单、撤单请求并写入请求队列
+            ReadRequestFromMemory();
+            // 从客户端读取报单、撤单请求并写入请求队列
+            ReadRequestFromClient();
+            // 处理请求
+            HandleRequestMessage();
+            // 处理风控检查结果
+            HandleRiskResponse();
+            // 处理回报
+            HandleExecuteReport();
+            // 写入回报到Report通道内存队列
+            WriteExecuteReportToMemory();
         }
         static unsigned long currentTimeStamp = m_CurrentTimeStamp / 1000;
         if(currentTimeStamp < m_CurrentTimeStamp / 1000)
@@ -125,6 +147,381 @@ void TraderEngine::RegisterRiskClient(const char *ip, unsigned int port)
     login.ClientType = Message::EClientType::EXTRADER;
     strncpy(login.Account, m_XTraderConfig.Account.c_str(), sizeof(login.Account));
     m_RiskClient->Login(login);
+}
+
+void TraderEngine::ReadRequestFromMemory()
+{
+    std::list<Message::PackMessage> items;
+    if(m_OrderChannelQueue.Pop(m_XTraderConfig.Account.c_str(), items))
+    {
+        for(auto it = items.begin(); it != items.end(); it++)
+        {
+            m_RequestMessageQueue.push(*it);
+        }
+    }
+}
+
+void TraderEngine::ReadRequestFromClient()
+{
+    while(true)
+    {
+        Message::PackMessage message;
+        bool ok = m_HPPackClient->m_PackMessageQueue.pop(message);
+        if(ok)
+        {
+            switch(message.MessageType)
+            {
+                case Message::EMessageType::EOrderRequest:
+                {
+                    m_RequestMessageQueue.push(message);
+                    break;
+                }
+                case Message::EMessageType::EActionRequest:
+                {
+                    m_RequestMessageQueue.push(message);
+                    break;
+                }
+                case Message::EMessageType::ECommand:
+                    HandleCommand(message);
+                    break;
+                default:
+                {
+                    char buffer[256] = {0};
+                    sprintf(buffer, "Unkown Message Type:0X%X", message.MessageType);
+                    Utils::gLogger->Log->warn("TraderEngine::ReadRequestFromClient {}", buffer);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+void TraderEngine::HandleRequestMessage()
+{
+    // 处理报单、撤单请求，发送至风控系统或直接通过API报单、撤单
+    while(true)
+    {
+        Message::PackMessage request;
+        bool ok = m_RequestMessageQueue.pop(request);
+        if(ok)
+        {
+            switch(request.MessageType)
+            {
+                case Message::EMessageType::EOrderRequest:
+                {
+                    request.OrderRequest.BussinessType = m_XTraderConfig.BussinessType;
+                    if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ENOCHECKED)
+                    {
+                        SendRequest(request);
+                    }
+                    else if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
+                    {
+                        SendRiskCheckReqeust(request);
+                    }
+                    else if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ECHECK_INIT)
+                    {
+                        SendRiskCheckReqeust(request);
+                    }
+                    break;
+                }
+                case Message::EMessageType::EActionRequest:
+                {
+                    if(request.ActionRequest.RiskStatus == Message::ERiskStatusType::ENOCHECKED)
+                    {
+                        SendRequest(request);
+                    }
+                    else if(request.ActionRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
+                    {
+                        SendRiskCheckReqeust(request);
+                    }
+                    break;
+                }
+                default:
+                {
+                    char buffer[256] = {0};
+                    sprintf(buffer, "Unkown Message Type:0X%X", request.MessageType);
+                    Utils::gLogger->Log->warn("TraderEngine::HandleRequestMessage {}", buffer);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+void TraderEngine::HandleRiskResponse()
+{
+    // 处理风控检查结果
+    while(true)
+    {
+        Message::PackMessage message;
+        bool ok = m_RiskClient->m_PackMessageQueue.pop(message);
+        if(ok)
+        {
+            switch(message.MessageType)
+            {
+                case Message::EMessageType::EOrderRequest:
+                {
+                    SendRequest(message);
+                    break;
+                }
+                case Message::EMessageType::EActionRequest:
+                {
+                    SendRequest(message);
+                    break;
+                }
+                case Message::EMessageType::ERiskReport:
+                {
+                    SendMonitorMessage(message);
+                    break;
+                }
+                default:
+                {
+                    char buffer[256] = {0};
+                    sprintf(buffer, "Unkown Message Type:0X%X", message.MessageType);
+                    Utils::gLogger->Log->warn("TraderEngine::HandleRiskResponse {}", buffer);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+void TraderEngine::HandleExecuteReport()
+{
+    // OrderStatus,AccountFund,AccountPosition写入内存队列，所有监控消息回传
+    while(true)
+    {
+        Message::PackMessage report;
+        // 从交易网关回报队列取出消息
+        bool ok = m_TradeGateWay->m_ReportMessageQueue.pop(report);
+        if(ok)
+        {
+            switch(report.MessageType)
+            {
+                case Message::EMessageType::EOrderStatus:
+                case Message::EMessageType::EAccountFund:
+                case Message::EMessageType::EAccountPosition:
+                {
+                    m_ReportMessageQueue.push(report);
+                    SendMonitorMessage(report);
+                    break;
+                }
+                case Message::EMessageType::EEventLog:
+                {
+                    SendMonitorMessage(report);
+                    break;
+                }
+                default:
+                {
+                    char buffer[256] = {0};
+                    sprintf(buffer, "Unkown Message Type:0X%X", report.MessageType);
+                    Utils::gLogger->Log->warn("TraderEngine::HandleExcuteReport {}", buffer);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+void TraderEngine::HandleCommand(const Message::PackMessage& msg)
+{
+    if(Message::EBusinessType::ESTOCK ==  m_XTraderConfig.BussinessType)
+    {
+        if(Message::ECommandType::ETRANSFER_FUND_IN == msg.Command.CmdType)
+        {
+            std::string Command = msg.Command.Command;
+            std::vector<std::string> vec;
+            Utils::Split(Command, ":", vec);
+            if(vec.size() >= 2)
+            {
+                double Amount = atof(vec.at(1).c_str());
+                m_TradeGateWay->TransferFundIn(Amount);
+            }
+            else
+            {
+                Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid TransferFundIn Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+            }
+        }
+        else if(Message::ECommandType::ETRANSFER_FUND_OUT == msg.Command.CmdType)
+        {
+            std::string Command = msg.Command.Command;
+            std::vector<std::string> vec;
+            Utils::Split(Command, ":", vec);
+            if(vec.size() >= 2)
+            {
+                double Amount = atof(vec.at(1).c_str());
+                m_TradeGateWay->TransferFundOut(Amount);
+            }
+            else
+            {
+                Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid TransferFundOut Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+            }
+        }
+        else 
+        {
+            Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+        }
+    }
+    else if(Message::EBusinessType::ECREDIT ==  m_XTraderConfig.BussinessType)
+    {
+        if(Message::ECommandType::ETRANSFER_FUND_IN == msg.Command.CmdType)
+        {
+            std::string Command = msg.Command.Command;
+            std::vector<std::string> vec;
+            Utils::Split(Command, ":", vec);
+            if(vec.size() >= 2)
+            {
+                double Amount = atof(vec.at(1).c_str());
+                m_TradeGateWay->TransferFundIn(Amount);
+            }
+            else
+            {
+                Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid TransferFundIn Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+            }
+        }
+        else if(Message::ECommandType::ETRANSFER_FUND_OUT == msg.Command.CmdType)
+        {
+            std::string Command = msg.Command.Command;
+            std::vector<std::string> vec;
+            Utils::Split(Command, ":", vec);
+            if(vec.size() >= 2)
+            {
+                double Amount = atof(vec.at(1).c_str());
+                m_TradeGateWay->TransferFundOut(Amount);
+            }
+            else
+            {
+                Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid TransferFundOut Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+            }
+        }
+        else if(Message::ECommandType::EREPAY_MARGIN_DIRECT == msg.Command.CmdType)
+        {
+            std::string Command = msg.Command.Command;
+            std::vector<std::string> vec;
+            Utils::Split(Command, ":", vec);
+            if(vec.size() >= 2)
+            {
+                double Amount = atof(vec.at(1).c_str());
+                m_TradeGateWay->RepayMarginDirect(Amount);
+            }
+            else
+            {
+                Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid RepayMarginDirect Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+            }
+        }
+        else 
+        {
+            Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+        }
+    }
+    else 
+    {
+        Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+    }
+}
+
+void TraderEngine::WriteExecuteReportToMemory()
+{
+    while(true)
+    {
+        Message::PackMessage report;
+        bool ok = m_ReportMessageQueue.pop(report);
+        if(ok)
+        {
+            if(!m_ReportChannelQueue.Push(m_XTraderConfig.Account.c_str(), report))
+            {
+                Utils::gLogger->Log->warn("TraderEngine::WriteExecuteReportToMemory failed, ReportChannelKey:{} Channel:{} Queue is full.", 
+                                          m_XTraderConfig.ReportChannelKey, m_XTraderConfig.Account);
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+void TraderEngine::SendRequest(const Message::PackMessage& request)
+{
+    m_TradeGateWay->SendRequest(request);
+}
+
+void TraderEngine::SendRiskCheckReqeust(const Message::PackMessage& request)
+{
+    m_RiskClient->SendData((const unsigned char*)&request, sizeof(request));
+}
+
+void TraderEngine::SendMonitorMessage(const Message::PackMessage& message)
+{
+    switch(message.MessageType)
+    {
+        case Message::EMessageType::EOrderStatus:
+        {
+            m_HPPackClient->SendData((const unsigned char*)&message, sizeof(message));
+            m_RiskClient->SendData((const unsigned char*)&message, sizeof(message));
+            break;
+        }
+        case Message::EMessageType::EEventLog:
+        {
+            m_HPPackClient->SendData((const unsigned char*)&message, sizeof(message));
+            break;
+        }
+        case Message::EMessageType::ERiskReport:
+        {
+            m_HPPackClient->SendData((const unsigned char*)&message, sizeof(message));
+            break;
+        }
+        case Message::EMessageType::EAccountFund:
+        {
+            m_HPPackClient->SendData((const unsigned char*)&message, sizeof(message));
+            break;
+        }
+        case Message::EMessageType::EAccountPosition:
+        {
+            m_HPPackClient->SendData((const unsigned char*)&message, sizeof(message));
+            break;
+        }
+        default:
+        {
+            char buffer[256] = {0};
+            sprintf(buffer, "Unkown Message Type:0X%X", message.MessageType);
+            Utils::gLogger->Log->warn("TraderEngine::SendMonitorMessage {}", buffer);
+            break;
+        }
+    }
+}
+
+void TraderEngine::InitRiskCheck()
+{
+    Message::PackMessage message;
+    memset(&message, 0, sizeof(message));
+    message.MessageType = Message::EMessageType::EOrderRequest;
+    message.OrderRequest.Price = 0.0;
+    message.OrderRequest.Volume = 0;
+    message.OrderRequest.RiskStatus = Message::ERiskStatusType::ECHECK_INIT;
+    strncpy(message.OrderRequest.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.OrderRequest.Broker));
+    strncpy(message.OrderRequest.Account, m_XTraderConfig.Account.c_str(), sizeof(message.OrderRequest.Account));
+    message.OrderRequest.OrderType = Message::EOrderType::ELIMIT;
+    message.OrderRequest.Direction = Message::EOrderDirection::EBUY;
+    message.OrderRequest.Offset = Message::EOrderOffset::EOPEN;
+    
+    m_RequestMessageQueue.push(message);
 }
 
 bool TraderEngine::IsTrading()const
