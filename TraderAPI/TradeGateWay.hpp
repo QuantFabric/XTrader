@@ -76,8 +76,8 @@ public:
                 ReqQryTrade();
                 sleep(2);
                 ReqQryOrder();
-                sleep(2);
-                ReqQryTickerRate();
+                // sleep(2);
+                // ReqQryTickerRate();
                 break;
             }
             else
