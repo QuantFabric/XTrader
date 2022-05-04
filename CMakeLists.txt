@@ -5,13 +5,13 @@ PROJECT(XTrader)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.5.0)
+SET(AppVersion 0.6.0)
 SET(XTrader_Version ${PROJECT_NAME}_${AppVersion})
 
 # 默认输出debug版
 #SET(CMAKE_BUILD_TYPE "Release")
-SET(CMAKE_BUILD_TYPE "debug")
-#SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
+#SET(CMAKE_BUILD_TYPE "debug")
+SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_CXX_STANDARD 11)
 
 macro(Get_CommitID APP_COMMITID)
