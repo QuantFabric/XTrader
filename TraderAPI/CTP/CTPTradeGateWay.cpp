@@ -1140,10 +1140,12 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
                 if(pOrder->VolumeTraded > 0)
                 {
                     OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED_CANCELLED;
+                    OrderStatus.CanceledVolume = pOrder->VolumeTotalOriginal - pOrder->VolumeTraded;
                 }
                 else
                 {
                     OrderStatus.OrderStatus = Message::EOrderStatus::ECANCELLED;
+                    OrderStatus.CanceledVolume = pOrder->VolumeTotalOriginal;
                 }
             }
         }
@@ -1177,10 +1179,12 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
                 if(pOrder->VolumeTraded > 0)
                 {
                     OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED_CANCELLED;
+                    OrderStatus.CanceledVolume = pOrder->VolumeTotalOriginal - pOrder->VolumeTraded;
                 }
                 else
                 {
                     OrderStatus.OrderStatus = Message::EOrderStatus::ECANCELLED;
+                    OrderStatus.CanceledVolume = pOrder->VolumeTotalOriginal;
                 }
             }
         }
@@ -1214,27 +1218,39 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
         }
         Utils::CodeConvert(pOrder->StatusMsg, sizeof(pOrder->StatusMsg), OrderStatus.ErrorMsg,
                            sizeof(OrderStatus.ErrorMsg), "gb2312", "utf-8");
-        // 主动撤单和被动撤单
-        if(Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
-                Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
-                Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+                // Update OrderStatus
+        if(OrderStatus.OrderType == Message::EOrderType::ELIMIT)
         {
-            OrderStatus.CanceledVolume = pOrder->VolumeTotalOriginal - pOrder->VolumeTraded;
-            UpdatePosition(OrderStatus, AccountPosition);
+            // 对于LIMIT订单，在成交回报更新时更新订单状态
+            if(Message::EOrderStatus::EALLTRADED != OrderStatus.OrderStatus && Message::EOrderStatus::EPARTTRADED != OrderStatus.OrderStatus)
+            {
+                UpdateOrderStatus(OrderStatus);
+            }
+            // Update Position
+            if(Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+            {
+                UpdatePosition(OrderStatus, AccountPosition);
+                // remove Order
+                m_OrderStatusMap.erase(it);
+            }
         }
-        // 成交状态不更新订单状态，在OnRtnTrade进行更新
-        if(Message::EOrderStatus::EALLTRADED != OrderStatus.OrderStatus && Message::EOrderStatus::EPARTTRADED != OrderStatus.OrderStatus)
+        else if(OrderStatus.OrderType == Message::EOrderType::EFAK || OrderStatus.OrderType == Message::EOrderType::EFOK)
         {
-            UpdateOrderStatus(OrderStatus);
-            PrintOrderStatus(OrderStatus, "CTPTrader::OnRtnOrder end");
-            PrintAccountPosition(AccountPosition, "CTPTrader::OnRtnOrder end");
-        }
-        // remove Order
-        if(Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
-                Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
-                Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
-        {
-            m_OrderStatusMap.erase(it);
+            if(Message::EOrderStatus::EALLTRADED != OrderStatus.OrderStatus && 
+                    Message::EOrderStatus::EPARTTRADED_CANCELLED != OrderStatus.OrderStatus)
+            {
+                UpdateOrderStatus(OrderStatus);
+            }
+            // Update Position
+            if(Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+            {
+                UpdatePosition(OrderStatus, AccountPosition);
+                // remove Order
+                m_OrderStatusMap.erase(it);
+            }
         }
     }
     else
@@ -1305,20 +1321,60 @@ void CTPTradeGateWay::OnRtnTrade(CThostFtdcTradeField *pTrade)
         OrderStatus.TradedVolume =  pTrade->Volume;
         OrderStatus.TradedPrice = pTrade->Price;
         OrderStatus.TradedAvgPrice = (pTrade->Price * pTrade->Volume + prevTotalAmount) / OrderStatus.TotalTradedVolume;
-        UpdateOrderStatus(OrderStatus);
-        // Position Update
+
         std::string Account = pTrade->InvestorID;
         std::string Ticker = pTrade->InstrumentID;
         std::string Key = Account + ":" + Ticker;
         Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
-        UpdatePosition(OrderStatus, AccountPosition);
-
-        PrintOrderStatus(OrderStatus, "CTPTrader::OnRtnTrade ");
-        PrintAccountPosition(AccountPosition, "CTPTrader::OnRtnTrade ");
-        // remove Order When AllTraded
-        if(Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus)
+        if(Message::EOrderType::ELIMIT ==  OrderStatus.OrderType)
         {
-            m_OrderStatusMap.erase(it);
+            // Upadte OrderStatus
+            if(OrderStatus.TotalTradedVolume == OrderStatus.SendVolume)
+            {
+                OrderStatus.OrderStatus = Message::EOrderStatus::EALLTRADED;
+            }
+            else
+            {
+                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+            }
+            UpdateOrderStatus(OrderStatus);
+            // Position Update
+            UpdatePosition(OrderStatus, AccountPosition);
+            // remove Order When AllTraded
+            if(Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus && OrderStatus.TotalTradedVolume == OrderStatus.SendVolume)
+            {
+                m_OrderStatusMap.erase(it);
+            }
+        }
+        else if(Message::EOrderType::EFAK == OrderStatus.OrderType || Message::EOrderType::EFOK == OrderStatus.OrderType)
+        {
+            if(OrderStatus.TotalTradedVolume == OrderStatus.SendVolume)
+            {
+                OrderStatus.OrderStatus = Message::EOrderStatus::EALLTRADED;
+                UpdatePosition(OrderStatus, AccountPosition);
+                UpdateOrderStatus(OrderStatus);
+            }
+            else if(OrderStatus.TotalTradedVolume == OrderStatus.SendVolume - OrderStatus.CanceledVolume)
+            {
+                // 更新成交数量仓位
+                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+                UpdatePosition(OrderStatus, AccountPosition);
+                // 更新订单终结状态冻结仓位
+                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED_CANCELLED;
+                UpdatePosition(OrderStatus, AccountPosition);
+                UpdateOrderStatus(OrderStatus);
+            }
+            else
+            {
+                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+                UpdatePosition(OrderStatus, AccountPosition);
+            }
+            PrintOrderStatus(OrderStatus, "CTPTrader::OnRtnTrade ");
+            if(Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus)
+            {
+                m_OrderStatusMap.erase(it);
+            }
         }
     }
     else
