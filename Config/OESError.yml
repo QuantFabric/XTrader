@@ -1,6 +1,96 @@
 
 OESError:
   -
+    Code: 1
+    Error: Operation not permitted
+  -
+    Code: 2
+    Error: No such file or directory
+  -
+    Code: 3
+    Error: No such process
+  -
+    Code: 4
+    Error: Interrupted system call
+  -
+    Code: 5
+    Error: I/O error
+  -
+    Code: 6
+    Error: No such device or address
+  -
+    Code: 7
+    Error: Arg list too long
+  -
+    Code: 8
+    Error: Exec format error
+  -
+    Code: 9
+    Error: Bad file number
+  -
+    Code: 10
+    Error: No child processes
+  -
+    Code: 11
+    Error: Try again
+  -
+    Code: 12
+    Error: Out of memory
+  -
+    Code: 13
+    Error: Permission denied
+  -
+    Code: 14
+    Error: Bad address
+  -
+    Code: 15
+    Error: Block device required
+  -
+    Code: 16
+    Error: Device or resource busy
+  -
+    Code: 17
+    Error: File exists
+  -
+    Code: 18
+    Error: Cross-device link
+  -
+    Code: 19
+    Error: No such device
+  -
+    Code: 20
+    Error: Not a directory
+  -
+    Code: 21
+    Error: Is a directory
+  -
+    Code: 22
+    Error: Invalid argument
+  -
+    Code: 23
+    Error: File table overflow
+  -
+    Code: 24
+    Error: Too many open files
+  -
+    Code: 25
+    Error: Not a tty device
+  -
+    Code: 26
+    Error: Text file busy
+  -
+    Code: 27
+    Error: File too large
+  -
+    Code: 28
+    Error: No space left on device
+  -
+    Code: 29
+    Error: Illegal seek
+  -
+    Code: 30
+    Error: Read-only file system
+  -
     Code: 1001
     Error: 报文格式错误
   - 

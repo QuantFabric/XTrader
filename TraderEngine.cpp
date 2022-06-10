@@ -446,8 +446,10 @@ void TraderEngine::WriteExecuteReportToMemory()
         {
             if(!m_ReportChannelQueue.Push(m_XTraderConfig.Account.c_str(), report))
             {
+                char buffer[32] = {0};
+                sprintf(buffer, "0X%X", m_XTraderConfig.ReportChannelKey);
                 Utils::gLogger->Log->warn("TraderEngine::WriteExecuteReportToMemory failed, ReportChannelKey:{} Channel:{} Queue is full.", 
-                                          m_XTraderConfig.ReportChannelKey, m_XTraderConfig.Account);
+                                          buffer, m_XTraderConfig.Account);
             }
         }
         else

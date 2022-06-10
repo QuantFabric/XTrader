@@ -27,15 +27,14 @@ public:
 
     void PrintAccountPosition(const Message::TAccountPosition& Position, const std::string& op)
     {
-        m_Logger->Log->debug("{}, PrintAccountPosition Product:{} Account:{}\n"
-                    "\t\t\t\t\t\tTicker:{} ExchangeID:{} LongYdPosition:{} LongPosition:{}\n"
-                    "\t\t\t\t\t\tLongTdBuy:{} LongTdSell:{} LongTdSell4RePay:{} ShortYdPosition:{}\n"
-                    "\t\t\t\t\t\tShortPosition:{} TdBuy4RePay:{} TdDirectRepay:{} MarginPosition:{}",
+        m_Logger->Log->debug("{}, PrintAccountPosition Product:{} Account:{} Ticker:{} ExchangeID:{} LongYdPosition:{} LongPosition:{} "
+                    "LongTdBuy:{} LongTdSell:{} MarginYdPosition:{} MarginPosition:{} MarginRepaid:{} ShortYdPosition:{} ShortPosition:{} "
+                    "ShortSellRepaid:{} RepayDirectAvl:{} SpecialPositionAvl:{}",
                     op, Position.Product, Position.Account, Position.Ticker, Position.ExchangeID, 
                     Position.StockPosition.LongYdPosition, Position.StockPosition.LongPosition, Position.StockPosition.LongTdBuy,
-                    Position.StockPosition.LongTdSell, Position.StockPosition.LongTdSell4RePay, Position.StockPosition.ShortYdPosition,
-                    Position.StockPosition.ShortPosition, Position.StockPosition.TdBuy4RePay, Position.StockPosition.TdDirectRepay,
-                    Position.StockPosition.MarginPosition);
+                    Position.StockPosition.LongTdSell, Position.StockPosition.MarginYdPosition, Position.StockPosition.MarginPosition,
+                    Position.StockPosition.MarginRepaid, Position.StockPosition.ShortYdPosition, Position.StockPosition.ShortPosition,
+                    Position.StockPosition.ShortSellRepaid, Position.StockPosition.RepayDirectAvl, Position.StockPosition.SpecialPositionAvl);
     }
 };
 
