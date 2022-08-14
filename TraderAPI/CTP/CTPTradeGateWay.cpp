@@ -1218,7 +1218,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
         }
         Utils::CodeConvert(pOrder->StatusMsg, sizeof(pOrder->StatusMsg), OrderStatus.ErrorMsg,
                            sizeof(OrderStatus.ErrorMsg), "gb2312", "utf-8");
-                // Update OrderStatus
+        // Update OrderStatus
         if(OrderStatus.OrderType == Message::EOrderType::ELIMIT)
         {
             // 对于LIMIT订单，在成交回报更新时更新订单状态

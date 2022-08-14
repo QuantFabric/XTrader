@@ -1,59 +1,101 @@
- TickerList:
+TickerList:                             
   -
     TickerIndex: 0
-    Ticker: IC2204
+    Ticker: IC2208
     ExchangeID: CFFEX
-
+    PriceTick: 0.2
   -
     TickerIndex: 1
-    Ticker: IC2205
-    ExchangeID: CFFEX
-
-  -
-    TickerIndex: 2
-    Ticker: IC2206
-    ExchangeID: CFFEX
-
-  -
-    TickerIndex: 3
     Ticker: IC2209
     ExchangeID: CFFEX
-
+    PriceTick: 0.2
+  -
+    TickerIndex: 2
+    Ticker: IC2212
+    ExchangeID: CFFEX
+    PriceTick: 0.2
+  -
+    TickerIndex: 3
+    Ticker: IC2303
+    ExchangeID: CFFEX
+    PriceTick: 0.2
   -
     TickerIndex: 4
-    Ticker: IF2204
+    Ticker: IF2208
     ExchangeID: CFFEX
-
+    PriceTick: 0.2
   -
     TickerIndex: 5
-    Ticker: IF2205
-    ExchangeID: CFFEX
-  -
-    TickerIndex: 6
-    Ticker: IF2206
-    ExchangeID: CFFEX
-
-  -
-    TickerIndex: 7
     Ticker: IF2209
     ExchangeID: CFFEX
-
+    PriceTick: 0.2
+  -
+    TickerIndex: 6
+    Ticker: IF2212
+    ExchangeID: CFFEX
+    PriceTick: 0.2
+  -
+    TickerIndex: 7
+    Ticker: IF2303
+    ExchangeID: CFFEX
+    PriceTick: 0.2
   -
     TickerIndex: 8
-    Ticker: IH2204
+    Ticker: IH2208
     ExchangeID: CFFEX
-
+    PriceTick: 0.2
   -
     TickerIndex: 9
-    Ticker: IH2205
-    ExchangeID: CFFEX
-
-  -
-    TickerIndex: 10
-    Ticker: IH2206
-    ExchangeID: CFFEX
-
-  -
-    TickerIndex: 11
     Ticker: IH2209
     ExchangeID: CFFEX
+    PriceTick: 0.2
+  -
+    TickerIndex: 10
+    Ticker: IH2212
+    ExchangeID: CFFEX
+    PriceTick: 0.2
+  -
+    TickerIndex: 11
+    Ticker: IH2303
+    ExchangeID: CFFEX
+    PriceTick: 0.2
+  -
+    TickerIndex: 12
+    Ticker: IM2208
+    ExchangeID: CFFEX
+    PriceTick: 0.2
+  -
+    TickerIndex: 13
+    Ticker: IM2209
+    ExchangeID: CFFEX
+    PriceTick: 0.2
+  -
+    TickerIndex: 14
+    Ticker: IM2212
+    ExchangeID: CFFEX
+    PriceTick: 0.2
+  -
+    TickerIndex: 15
+    Ticker: IM2303
+    ExchangeID: CFFEX
+    PriceTick: 0.2
+  -
+    TickerIndex: 16
+    Ticker: SH000300
+    ExchangeID: SH
+    PriceTick: 0.01
+  -
+    TickerIndex: 17
+    Ticker: SH000905
+    ExchangeID: SH
+    PriceTick: 0.01
+  -
+    TickerIndex: 18
+    Ticker: SH000016
+    ExchangeID: SH
+    PriceTick: 0.01
+  -
+    TickerIndex: 19
+    Ticker: SH000852
+    ExchangeID: SH
+    PriceTick: 0.01

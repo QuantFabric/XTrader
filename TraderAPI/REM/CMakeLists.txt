@@ -56,8 +56,6 @@ include_directories(${CMAKE_SOURCE_DIR}/../Utils/)
 include_directories(${CMAKE_SOURCE_DIR}/TraderAPI/)
 include_directories(${CMAKE_SOURCE_DIR}/)
 
-# ConcurrentQueue
-include_directories(${CMAKE_SOURCE_DIR}/../XAPI/ConcurrentQueue/1.0.3/)
 # SPDLog
 include_directories(${CMAKE_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/include/)
 link_directories(${CMAKE_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/lib)
