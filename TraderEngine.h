@@ -54,6 +54,7 @@ private:
     Utils::IPCLockFreeQueue<Message::PackMessage, 1000> m_ReportChannelQueue;
     Utils::RingBuffer<Message::PackMessage> m_RequestMessageQueue;
     Utils::RingBuffer<Message::PackMessage> m_ReportMessageQueue;
+    std::vector<int> m_CPUSETVector;
 };
 
 #endif // TRADERENGINE_HPP

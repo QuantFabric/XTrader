@@ -105,6 +105,15 @@ void HPPackRiskClient::SendData(const unsigned char* pBuffer, int iLength)
     }
 }
 
+En_HP_HandleResult __stdcall HPPackRiskClient::OnPrepareConnect(HP_Client pSender, CONNID dwConnID, UINT_PTR socket)
+{
+    int enable = 1;
+    int ret1 = SYS_SetSocketOption(socket, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable));
+    int ret2 = SYS_SetSocketOption(socket, IPPROTO_TCP, TCP_QUICKACK, &enable, sizeof(enable));
+    Utils::gLogger->Log->info("HPPackRiskClient::OnPrepareConnect Socket:{} NoDelay:{} QuickAck:{}", socket, ret1 == 0, ret2 == 0);
+    return HR_OK;
+}
+
 En_HP_HandleResult __stdcall HPPackRiskClient::OnConnect(HP_Client pSender, HP_CONNID dwConnID)
 {
     TCHAR szAddress[50];

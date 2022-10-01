@@ -21,6 +21,7 @@ XTraderConfig:
   TraderAPIConfig: /home/xtrader/Test/XTrader/Config/XTrader.yml
   OrderChannelKey: 0XFF000002
   ReportChannelKey: 0XFF000003
+  CPUSET: 10
 
 REMConfig:
   TradeServerIP : 125.64.36.25

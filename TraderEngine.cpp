@@ -29,6 +29,12 @@ void TraderEngine::LoadConfig(const std::string& path)
         sprintf(buffer, "LoadXTraderConfig TraderAPIConfig:%s OrderChannelKey:0X%X ReportChannelKey:0X%X",
                         m_XTraderConfig.TraderAPIConfig.c_str(), m_XTraderConfig.OrderChannelKey, m_XTraderConfig.ReportChannelKey);
         Utils::gLogger->Log->info(buffer);
+        std::vector<std::string> CPUSETVector;
+        Utils::Split(m_XTraderConfig.CPUSET, ",", CPUSETVector);
+        for(int i = 0; i < CPUSETVector.size(); i++)
+        {
+            m_CPUSETVector.push_back(atoi(CPUSETVector.at(i).c_str()));
+        }
     }
     m_OpenTime = Utils::getTimeStampMs(m_XTraderConfig.OpenTime.c_str());
     m_CloseTime = Utils::getTimeStampMs(m_XTraderConfig.CloseTime.c_str());
@@ -60,6 +66,8 @@ void TraderEngine::LoadTradeGateWay(const std::string& soPath)
 
 void TraderEngine::Run()
 {
+    bool ret = Utils::ThreadBind(pthread_self(), m_CPUSETVector.at(0));
+    Utils::gLogger->Log->info("TraderEngine::Run start thread CPU:{} CPUBind:{}", m_CPUSETVector.at(0), ret);
     char buffer[256] = {0};
     sprintf(buffer, "OrderChnnel:0X%X ReportChannel:0X%X", m_XTraderConfig.OrderChannelKey, m_XTraderConfig.ReportChannelKey);
     Utils::gLogger->Log->info("TraderEngine::Run {}", buffer);

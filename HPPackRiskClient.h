@@ -9,6 +9,10 @@
 #include <string.h>
 #include <string>
 #include <unistd.h>
+#include <sys/types.h>         
+#include <sys/socket.h>
+#include <netinet/tcp.h>
+#include <netinet/in.h>
 #include <vector>
 #include "RingBuffer.hpp"
 
@@ -25,6 +29,7 @@ public:
 public:
     static Utils::RingBuffer<Message::PackMessage> m_PackMessageQueue;
 protected:
+    static En_HP_HandleResult __stdcall OnPrepareConnect(HP_Client pSender, CONNID dwConnID, UINT_PTR socket);
     static En_HP_HandleResult __stdcall OnConnect(HP_Client pSender, HP_CONNID dwConnID);
     static En_HP_HandleResult __stdcall OnSend(HP_Server pSender, HP_CONNID dwConnID, const BYTE* pData, int iLength);
     static En_HP_HandleResult __stdcall OnReceive(HP_Server pSender, HP_CONNID dwConnID, const BYTE* pData, int iLength);
