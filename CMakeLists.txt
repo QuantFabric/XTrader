@@ -91,30 +91,30 @@ file(WRITE ${PROJECT_BINARY_DIR}/GitVersion.h
     "#define APP_COMMITID \"${APP_COMMITID}\"\n#define UTILS_COMMITID \"${UTILS_COMMITID}\"\n#define GIT_VERSION \"${GIT_VERSION}\"\n#define GIT_COMMITED_DATE \"${GIT_COMMITED_DATE}\"\n"
 )
 
-include_directories(${CMAKE_SOURCE_DIR}/../Utils/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../Utils/)
 
 # HP-Scoket
-include_directories(${CMAKE_SOURCE_DIR}/../XAPI/HP-Socket/5.8.2/include/)
-link_directories(${CMAKE_SOURCE_DIR}/../XAPI/HP-Socket/5.8.2/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/HP-Socket/5.8.2/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/HP-Socket/5.8.2/lib)
 
 # SPDLog
-include_directories(${CMAKE_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/include/)
-link_directories(${CMAKE_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/lib)
 
 # YAML-CPP
-include_directories(${CMAKE_SOURCE_DIR}/../XAPI/YAML-CPP/0.6.3/include/)
-link_directories(${CMAKE_SOURCE_DIR}/../XAPI/YAML-CPP/0.6.3/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.6.3/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.6.3/lib)
 
 set(SOURCES main.cpp 
             HPPackClient.cpp
             HPPackRiskClient.cpp
             TraderEngine.cpp
-            ${CMAKE_SOURCE_DIR}/../Utils/Logger.cpp)
+            ${CMAKE_CURRENT_SOURCE_DIR}/../Utils/Logger.cpp)
 add_executable(${XTrader_Version} ${SOURCES})
 
 target_link_libraries(${XTrader_Version} spdlog pthread hpsocket4c yaml-cpp dl)      
 
 # 输出so至build目录
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/)
 # 编译API SO
 add_subdirectory(TraderAPI)
