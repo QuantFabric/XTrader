@@ -114,7 +114,5 @@ add_executable(${XTrader_Version} ${SOURCES})
 
 target_link_libraries(${XTrader_Version} spdlog pthread hpsocket4c yaml-cpp dl)      
 
-# 输出so至build目录
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/)
 # 编译API SO
 add_subdirectory(TraderAPI)

@@ -52,22 +52,22 @@ add_definitions(-DSO_COMMITID=\"${SO_COMMITID}\")
 add_definitions(-DSO_UTILS_COMMITID=\"${SO_UTILS_COMMITID}\")
 add_definitions(-DAPI_VERSION=\"${APIVersion}\")
 
-include_directories(${CMAKE_SOURCE_DIR}/../Utils/)
-include_directories(${CMAKE_SOURCE_DIR}/TraderAPI/)
-include_directories(${CMAKE_SOURCE_DIR}/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../Utils/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../TraderAPI/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
 # SPDLog
-include_directories(${CMAKE_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/include/)
-link_directories(${CMAKE_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/SPDLog/1.8.5/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/SPDLog/1.8.5/lib)
 # YAML-CPP
-include_directories(${CMAKE_SOURCE_DIR}/../XAPI/YAML-CPP/0.6.3/include/)
-link_directories(${CMAKE_SOURCE_DIR}/../XAPI/YAML-CPP/0.6.3/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/YAML-CPP/0.6.3/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/YAML-CPP/0.6.3/lib)
 # REM
-include_directories(${CMAKE_SOURCE_DIR}/../XAPI/REM/3.1.3.49/include/)
-link_directories(${CMAKE_SOURCE_DIR}/../XAPI/REM/3.1.3.49/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/3.1.3.49/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/3.1.3.49/lib)
 
 set(SOURCES REMTradeGateWay.cpp
-            ${CMAKE_SOURCE_DIR}/../Utils/Logger.cpp)
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../../Utils/Logger.cpp)
 add_library(${TradeGateWay_Version} SHARED ${SOURCES})
 
 target_link_libraries(${TradeGateWay_Version} spdlog yaml-cpp EESTraderApi dl)   
