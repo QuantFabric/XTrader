@@ -5,6 +5,7 @@ XTraderConfig:
   Account : 188795
   Password : xxxxxx
   BussinessType: 3
+  CloseToday: yes
   AppID : simnow_client_test
   AuthCode : 0000000000000000
   ServerIP: 127.0.0.1

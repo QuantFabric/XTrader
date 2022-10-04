@@ -91,6 +91,7 @@ public:
     {
         switch(request.MessageType)
         {
+            CheckOrderRequest(request.OrderRequest);
             case Message::EMessageType::EOrderRequest:
             {
                 if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ENOCHECKED)
@@ -158,6 +159,47 @@ public:
         }
     }
 protected:
+    void CheckOrderRequest(const Message::TOrderRequest& req)
+    {
+        if(0 == req.Offset)
+        {
+            Message::TOrderRequest& request = const_cast<Message::TOrderRequest&>(req);
+            
+            std::string Key = std::string(request.Account) + ":" + request.Ticker;
+            Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
+            if(Message::EOrderDirection::EBUY == request.Direction)
+            {
+                if(AccountPosition.FuturePosition.ShortYdVolume - AccountPosition.FuturePosition.ShortClosingYdVolume >= request.Volume)
+                {
+                    request.Offset = Message::EOrderOffset::ECLOSE_YESTODAY;
+                }
+                else if(m_XTraderConfig.CloseToday && AccountPosition.FuturePosition.ShortTdVolume - AccountPosition.FuturePosition.ShortClosingTdVolume >= request.Volume)
+                {
+                    request.Offset = Message::EOrderOffset::ECLOSE_TODAY;
+                }
+                else
+                {
+                    request.Offset = Message::EOrderOffset::EOPEN;
+                }
+            }
+            else if(Message::EOrderDirection::ESELL == request.Direction)
+            {
+                if(AccountPosition.FuturePosition.LongYdVolume - AccountPosition.FuturePosition.LongClosingYdVolume >= request.Volume)
+                {
+                    request.Offset = Message::EOrderOffset::ECLOSE_YESTODAY;
+                }
+                else if(m_XTraderConfig.CloseToday && AccountPosition.FuturePosition.LongTdVolume - AccountPosition.FuturePosition.LongClosingTdVolume >= request.Volume)
+                {
+                    request.Offset = Message::EOrderOffset::ECLOSE_TODAY;
+                }
+                else
+                {
+                    request.Offset = Message::EOrderOffset::EOPEN;
+                }
+            }
+        }
+    }
+
     void UpdateOrderStatus(Message::TOrderStatus& OrderStatus)
     {
         strncpy(OrderStatus.UpdateTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.UpdateTime));
