@@ -2,10 +2,12 @@
 #define TRADEGATEWAY_HPP
 
 #include <string>
-#include "RingBuffer.hpp"
+#include "LockFreeQueue.hpp"
 #include "PackMessage.hpp"
 #include "Logger.h"
 #include "YMLConfig.hpp"
+#include "phmap.h"
+#include <shared_mutex>
 
 class TradeGateWay
 {
@@ -207,7 +209,7 @@ protected:
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EOrderStatus;
         memcpy(&message.OrderStatus, &OrderStatus, sizeof(message.OrderStatus));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 
     void CancelOrder(const Message::TOrderStatus& OrderStatus)
@@ -249,16 +251,25 @@ protected:
                                OrderStatus.ErrorID, OrderStatus.ErrorMsg, OrderStatus.RiskID);
     }
 public:
-    Utils::RingBuffer<Message::PackMessage> m_ReportMessageQueue;
+    Utils::LockFreeQueue<Message::PackMessage> m_ReportMessageQueue;
 protected:
     Message::ELoginStatus m_ConnectedStatus;
     std::vector<Utils::TickerProperty> m_TickerPropertyList;
     Utils::XTraderConfig m_XTraderConfig;
     Utils::Logger* m_Logger;
     std::unordered_map<std::string, std::string> m_TickerExchangeMap;
-    std::unordered_map<std::string, Message::TAccountPosition> m_TickerAccountPositionMap;
+
+    typedef phmap::parallel_node_hash_map<std::string, Message::TAccountPosition, phmap::priv::hash_default_hash<std::string>,
+                                     phmap::priv::hash_default_eq<std::string>,
+                                     std::allocator<std::pair<const std::string, Message::TAccountPosition>>, 12, std::shared_mutex>
+    AccountPositionMapT;
+    AccountPositionMapT m_TickerAccountPositionMap;
     std::unordered_map<std::string, Message::TAccountFund> m_AccountFundMap;
-    std::unordered_map<std::string, Message::TOrderStatus> m_OrderStatusMap;
+    typedef phmap::parallel_node_hash_map<std::string, Message::TOrderStatus, phmap::priv::hash_default_hash<std::string>,
+                                     phmap::priv::hash_default_eq<std::string>,
+                                     std::allocator<std::pair<const std::string, Message::TOrderStatus>>, 10, std::shared_mutex>
+    OrderStatusMapT;
+    OrderStatusMapT m_OrderStatusMap;
     std::unordered_map<int, std::string> m_CodeErrorMap;
 };
 

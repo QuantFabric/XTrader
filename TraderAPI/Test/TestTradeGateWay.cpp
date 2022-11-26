@@ -88,7 +88,7 @@ int TestTradeGateWay::ReqQryFund()
     memset(&message, 0, sizeof(message));
     message.MessageType = Message::EMessageType::EAccountFund;
     memcpy(&message.AccountFund, &AccountFund, sizeof(AccountFund));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
     return 0;
 }
 

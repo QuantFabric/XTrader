@@ -98,7 +98,7 @@ void YDTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         m_Logger->Log->warn(buffer);
     }
@@ -135,7 +135,7 @@ int YDTradeGateWay::ReqQryFund()
     memset(&message, 0, sizeof(message));
     message.MessageType = Message::EMessageType::EAccountFund;
     memcpy(&message.AccountFund, &AccountFund, sizeof(message.AccountFund));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
     m_Logger->Log->info("YDTrader::ReqQryFund Account:{} Balance:{} Available:{} Commission:{} CurrMargin:{} Deposit:{} Withdraw:{}", 
                         AccountFund.Account, AccountFund.Balance, AccountFund.Available, AccountFund.Commission, AccountFund.CurrMargin,
                         AccountFund.Deposit, AccountFund.Withdraw);
@@ -598,7 +598,7 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     else
     {
@@ -628,7 +628,7 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 }
 
@@ -692,7 +692,7 @@ void YDTradeGateWay::notifyCaughtUp(void)
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EAccountPosition;
         memcpy(&message.AccountPosition, &it->second, sizeof(message.AccountPosition));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
         PrintAccountPosition(it->second, "YDTrader::notifyCaughtUp Current Position ");
     }
     // 撤销所有挂单
@@ -986,7 +986,7 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
         strncpy(message.EventLog.ExchangeID, m_TickerExchangeMap[pInstrument->InstrumentID].c_str(), sizeof(message.EventLog.ExchangeID));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     char errorBuffer[512] = {0};
     sprintf(errorBuffer, "YDTrader::notifyOrder Account:%s Ticker:%s Direction:%d OffsetFlag:%d HedgeFlag:%d "
@@ -1101,7 +1101,7 @@ void YDTradeGateWay::notifyTrade(const YDTrade *pTrade, const YDInstrument *pIns
         strncpy(message.EventLog.ExchangeID, m_TickerExchangeMap[pInstrument->InstrumentID].c_str(), sizeof(message.EventLog.ExchangeID));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     char errorString[512] = {0};
     sprintf(errorString, "YDTrader::notifyTrade Account:%s Ticker:%s Direction:%d OffsetFlag:%d HedgeFlag:%d TradeID:%d "
@@ -1208,6 +1208,6 @@ void YDTradeGateWay::notifyExtendedAccount(const YDExtendedAccount *pAccount)
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EAccountFund;
         memcpy(&message.AccountFund, &AccountFund, sizeof(AccountFund));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 }

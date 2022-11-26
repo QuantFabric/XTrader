@@ -8,7 +8,7 @@
 #include "YMLConfig.hpp"
 #include "XPluginEngine.hpp"
 #include "IPCLockFreeQueue.hpp"
-#include "RingBuffer.hpp"
+#include "LockFreeQueue.hpp"
 #include "TraderAPI/TradeGateWay.hpp"
 
 class TraderEngine
@@ -21,6 +21,7 @@ public:
     void Run();
 
 protected:
+    void WorkFunc();
     void RegisterClient(const char *ip, unsigned int port);
     void RegisterRiskClient(const char *ip, unsigned int port);
     void ReadRequestFromMemory();
@@ -52,9 +53,10 @@ private:
     std::string m_Command;
     Utils::IPCLockFreeQueue<Message::PackMessage, 1000> m_OrderChannelQueue;
     Utils::IPCLockFreeQueue<Message::PackMessage, 1000> m_ReportChannelQueue;
-    Utils::RingBuffer<Message::PackMessage> m_RequestMessageQueue;
-    Utils::RingBuffer<Message::PackMessage> m_ReportMessageQueue;
+    Utils::LockFreeQueue<Message::PackMessage> m_RequestMessageQueue;
+    Utils::LockFreeQueue<Message::PackMessage> m_ReportMessageQueue;
     std::vector<int> m_CPUSETVector;
+    std::thread* m_pWorkThread;
 };
 
 #endif // TRADERENGINE_HPP

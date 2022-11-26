@@ -14,7 +14,7 @@
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <vector>
-#include "RingBuffer.hpp"
+#include "LockFreeQueue.hpp"
 
 class HPPackRiskClient
 {
@@ -27,7 +27,7 @@ public:
     void Stop();
     void SendData(const unsigned char* pBuffer, int iLength);
 public:
-    static Utils::RingBuffer<Message::PackMessage> m_PackMessageQueue;
+    static Utils::LockFreeQueue<Message::PackMessage> m_PackMessageQueue;
 protected:
     static En_HP_HandleResult __stdcall OnPrepareConnect(HP_Client pSender, CONNID dwConnID, UINT_PTR socket);
     static En_HP_HandleResult __stdcall OnConnect(HP_Client pSender, HP_CONNID dwConnID);

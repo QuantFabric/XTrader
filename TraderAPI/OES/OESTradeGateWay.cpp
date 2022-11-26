@@ -74,7 +74,7 @@ void OESTradeGateWay::LoadTrader()
         sprintf(ErrorBuffer, "OESTrader::LoadTrader Start failed, Account:%s ret=%d", m_XTraderConfig.Account.c_str(), ret);
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
         strncpy(message.EventLog.Event, ErrorBuffer, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         m_Logger->Log->error(ErrorBuffer);
     }
@@ -85,7 +85,7 @@ void OESTradeGateWay::LoadTrader()
         sprintf(ErrorBuffer, "OESTrader::LoadTrader Start successed, Account:%s OrderChannel:%d lastOutMsgSeq:%d ReportChannel:%d", 
                 m_XTraderConfig.Account.c_str(), m_OESTraderAPI->GetOrdChannelCount(), m_OESTraderAPI->m_DefaultClSeqNo, m_OESTraderAPI->GetRptChannelCount());
         strncpy(message.EventLog.Event, ErrorBuffer, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         m_Logger->Log->info(ErrorBuffer);
         // 查询账户信息
@@ -116,7 +116,7 @@ void OESTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         m_Logger->Log->warn(buffer);
     }
@@ -381,7 +381,7 @@ void OESTradeGateWay::RepayMarginDirect(double value)
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 }
 
@@ -408,7 +408,7 @@ void OESTradeGateWay::TransferFundIn(double value)
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 }
 
@@ -435,7 +435,7 @@ void OESTradeGateWay::TransferFundOut(double value)
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 }
 
@@ -475,7 +475,7 @@ void OESTradeGateWay::HandleRetCode(int code, const std::string& op)
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, errorString.c_str(), sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 }
 
 int OESTradeGateWay::OESOrderDirection(const Message::TOrderRequest& request)
@@ -836,7 +836,7 @@ int32 OESTradeGateWay::OnDisconnected(eOesApiChannelTypeT channelType, OesApiSes
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
     return EAGAIN;
 }
 
@@ -1162,7 +1162,7 @@ void OESTradeGateWay::OnCashAssetVariation(const OesCashAssetItemT *pCashAssetIt
     memset(&message, 0, sizeof(message));
     message.MessageType = Message::EMessageType::EAccountFund;
     memcpy(&message.AccountFund, &AccountFund, sizeof(AccountFund));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 
     m_Logger->Log->debug("OESTrader::OnCashAssetVariation custId:{} cashAcctId:{} beginningBal:{} currentTotalBal:{} currentAvailableBal:{} "
                          "currentDrawableBal:{} totalDepositAmt:{} totalWithdrawAmt:{} cashAcctId:{} totalAssetValue:{} marginAvailableBal:{} availableBal:{} drawableBal:{}", 
@@ -1224,7 +1224,7 @@ void OESTradeGateWay::OnStockHoldingVariation(const OesStkHoldingItemT *pStkHold
     memset(&message, 0, sizeof(message));
     message.MessageType = Message::EMessageType::EAccountPosition;
     memcpy(&message.AccountPosition, &AccountPosition, sizeof(message.AccountPosition));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 
     m_Logger->Log->debug("OESTrader::OnStockHoldingVariation invAcctId:{} securityId:{} mktId:{} securityType:{} subSecurityType:{} productType:{} "
                          "isCreditHolding:{} originalHld:{} totalBuyHld:{} totalSellHld:{} totalTrsfInHld:{} totalTrsfOutHld:{} originalAvlHld:{} "
@@ -1269,7 +1269,7 @@ void OESTradeGateWay::OnFundTrsfReject(const OesRptMsgHeadT *pRptMsgHead, const 
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 }
 
@@ -1301,7 +1301,7 @@ void OESTradeGateWay::OnFundTrsfReport(const OesRptMsgHeadT *pRptMsgHead, const 
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 }
 
@@ -1361,7 +1361,7 @@ void OESTradeGateWay::OnQueryCashAsset(const OesCashAssetItemT *pCashAsset, cons
     memset(&message, 0, sizeof(message));
     message.MessageType = Message::EMessageType::EAccountFund;
     memcpy(&message.AccountFund, &AccountFund, sizeof(AccountFund));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
     m_Logger->Log->info("OESTrader::OnQueryCashAsset Account:{} FundAccount:{} beginningBal:{} beginningAvailableBal:{} beginningDrawableBal:{} "
                         "totalDepositAmt:{} totalWithdrawAmt:{} totalFeeAmt:{} currentTotalBal:{} currentAvailableBal:{} cashAcctId:{} totalAssetValue:{} "
                         "marginAvailableBal:{} availableBal:{} drawableBal:{} ", 
@@ -1424,7 +1424,7 @@ void OESTradeGateWay::OnQueryStkHolding(const OesStkHoldingItemT *pStkHolding, c
     memset(&message, 0, sizeof(message));
     message.MessageType = Message::EMessageType::EAccountPosition;
     memcpy(&message.AccountPosition, &AccountPosition, sizeof(message.AccountPosition));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
     m_Logger->Log->info("OESTrader::OnQueryStkHolding Account:{} invAcctId:{} securityId:{} mktId:{} securityType:{} subSecurityType:{} isCreditHolding:{} "
                         "originalHld:{} originalAvlHld:{} sumHld:{} totalBuyHld:{} totalSellHld:{} sellAvlHld:{} sellAvlHld:{} specialSecurityPositionAvailableQty:{} "
                         "collateralHoldingQty:{} marginBuyOriginDebtQty:{} marginBuyDebtQty:{} marginBuyRepaidQty:{} shortSellOriginDebtQty:{} shortSellDebtQty:{} "
@@ -1535,7 +1535,7 @@ void OESTradeGateWay::OnQueryIssue(const OesIssueItemT *pIssue, const OesQryCurs
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
     m_Logger->Log->info("OESTrader::OnQueryIssue Account:{} securityId:{} mktId:{} issueType:{} isCancelAble:{} issuePrice:{} issueQty:{} "
                         "underlyingSecurityId:{} securityName:{} securityType:{} subSecurityType:{}", 
                         m_XTraderConfig.Account.c_str(), pIssue->securityId, pIssue->mktId, pIssue->issueType, pIssue->isCancelAble, 
@@ -1559,7 +1559,7 @@ void OESTradeGateWay::OnQueryLotWinning(const OesLotWinningItemT *pLotWinning, c
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
     m_Logger->Log->info("OESTrader::OnQueryLotWinning invAcctId:{} securityId:{} mktId:{} lotType:{} rejReason:{} lotDate:{} assignNum:{} lotQty:{} lotPrice:{} lotAmt:{}", 
                             pLotWinning->invAcctId, pLotWinning->securityId, pLotWinning->mktId, pLotWinning->lotType, pLotWinning->rejReason, 
                             pLotWinning->lotDate, pLotWinning->assignNum, pLotWinning->lotQty, pLotWinning->lotPrice, pLotWinning->lotAmt);

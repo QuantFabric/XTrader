@@ -83,7 +83,7 @@ void REMTradeGateWay::CreateTraderAPI()
         sprintf(errorString, "REMTrader::CreateTraderAPI Broker:%s InvestorID:%s Load REMTrader failed",
                 m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str());
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
         m_Logger->Log->warn(errorString);
         sleep(1);
         exit(-1);
@@ -92,7 +92,7 @@ void REMTradeGateWay::CreateTraderAPI()
     sprintf(errorString, "REMTrader::CreateTraderAPI Broker:%s InvestorID:%s create Trader API object successed, %s",
             m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(), m_APISoPath.c_str());
     strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 
     m_Logger->Log->info(errorString);
 }
@@ -132,7 +132,7 @@ void REMTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         m_Logger->Log->warn(buffer);
     }
@@ -156,7 +156,7 @@ void REMTradeGateWay::ReqUserLogin()
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, errorString.c_str(), sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 }
 
 int REMTradeGateWay::ReqQryFund()
@@ -461,7 +461,7 @@ void REMTradeGateWay::ConnectServer()
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         m_Logger->Log->warn(errorString);
         return;
@@ -481,7 +481,7 @@ void REMTradeGateWay::ConnectServer()
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 
     m_Logger->Log->info(errorString);
 }
@@ -507,7 +507,7 @@ bool REMTradeGateWay::LoadEESTrader()
                 m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(),
                 m_APISoPath.c_str(), dlerror());
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         m_Logger->Log->warn(errorString);
         return false;
@@ -520,7 +520,7 @@ bool REMTradeGateWay::LoadEESTrader()
                 m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(),
                 CREATE_EES_TRADER_API_NAME, dlerror());
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         m_Logger->Log->warn(errorString);
         return false;
@@ -533,7 +533,7 @@ bool REMTradeGateWay::LoadEESTrader()
                 m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(),
                 DESTROY_EES_TRADER_API_NAME, dlerror());
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         m_Logger->Log->warn(errorString);
         return false;
@@ -647,7 +647,7 @@ void REMTradeGateWay::HandleRetResult(int code, const std::string& op)
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, errorString.c_str(), sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 }
 
 int REMTradeGateWay::OrderSide(unsigned char side, const std::string& Key)
@@ -815,7 +815,7 @@ void REMTradeGateWay::OnConnection(ERR_NO errNo, const char* pErrStr)
                 m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(), pErrStr);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         message.EventLog.Level = Message::EEventLogLevel::EERROR;
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         m_Logger->Log->warn(errorString);
         return;
@@ -826,7 +826,7 @@ void REMTradeGateWay::OnConnection(ERR_NO errNo, const char* pErrStr)
             m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str());
     strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
     message.EventLog.Level = Message::EEventLogLevel::EINFO;
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 
     m_Logger->Log->info(errorString);
 
@@ -850,7 +850,7 @@ void REMTradeGateWay::OnDisConnection(ERR_NO errNo, const char* pErrStr )
     strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
     strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 
     m_ConnectedStatus = Message::ELoginStatus::ELOGIN_FAILED;
     m_Logger->Log->warn(errorString);
@@ -884,7 +884,7 @@ void REMTradeGateWay::OnUserLogon(EES_LogonResponse* pLogon)
     strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
     strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 
     // 查询绑定账户
     m_TraderAPI->QueryUserAccount();
@@ -957,7 +957,7 @@ void REMTradeGateWay::OnOrderAccept(EES_OrderAcceptField* pAccept )
         strncpy(message.EventLog.ExchangeID, ExchangeID(pAccept->m_Exchange), sizeof(message.EventLog.ExchangeID));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     m_Logger->Log->info("REMTrader:OnOrderAccept, Broker:{}, InvestorID:{} m_Symbol:{}\n"
                               "\t\t\t\t\t\tm_ClientOrderToken:{} m_MarketOrderToken:{} m_OrderState:{} m_UserID:{} m_AcceptTime:{}\n"
@@ -1030,7 +1030,7 @@ void REMTradeGateWay::OnOrderReject(EES_OrderRejectField* pReject )
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     m_Logger->Log->info("REMTrader:OnOrderReject, Broker:{}, InvestorID:{} m_Userid:{}\n"
                               "\t\t\t\t\t\tm_Timestamp:{} m_ClientOrderToken:{} m_RejectedMan:{} m_ReasonCode:{} m_GrammerResult:{}\n"
@@ -1075,7 +1075,7 @@ void REMTradeGateWay::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
         strncpy(message.EventLog.Account, pAccept->m_Account, sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     m_Logger->Log->info("REMTrader:OnOrderMarketAccept, Broker:{}, InvestorID:{} m_Account:{}\n"
                               "\t\t\t\t\t\tm_MarketOrderToken:{} m_MarketOrderId:{} m_MarketTime:{} m_UserID:{} m_ClientOrderToken:{}",
@@ -1132,7 +1132,7 @@ void REMTradeGateWay::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     m_Logger->Log->info("REMTrader:OnOrderMarketReject, Broker:{}, InvestorID:{} m_Account:{}\n"
                               "\t\t\t\t\t\tm_MarketOrderToken:{} m_MarketTimestamp:{} m_ReasonText:{} m_UserID:{} m_ClientOrderToken:{}",
@@ -1196,7 +1196,7 @@ void REMTradeGateWay::OnOrderExecution(EES_OrderExecutionField* pExec )
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     m_Logger->Log->info("REMTrader:OnOrderExecution, Broker:{}, InvestorID:{} m_Userid:{}\n"
                               "\t\t\t\t\t\tm_Timestamp:{} m_ClientOrderToken:{} m_MarketOrderToken:{} m_Quantity:{} m_Price:{}\n"
@@ -1255,7 +1255,7 @@ void REMTradeGateWay::OnOrderCxled(EES_OrderCxled* pCxled )
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     m_Logger->Log->info("REMTrader:OnOrderCxled, Broker:{}, InvestorID:{} m_Userid:{}\n"
                               "\t\t\t\t\t\tm_Timestamp:{} m_ClientOrderToken:{} m_MarketOrderToken:{} m_Decrement:{} m_Reason:{}",
@@ -1298,7 +1298,7 @@ void REMTradeGateWay::OnCxlOrderReject(EES_CxlOrderRej* pReject )
             strncpy(message.EventLog.ExchangeID, ExchangeID(pReject->m_ExchangeID), sizeof(message.EventLog.ExchangeID));
             strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-            m_ReportMessageQueue.push(message);
+            while(!m_ReportMessageQueue.Push(message));
             m_Logger->Log->warn(errorString);
         }
         PrintOrderStatus(OrderStatus, "REMTrader::OnCxlOrderReject ");
@@ -1320,7 +1320,7 @@ void REMTradeGateWay::OnCxlOrderReject(EES_CxlOrderRej* pReject )
         strncpy(message.EventLog.ExchangeID, ExchangeID(pReject->m_ExchangeID), sizeof(message.EventLog.ExchangeID));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     m_Logger->Log->info("REMTrader:OnCxlOrderReject, Broker:{}, InvestorID:{} m_account:{} m_MarketOrderToken:{}\n"
                               "\t\t\t\t\t\tm_ReasonCode:{} m_ReasonText:{} m_UserID:{} m_ClientOrderToken:{} m_ExchangeID:{}",
@@ -1379,7 +1379,7 @@ void REMTradeGateWay::OnQueryAccountBP(const char* pAccount, EES_AccountBP* pAcc
         AccountFund.PreBalance = pAccountBP->m_OvnInitMargin + pAccountBP->m_InitialBp;
         strncpy(AccountFund.UpdateTime, Utils::getCurrentTimeUs(), sizeof(AccountFund.UpdateTime));
         memcpy(&message.AccountFund, &AccountFund, sizeof(message.AccountFund));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
         m_Logger->Log->info("REMTrader::OnQueryAccountBP, m_account:{} m_InitialBp:{} m_AvailableBp:{} m_OvnMargin:{}\n"
                                   "\t\t\t\t\t\tm_FrozenMargin:{} m_CommissionFee:{} m_FrozenCommission:{} m_OvnInitMargin:{}\n"
                                   "\t\t\t\t\t\tm_TotalLiquidPL:{} m_TotalMarketPL:{}",
@@ -1450,7 +1450,7 @@ void REMTradeGateWay::OnQueryAccountPosition(const char* pAccount, EES_AccountPo
                 memset(&message, 0, sizeof(message));
                 message.MessageType = Message::EMessageType::EAccountPosition;
                 memcpy(&message.AccountPosition, &(it->second), sizeof(message.AccountPosition));
-                m_ReportMessageQueue.push(message);
+                while(!m_ReportMessageQueue.Push(message));
             }
         }
     }

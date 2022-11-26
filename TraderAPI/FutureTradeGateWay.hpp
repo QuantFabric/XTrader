@@ -26,7 +26,7 @@ public:
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
         m_Logger->Log->error(stringBuffer);
     }
 
@@ -44,7 +44,7 @@ public:
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
         m_Logger->Log->error(stringBuffer);
     }
 
@@ -62,7 +62,7 @@ public:
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
         m_Logger->Log->error(stringBuffer);
     }
 
@@ -77,12 +77,12 @@ public:
             {
                 position.FuturePosition.LongOpenVolume += OrderStatus.TradedVolume;
                 position.FuturePosition.LongTdVolume += OrderStatus.TradedVolume;
-                if(position.FuturePosition.LongOpenVolume > 0)
+                if(!m_XTraderConfig.CloseToday && position.FuturePosition.LongOpenVolume > 0)
                 {
                     position.FuturePosition.LongTdVolume += position.FuturePosition.LongYdVolume;
                     position.FuturePosition.LongYdVolume = 0;
                 }
-                position.FuturePosition.LongOpeningVolume -= OrderStatus.TradedVolume;
+                position.FuturePosition.LongOpeningVolume -= OrderStatus.TradedVolume;  
             }
             else if(Message::EOrderStatus::EORDER_SENDED == OrderStatus.OrderStatus)
             {
@@ -102,7 +102,7 @@ public:
             {
                 position.FuturePosition.ShortOpenVolume += OrderStatus.TradedVolume;
                 position.FuturePosition.ShortTdVolume += OrderStatus.TradedVolume;
-                if(position.FuturePosition.ShortOpenVolume > 0)
+                if(!m_XTraderConfig.CloseToday && position.FuturePosition.ShortOpenVolume > 0)
                 {
                     position.FuturePosition.ShortTdVolume += position.FuturePosition.ShortYdVolume;
                     position.FuturePosition.ShortYdVolume = 0;
@@ -205,7 +205,7 @@ public:
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EAccountPosition;
         memcpy(&message.AccountPosition, &position, sizeof(message.AccountPosition));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 
     virtual void UpdateFrozenPosition(const Message::TOrderStatus& OrderStatus, Message::TAccountPosition& position)
@@ -281,7 +281,7 @@ public:
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EAccountPosition;
         memcpy(&message.AccountPosition, &position, sizeof(message.AccountPosition));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 
     virtual void InitPosition()

@@ -3,7 +3,7 @@
 extern Utils::Logger* gLogger;
 
 bool HPPackRiskClient::m_Connected = false;
-Utils::RingBuffer<Message::PackMessage> HPPackRiskClient::m_PackMessageQueue(1 << 10);
+Utils::LockFreeQueue<Message::PackMessage> HPPackRiskClient::m_PackMessageQueue(1 << 10);
 
 HPPackRiskClient::HPPackRiskClient(const char* ip, unsigned int port)
 {
@@ -137,7 +137,7 @@ En_HP_HandleResult __stdcall HPPackRiskClient::OnReceive(HP_Server pSender, HP_C
 {
     Message::PackMessage message;
     memcpy(&message, pData, iLength);
-    m_PackMessageQueue.push(message);
+    while(!m_PackMessageQueue.Push(message));
     return HR_OK;
 }
 

@@ -2,7 +2,7 @@
 
 extern Utils::Logger *gLogger;
 
-TraderEngine::TraderEngine()
+TraderEngine::TraderEngine() : m_RequestMessageQueue(1 << 12), m_ReportMessageQueue(1 << 12)
 {
     m_HPPackClient = NULL;
     m_RiskClient = NULL;
@@ -66,8 +66,6 @@ void TraderEngine::LoadTradeGateWay(const std::string& soPath)
 
 void TraderEngine::Run()
 {
-    bool ret = Utils::ThreadBind(pthread_self(), m_CPUSETVector.at(0));
-    Utils::gLogger->Log->info("TraderEngine::Run start thread CPU:{} CPUBind:{}", m_CPUSETVector.at(0), ret);
     char buffer[256] = {0};
     sprintf(buffer, "OrderChnnel:0X%X ReportChannel:0X%X", m_XTraderConfig.OrderChannelKey, m_XTraderConfig.ReportChannelKey);
     Utils::gLogger->Log->info("TraderEngine::Run {}", buffer);
@@ -98,41 +96,43 @@ void TraderEngine::Run()
     // 风控初始化检查
     InitRiskCheck();
 
-    // start 
+    m_pWorkThread = new std::thread(&TraderEngine::WorkFunc, this);
+    m_pWorkThread->join();
+}
+
+void TraderEngine::WorkFunc()
+{
+    bool ret = Utils::ThreadBind(pthread_self(), m_CPUSETVector.at(0));
+    Utils::gLogger->Log->info("TraderEngine::WorkFunc CPU:{} BindCPU:{}", m_CPUSETVector.at(0), ret);
     while(true)
     {
-        CheckTrading();
-        if(m_Trading)
+        // 从Order通道内存队列读取报单、撤单请求并写入请求队列
+        ReadRequestFromMemory();
+        // 从客户端读取报单、撤单请求并写入请求队列
+        ReadRequestFromClient();
+        // 处理请求
+        HandleRequestMessage();
+        // 处理风控检查结果
+        HandleRiskResponse();
+        // 处理回报
+        HandleExecuteReport();
+        // 写入回报到Report通道内存队列
+        WriteExecuteReportToMemory();
+        unsigned long CurrentTimeStamp = Utils::getTimeMs();
+        static unsigned long PreTimeStamp = CurrentTimeStamp / 1000;
+        if(PreTimeStamp < CurrentTimeStamp / 1000)
         {
-            // 从Order通道内存队列读取报单、撤单请求并写入请求队列
-            ReadRequestFromMemory();
-            // 从客户端读取报单、撤单请求并写入请求队列
-            ReadRequestFromClient();
-            // 处理请求
-            HandleRequestMessage();
-            // 处理风控检查结果
-            HandleRiskResponse();
-            // 处理回报
-            HandleExecuteReport();
-            // 写入回报到Report通道内存队列
-            WriteExecuteReportToMemory();
+            PreTimeStamp = CurrentTimeStamp / 1000;
         }
-        static unsigned long currentTimeStamp = m_CurrentTimeStamp / 1000;
-        if(currentTimeStamp < m_CurrentTimeStamp / 1000)
+        if(PreTimeStamp % 5 == 0)
         {
-            currentTimeStamp = m_CurrentTimeStamp / 1000;
-        }
-        if(currentTimeStamp % 5 == 0)
-        {
-            // ReConnect 
-            m_HPPackClient->ReConnect();
             m_RiskClient->ReConnect();
-            m_TradeGateWay->ReLoadTrader();
+            m_HPPackClient->ReConnect();
             if(m_XTraderConfig.QryFund)
             {
                 m_TradeGateWay->ReqQryFund();
             }
-            currentTimeStamp += 1;
+            PreTimeStamp += 1;
         }
     }
 }
@@ -164,7 +164,7 @@ void TraderEngine::ReadRequestFromMemory()
     {
         for(auto it = items.begin(); it != items.end(); it++)
         {
-            m_RequestMessageQueue.push(*it);
+            while(!m_RequestMessageQueue.Push(*it));
         }
     }
 }
@@ -174,19 +174,19 @@ void TraderEngine::ReadRequestFromClient()
     while(true)
     {
         Message::PackMessage message;
-        bool ok = m_HPPackClient->m_PackMessageQueue.pop(message);
+        bool ok = m_HPPackClient->m_PackMessageQueue.Pop(message);
         if(ok)
         {
             switch(message.MessageType)
             {
                 case Message::EMessageType::EOrderRequest:
                 {
-                    m_RequestMessageQueue.push(message);
+                    while(!m_RequestMessageQueue.Push(message));
                     break;
                 }
                 case Message::EMessageType::EActionRequest:
                 {
-                    m_RequestMessageQueue.push(message);
+                    while(!m_RequestMessageQueue.Push(message));
                     break;
                 }
                 case Message::EMessageType::ECommand:
@@ -214,7 +214,7 @@ void TraderEngine::HandleRequestMessage()
     while(true)
     {
         Message::PackMessage request;
-        bool ok = m_RequestMessageQueue.pop(request);
+        bool ok = m_RequestMessageQueue.Pop(request);
         if(ok)
         {
             switch(request.MessageType)
@@ -270,7 +270,7 @@ void TraderEngine::HandleRiskResponse()
     while(true)
     {
         Message::PackMessage message;
-        bool ok = m_RiskClient->m_PackMessageQueue.pop(message);
+        bool ok = m_RiskClient->m_PackMessageQueue.Pop(message);
         if(ok)
         {
             switch(message.MessageType)
@@ -313,7 +313,7 @@ void TraderEngine::HandleExecuteReport()
     {
         Message::PackMessage report;
         // 从交易网关回报队列取出消息
-        bool ok = m_TradeGateWay->m_ReportMessageQueue.pop(report);
+        bool ok = m_TradeGateWay->m_ReportMessageQueue.Pop(report);
         if(ok)
         {
             switch(report.MessageType)
@@ -322,7 +322,7 @@ void TraderEngine::HandleExecuteReport()
                 case Message::EMessageType::EAccountFund:
                 case Message::EMessageType::EAccountPosition:
                 {
-                    m_ReportMessageQueue.push(report);
+                    while(!m_ReportMessageQueue.Push(report));
                     SendMonitorMessage(report);
                     break;
                 }
@@ -449,7 +449,7 @@ void TraderEngine::WriteExecuteReportToMemory()
     while(true)
     {
         Message::PackMessage report;
-        bool ok = m_ReportMessageQueue.pop(report);
+        bool ok = m_ReportMessageQueue.Pop(report);
         if(ok)
         {
             if(!m_ReportChannelQueue.Push(m_XTraderConfig.Account.c_str(), report))
@@ -531,7 +531,7 @@ void TraderEngine::InitRiskCheck()
     message.OrderRequest.Direction = Message::EOrderDirection::EBUY;
     message.OrderRequest.Offset = Message::EOrderOffset::EOPEN;
     
-    m_RequestMessageQueue.push(message);
+    while(!m_RequestMessageQueue.Push(message));
 }
 
 bool TraderEngine::IsTrading()const
@@ -541,8 +541,7 @@ bool TraderEngine::IsTrading()const
 
 void TraderEngine::CheckTrading()
 {
-    std::string buffer = Utils::getCurrentTimeMs() + 11;
-    m_CurrentTimeStamp = Utils::getTimeStampMs(buffer.c_str());
+    m_CurrentTimeStamp = Utils::getTimeStampMs(Utils::getCurrentTimeMs() + 11);
     m_Trading  = (m_CurrentTimeStamp >= m_OpenTime && m_CurrentTimeStamp <= m_CloseTime);
 }
 

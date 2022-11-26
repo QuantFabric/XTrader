@@ -125,7 +125,7 @@ void CTPTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
         m_Logger->Log->warn(buffer);
     }
 }
@@ -551,7 +551,7 @@ void CTPTradeGateWay::HandleRetCode(int code, const std::string& op)
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, errorString.c_str(), sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 }
 
 int CTPTradeGateWay::OrderSide(char direction, char offset, const std::string& Key)
@@ -647,7 +647,7 @@ void CTPTradeGateWay::OnFrontConnected()
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
     // 请求身份认证
     ReqAuthenticate();
 }
@@ -679,7 +679,7 @@ void CTPTradeGateWay::OnFrontDisconnected(int nReason)
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 }
 
 void CTPTradeGateWay::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuthenticateField, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
@@ -700,7 +700,7 @@ void CTPTradeGateWay::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuth
                 pRspAuthenticateField->BrokerID,  m_XTraderConfig.Account.c_str(), pRspAuthenticateField->UserID, pRspAuthenticateField->AppID);
         m_Logger->Log->info(errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
 
         ReqUserLogin();
     }
@@ -713,7 +713,7 @@ void CTPTradeGateWay::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuth
                 m_XTraderConfig.BrokerID.c_str(), m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
         m_Logger->Log->warn(errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 }
 
@@ -740,7 +740,7 @@ void CTPTradeGateWay::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                 pRspUserLogin->SystemName, pRspUserLogin->MaxOrderRef, pRspUserLogin->FrontID, pRspUserLogin->SessionID);
         m_Logger->Log->info(errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
         // 请求结算单确认
         ReqSettlementInfoConfirm();
     }
@@ -753,7 +753,7 @@ void CTPTradeGateWay::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                 m_XTraderConfig.BrokerID.c_str(), m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
         m_Logger->Log->warn(errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 }
 
@@ -786,7 +786,7 @@ void CTPTradeGateWay::OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CT
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-    m_ReportMessageQueue.push(message);
+    while(!m_ReportMessageQueue.Push(message));
 }
 
 void CTPTradeGateWay::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfirmField *pSettlementInfoConfirm, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
@@ -809,7 +809,7 @@ void CTPTradeGateWay::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfirm
                             pSettlementInfoConfirm->BrokerID, pSettlementInfoConfirm->InvestorID);
         m_Logger->Log->info(errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
         // 初始化仓位
         InitPosition();
     }
@@ -822,7 +822,7 @@ void CTPTradeGateWay::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfirm
                             m_XTraderConfig.BrokerID.c_str(), m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
         m_Logger->Log->warn(errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
 }
 
@@ -888,7 +888,7 @@ void CTPTradeGateWay::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder
                 strncpy(message.EventLog.ExchangeID, pInputOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
                 strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
                 strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-                m_ReportMessageQueue.push(message);
+                while(!m_ReportMessageQueue.Push(message));
                 m_Logger->Log->warn(errorString);
             }
 
@@ -912,7 +912,7 @@ void CTPTradeGateWay::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder
             strncpy(message.EventLog.ExchangeID, pInputOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
             strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-            m_ReportMessageQueue.push(message);
+            while(!m_ReportMessageQueue.Push(message));
             m_Logger->Log->warn(errorString);
         }
         m_Logger->Log->info("CTPTrader:OnErrRtnOrderInsert, BrokerID:{}, Account:{} InstrumentID:{}\n"
@@ -1003,7 +1003,7 @@ void CTPTradeGateWay::OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderActi
                 strncpy(message.EventLog.ExchangeID, pOrderAction->ExchangeID, sizeof(message.EventLog.ExchangeID));
                 strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
                 strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-                m_ReportMessageQueue.push(message);
+                while(!m_ReportMessageQueue.Push(message));
                 m_Logger->Log->warn(errorString);
             }
 
@@ -1026,7 +1026,7 @@ void CTPTradeGateWay::OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderActi
             strncpy(message.EventLog.ExchangeID, pOrderAction->ExchangeID, sizeof(message.EventLog.ExchangeID));
             strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-            m_ReportMessageQueue.push(message);
+            while(!m_ReportMessageQueue.Push(message));
             m_Logger->Log->warn(errorString);
         }
         m_Logger->Log->info("CTPTrader:OnErrRtnOrderAction, BrokerID:{}, Account:{} InstrumentID:{}\n"
@@ -1214,7 +1214,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
             strncpy(message.EventLog.ExchangeID, pOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
             strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-            m_ReportMessageQueue.push(message);
+            while(!m_ReportMessageQueue.Push(message));
         }
         Utils::CodeConvert(pOrder->StatusMsg, sizeof(pOrder->StatusMsg), OrderStatus.ErrorMsg,
                            sizeof(OrderStatus.ErrorMsg), "gb2312", "utf-8");
@@ -1271,7 +1271,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
         strncpy(message.EventLog.ExchangeID, pOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     m_Logger->Log->info("CTPTrader:OnRtnOrder, BrokerID:{}, Account:{} InstrumentID:{}\n"
                               "\t\t\t\t\t\tOrderRef:{} UserID:{} OrderPriceType:{} Direction:{} CombOffsetFlag:{}\n"
@@ -1395,7 +1395,7 @@ void CTPTradeGateWay::OnRtnTrade(CThostFtdcTradeField *pTrade)
         strncpy(message.EventLog.ExchangeID,  pTrade->ExchangeID, sizeof(message.EventLog.ExchangeID));
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     m_Logger->Log->info("CTPTrader:OnRtnTrade, BrokerID:{}, Account:{} InstrumentID:{}\n"
                               "\t\t\t\t\t\tOrderRef:{} UserID:{} ExchangeID:{} TradeID:{} Direction:{}\n"
@@ -1466,7 +1466,7 @@ void CTPTradeGateWay::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTra
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EAccountFund;
         memcpy(&message.AccountFund, &AccountFund, sizeof(AccountFund));
-        m_ReportMessageQueue.push(message);
+        while(!m_ReportMessageQueue.Push(message));
     }
     else if(NULL != pRspInfo)
     {
@@ -1611,7 +1611,7 @@ void CTPTradeGateWay::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *
                 memset(&message, 0, sizeof(message));
                 message.MessageType = Message::EMessageType::EAccountPosition;
                 memcpy(&message.AccountPosition, &(it->second), sizeof(message.AccountPosition));
-                m_ReportMessageQueue.push(message);
+                while(!m_ReportMessageQueue.Push(message));
             }
         }
     }

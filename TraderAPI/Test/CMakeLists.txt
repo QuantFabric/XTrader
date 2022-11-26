@@ -4,7 +4,7 @@ PROJECT(TestTrader)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.1.0)
+SET(AppVersion 0.2.0)
 SET(APIVersion "Test 1.0.0")
 SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 
@@ -12,7 +12,7 @@ SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 #SET(CMAKE_BUILD_TYPE "Release")
 #SET(CMAKE_BUILD_TYPE "debug")
 SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 macro(Get_CommitID SO_COMMITID)
     find_package(Git QUIET)     # 查找Git，QUIET静默方式不报错
@@ -59,6 +59,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 # SPDLog
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/SPDLog/1.8.5/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/SPDLog/1.8.5/lib)
+
+# Parallel HashMap
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/parallel_hashmap/)
 
 set(SOURCES TestTradeGateWay.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/../../../Utils/Logger.cpp)
