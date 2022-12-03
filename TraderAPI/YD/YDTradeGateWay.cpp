@@ -583,7 +583,6 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
     if(0 == errorNo)
     {
         m_MaxOrderRef = maxOrderRef;
-        m_ConnectedStatus = Message::ELoginStatus::ELOGIN_SUCCESSED;
         m_Logger->Log->info("YDTrader::notifyLogin {} login successed. maxOrderRef:{}", m_XTraderConfig.Account, maxOrderRef);
 
         char buffer[512] = {0};
@@ -634,6 +633,7 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
 
 void YDTradeGateWay::notifyFinishInit(void)
 {
+    m_ConnectedStatus = Message::ELoginStatus::ELOGIN_SUCCESSED;
     m_YDAccount = const_cast<YDAccount*>(m_YDAPI->getMyAccount());
     m_Logger->Log->info("YDTrader::notifyFinishInit Tickers:{}", m_TickerPropertyList.size());
     for(auto it = m_TickerPropertyList.begin(); it != m_TickerPropertyList.end(); it++)
