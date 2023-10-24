@@ -102,8 +102,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/lib)
 
 # YAML-CPP
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.6.3/include/)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.6.3/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.8.0/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.8.0/lib)
 
 
 # Parallel HashMap

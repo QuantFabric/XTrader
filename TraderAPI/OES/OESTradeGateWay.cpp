@@ -587,16 +587,6 @@ int OESTradeGateWay::OrderSide(int bsType)
         {
             side = Message::EOrderSide::ECLOSE_LONG;
         }
-        // 担保品转入
-        else if(bsType == eOesBuySellTypeT::OES_BS_TYPE_COLLATERAL_TRANSFER_IN)
-        {
-            side = Message::EOrderSide::ESIDE_COLLATERAL_TRANSFER_IN;
-        }
-        // 担保品转出
-        else if(bsType == eOesBuySellTypeT::OES_BS_TYPE_COLLATERAL_TRANSFER_OUT)
-        {
-            side = Message::EOrderSide::ESIDE_COLLATERAL_TRANSFER_OUT;
-        }
         // 融资买入
         else if(bsType == eOesBuySellTypeT::OES_BS_TYPE_MARGIN_BUY)
         {
@@ -1202,20 +1192,18 @@ void OESTradeGateWay::OnStockHoldingVariation(const OesStkHoldingItemT *pStkHold
     }
     else if(m_XTraderConfig.BussinessType == Message::EBusinessType::ECREDIT && 1 == pStkHoldingItem->isCreditHolding)
     {
-        // 昨仓可用持仓 = 昨仓日初持仓 - 今日卖出量
+        // 昨仓可用持仓
         AccountPosition.StockPosition.LongYdPosition = pStkHoldingItem->originalAvlHld; 
         AccountPosition.StockPosition.LongPosition = pStkHoldingItem->sumHld; // 当前持仓
         AccountPosition.StockPosition.LongTdBuy = pStkHoldingItem->totalBuyHld; // 今日买入量
         AccountPosition.StockPosition.LongTdSell = pStkHoldingItem->totalSellHld; // 今日卖出量
-        // 日初融资负债 = 日初融资负债数量 (不包括日初已还) - 当日已归还融资数量
-        AccountPosition.StockPosition.MarginYdPosition = pStkHoldingItem->creditExt.marginBuyOriginDebtQty - pStkHoldingItem->creditExt.marginBuyRepaidQty; 
-        AccountPosition.StockPosition.MarginPosition = pStkHoldingItem->creditExt.marginBuyDebtQty; // 融资负债数量 (不包括已还)
-        AccountPosition.StockPosition.MarginRepaid = pStkHoldingItem->creditExt.marginBuyRepaidQty; // 当日已归还融资数量 (对应于合约开仓价格的理论上的已归还融资数量)
-        // 日初融券负债数量 = 日初融券负债数量 (日初融券余量, 不包括日初已还) - 当日已归还融券数量
-        AccountPosition.StockPosition.ShortYdPosition = pStkHoldingItem->creditExt.shortSellOriginDebtQty - pStkHoldingItem->creditExt.shortSellRepaidQty; 
-        AccountPosition.StockPosition.ShortPosition = pStkHoldingItem->creditExt.shortSellDebtQty; // 融券负债数量 (不包括已还)
-        AccountPosition.StockPosition.ShortSellRepaid = pStkHoldingItem->creditExt.shortSellRepaidQty; // 当日已归还融券数量 (日中发生的归还数量, 不包括日初已还)
-        AccountPosition.StockPosition.RepayDirectAvl = pStkHoldingItem->creditExt.repayStockDirectAvlHld; // 直接还券可用持仓数量
+
+        //  日初融券负债数量 = 日初融券负债数量 (日初融券余量, 不包括日初已还) - 当日已归还融券数量
+        AccountPosition.StockPosition.ShortYdPosition = pStkHoldingItem->creditExt.shortSellOriginDebtQty - pStkHoldingItem->creditExt.shortSellRepaidQty; // 
+        AccountPosition.StockPosition.ShortPosition = pStkHoldingItem->creditExt.shortSellDebtQty; 
+        AccountPosition.StockPosition.ShortTdSell = pStkHoldingItem->creditExt.shortSellDebtQty + pStkHoldingItem->creditExt.shortSellRepaidQty - AccountPosition.StockPosition.ShortYdPosition ; 
+        AccountPosition.StockPosition.ShortTdBuy = pStkHoldingItem->creditExt.shortSellRepaidQty; 
+        AccountPosition.StockPosition.ShortDirectRepaid = 0; 
         AccountPosition.StockPosition.SpecialPositionAvl = pStkHoldingItem->creditExt.specialSecurityPositionAvailableQty; // 专项证券头寸可用数量
     }
     strncpy(AccountPosition.UpdateTime, Utils::getCurrentTimeUs(), sizeof(AccountPosition.UpdateTime));
@@ -1407,15 +1395,13 @@ void OESTradeGateWay::OnQueryStkHolding(const OesStkHoldingItemT *pStkHolding, c
         AccountPosition.StockPosition.LongPosition = pStkHolding->sumHld; // 当前持仓
         AccountPosition.StockPosition.LongTdBuy = pStkHolding->totalBuyHld; // 今日买入量
         AccountPosition.StockPosition.LongTdSell = pStkHolding->totalSellHld; // 今日卖出量
-         // 日初融资负债数量 = 日初融资负债数量 (不包括日初已还) - 当日已归还融资数量 
-        AccountPosition.StockPosition.MarginYdPosition = pStkHolding->creditExt.marginBuyOriginDebtQty - pStkHolding->creditExt.marginBuyRepaidQty;
-        AccountPosition.StockPosition.MarginPosition = pStkHolding->creditExt.marginBuyDebtQty; // 融资负债数量 (不包括已还)
-        AccountPosition.StockPosition.MarginRepaid = pStkHolding->creditExt.marginBuyRepaidQty; // 当日已归还融资数量 (对应于合约开仓价格的理论上的已归还融资数量)
+
         //  日初融券负债数量 = 日初融券负债数量 (日初融券余量, 不包括日初已还) - 当日已归还融券数量
         AccountPosition.StockPosition.ShortYdPosition = pStkHolding->creditExt.shortSellOriginDebtQty - pStkHolding->creditExt.shortSellRepaidQty; // 
-        AccountPosition.StockPosition.ShortPosition = pStkHolding->creditExt.shortSellDebtQty; // 融券负债数量 (不包括已还)
-        AccountPosition.StockPosition.ShortSellRepaid = pStkHolding->creditExt.shortSellRepaidQty; // 当日已归还融券数量 (日中发生的归还数量, 不包括日初已还)
-        AccountPosition.StockPosition.RepayDirectAvl = pStkHolding->creditExt.repayStockDirectAvlHld; // 直接还券可用持仓数量
+        AccountPosition.StockPosition.ShortPosition = pStkHolding->creditExt.shortSellDebtQty; 
+        AccountPosition.StockPosition.ShortTdSell = pStkHolding->creditExt.shortSellDebtQty + pStkHolding->creditExt.shortSellRepaidQty - AccountPosition.StockPosition.ShortYdPosition ; 
+        AccountPosition.StockPosition.ShortTdBuy = pStkHolding->creditExt.shortSellRepaidQty; 
+        AccountPosition.StockPosition.ShortDirectRepaid = 0; 
         AccountPosition.StockPosition.SpecialPositionAvl = pStkHolding->creditExt.specialSecurityPositionAvailableQty; // 专项证券头寸可用数量
     }
     strncpy(AccountPosition.UpdateTime, Utils::getCurrentTimeUs(), sizeof(AccountPosition.UpdateTime));
