@@ -5,7 +5,7 @@ PROJECT(XTrader)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.8.0)
+SET(AppVersion 0.9.0)
 SET(XTrader_Version ${PROJECT_NAME}_${AppVersion})
 
 # 默认输出debug版
@@ -105,18 +105,19 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/SPDLog/1.8.5/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.8.0/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.8.0/lib)
 
+# SHMServer
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../SHMServer/)
 
 # Parallel HashMap
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/parallel_hashmap/)
 
 set(SOURCES main.cpp 
             HPPackClient.cpp
-            HPPackRiskClient.cpp
             TraderEngine.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/../Utils/Logger.cpp)
 add_executable(${XTrader_Version} ${SOURCES})
 
-target_link_libraries(${XTrader_Version} spdlog pthread hpsocket4c yaml-cpp dl)      
+target_link_libraries(${XTrader_Version} spdlog pthread hpsocket4c yaml-cpp dl rt)      
 
 # 编译API SO
 add_subdirectory(TraderAPI)

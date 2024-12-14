@@ -16,13 +16,10 @@ XTraderConfig:
   CancelAll: true
   TickerListPath: /home/xtrader/Test/XTrader/Config/TickerList.yml 
   ErrorPath: /home/xtrader/Test/XTrader/Config/CTPError.yml
-  RiskServerIP: 127.0.0.1
-  RiskServerPort: 8008
+  RiskServerName: RiskServer
+  QuantServerName: QuantServer
   TraderAPI: CTP
   TraderAPIConfig: /home/xtrader/Test/XTrader/Config/XTrader.yml
-  OrderChannelKey: 0XFF000002
-  ReportChannelKey: 0XFF000003
-  CPUSET: 10
 
 REMConfig:
   TradeServerIP : 125.64.36.25

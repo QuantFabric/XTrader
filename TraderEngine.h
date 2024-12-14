@@ -4,12 +4,11 @@
 #include <vector>
 #include <stdlib.h>
 #include "HPPackClient.h"
-#include "HPPackRiskClient.h"
 #include "YMLConfig.hpp"
 #include "XPluginEngine.hpp"
-#include "IPCLockFreeQueue.hpp"
 #include "LockFreeQueue.hpp"
 #include "TraderAPI/TradeGateWay.hpp"
+#include "SHMConnection.hpp"
 
 class TraderEngine
 {
@@ -23,14 +22,13 @@ public:
 protected:
     void WorkFunc();
     void RegisterClient(const char *ip, unsigned int port);
-    void RegisterRiskClient(const char *ip, unsigned int port);
-    void ReadRequestFromMemory();
+    void ReadRequestFromQuant();
     void ReadRequestFromClient();
     void HandleRequestMessage();
     void HandleRiskResponse();
     void HandleExecuteReport();
     void HandleCommand(const Message::PackMessage& msg);
-    void WriteExecuteReportToMemory();
+    void SendReportToQuant();
     void SendRequest(const Message::PackMessage& request);
     void SendRiskCheckReqeust(const Message::PackMessage& request);
     void SendMonitorMessage(const Message::PackMessage& msg);
@@ -43,7 +41,8 @@ protected:
     void UpdateAppStatus(const std::string& cmd, Message::TAppStatus& AppStatus);
 private:
     HPPackClient* m_HPPackClient;
-    HPPackRiskClient* m_RiskClient;
+    SHMIPC::SHMConnection<Message::PackMessage, SHMIPC::CommonConf>* m_RiskClient;
+    SHMIPC::SHMConnection<Message::PackMessage, SHMIPC::CommonConf>* m_QuantClient;
     Utils::XTraderConfig m_XTraderConfig;
     bool m_Trading;
     unsigned long m_CurrentTimeStamp;
@@ -51,11 +50,8 @@ private:
     int m_CloseTime;
     TradeGateWay* m_TradeGateWay;
     std::string m_Command;
-    Utils::IPCLockFreeQueue<Message::PackMessage, 1000> m_OrderChannelQueue;
-    Utils::IPCLockFreeQueue<Message::PackMessage, 1000> m_ReportChannelQueue;
     Utils::LockFreeQueue<Message::PackMessage> m_RequestMessageQueue;
     Utils::LockFreeQueue<Message::PackMessage> m_ReportMessageQueue;
-    std::vector<int> m_CPUSETVector;
     std::thread* m_pWorkThread;
 };
 

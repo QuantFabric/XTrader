@@ -6,6 +6,7 @@ TraderEngine::TraderEngine() : m_RequestMessageQueue(1 << 12), m_ReportMessageQu
 {
     m_HPPackClient = NULL;
     m_RiskClient = NULL;
+    m_QuantClient = NULL;
     m_TradeGateWay = NULL;
 }
 
@@ -24,17 +25,8 @@ void TraderEngine::LoadConfig(const std::string& path)
         Utils::gLogger->Log->info("LoadXTraderConfig ServerIP:{} Port:{} OpenTime:{} CloseTime:{}", 
                                     m_XTraderConfig.ServerIP, m_XTraderConfig.Port, m_XTraderConfig.OpenTime, m_XTraderConfig.CloseTime);
         Utils::gLogger->Log->info("LoadXTraderConfig TickerListPath:{} ErrorPath:{}",  m_XTraderConfig.TickerListPath, m_XTraderConfig.ErrorPath);
-        Utils::gLogger->Log->info("LoadXTraderConfig RiskServerIP:{} RiskServerPort:{} TraderAPI:{}", m_XTraderConfig.RiskServerIP, m_XTraderConfig.RiskServerPort,m_XTraderConfig.TraderAPI);
-        char buffer[256] = {0};
-        sprintf(buffer, "LoadXTraderConfig TraderAPIConfig:%s OrderChannelKey:0X%X ReportChannelKey:0X%X",
-                        m_XTraderConfig.TraderAPIConfig.c_str(), m_XTraderConfig.OrderChannelKey, m_XTraderConfig.ReportChannelKey);
-        Utils::gLogger->Log->info(buffer);
-        std::vector<std::string> CPUSETVector;
-        Utils::Split(m_XTraderConfig.CPUSET, ",", CPUSETVector);
-        for(int i = 0; i < CPUSETVector.size(); i++)
-        {
-            m_CPUSETVector.push_back(atoi(CPUSETVector.at(i).c_str()));
-        }
+        Utils::gLogger->Log->info("LoadXTraderConfig RiskServerName:{} QuantServerName:{} TraderAPI:{}", 
+                                    m_XTraderConfig.RiskServerName, m_XTraderConfig.QuantServerName, m_XTraderConfig.TraderAPI);
     }
     m_OpenTime = Utils::getTimeStampMs(m_XTraderConfig.OpenTime.c_str());
     m_CloseTime = Utils::getTimeStampMs(m_XTraderConfig.CloseTime.c_str());
@@ -66,23 +58,17 @@ void TraderEngine::LoadTradeGateWay(const std::string& soPath)
 
 void TraderEngine::Run()
 {
-    char buffer[256] = {0};
-    sprintf(buffer, "OrderChnnel:0X%X ReportChannel:0X%X", m_XTraderConfig.OrderChannelKey, m_XTraderConfig.ReportChannelKey);
-    Utils::gLogger->Log->info("TraderEngine::Run {}", buffer);
-
-    // Init Order Channel Queue
-    m_OrderChannelQueue.Init(m_XTraderConfig.OrderChannelKey);
-    m_OrderChannelQueue.RegisterChannel(m_XTraderConfig.Account.c_str());
-    // Init Report Channel Queue
-    m_ReportChannelQueue.Init(m_XTraderConfig.ReportChannelKey);
-    m_ReportChannelQueue.RegisterChannel(m_XTraderConfig.Account.c_str());
-    m_ReportChannelQueue.ResetChannel(m_XTraderConfig.Account.c_str());
-
+    Utils::gLogger->Log->info("TraderEngine::Run RiskServer:{} QuantServer:{}", m_XTraderConfig.RiskServerName, m_XTraderConfig.QuantServerName);
     // Connect to XWatcher
     RegisterClient(m_XTraderConfig.ServerIP.c_str(), m_XTraderConfig.Port);
-    // Connect to Risk Server
-    RegisterRiskClient(m_XTraderConfig.RiskServerIP.c_str(), m_XTraderConfig.RiskServerPort);
-
+    // Connect to RiskServer
+    Utils::gLogger->Log->info("TraderEngine::Run connect to RiskServer:{}", m_XTraderConfig.RiskServerName);
+    m_RiskClient = new SHMIPC::SHMConnection<Message::PackMessage, SHMIPC::CommonConf>(m_XTraderConfig.RiskServerName + m_XTraderConfig.Account);
+    m_RiskClient->Start(m_XTraderConfig.RiskServerName);
+    // Connect to QuantServer
+    Utils::gLogger->Log->info("TraderEngine::Run connect to QuantServer:{}", m_XTraderConfig.QuantServerName);
+    m_QuantClient = new SHMIPC::SHMConnection<Message::PackMessage, SHMIPC::CommonConf>(m_XTraderConfig.QuantServerName + m_XTraderConfig.Account);
+    m_QuantClient->Start(m_XTraderConfig.QuantServerName);
     sleep(1);
     // Update App Status
     InitAppStatus();
@@ -93,21 +79,20 @@ void TraderEngine::Run()
     // 查询Order、Trade、Fund、Position信息
     m_TradeGateWay->Qry();
 
-    // 风控初始化检查
-    InitRiskCheck();
-
+    usleep(1000000);
     m_pWorkThread = new std::thread(&TraderEngine::WorkFunc, this);
     m_pWorkThread->join();
 }
 
 void TraderEngine::WorkFunc()
 {
-    bool ret = Utils::ThreadBind(pthread_self(), m_CPUSETVector.at(0));
-    Utils::gLogger->Log->info("TraderEngine::WorkFunc CPU:{} BindCPU:{}", m_CPUSETVector.at(0), ret);
+    Utils::gLogger->Log->info("TraderEngine::WorkFunc WorkThread start");
+    // 风控初始化检查
+    InitRiskCheck();
     while(true)
     {
-        // 从Order通道内存队列读取报单、撤单请求并写入请求队列
-        ReadRequestFromMemory();
+        // 从QuantServer内存通道读取报单、撤单请求并写入请求队列
+        ReadRequestFromQuant();
         // 从客户端读取报单、撤单请求并写入请求队列
         ReadRequestFromClient();
         // 处理请求
@@ -116,8 +101,8 @@ void TraderEngine::WorkFunc()
         HandleRiskResponse();
         // 处理回报
         HandleExecuteReport();
-        // 写入回报到Report通道内存队列
-        WriteExecuteReportToMemory();
+        // 写入回报到QuantServer内存通道
+        SendReportToQuant();
         unsigned long CurrentTimeStamp = Utils::getTimeMs();
         static unsigned long PreTimeStamp = CurrentTimeStamp / 1000;
         if(PreTimeStamp < CurrentTimeStamp / 1000)
@@ -126,7 +111,6 @@ void TraderEngine::WorkFunc()
         }
         if(PreTimeStamp % 5 == 0)
         {
-            m_RiskClient->ReConnect();
             m_HPPackClient->ReConnect();
             if(m_XTraderConfig.QryFund)
             {
@@ -136,6 +120,7 @@ void TraderEngine::WorkFunc()
         }
     }
 }
+
 
 void TraderEngine::RegisterClient(const char *ip, unsigned int port)
 {
@@ -147,25 +132,19 @@ void TraderEngine::RegisterClient(const char *ip, unsigned int port)
     m_HPPackClient->Login(login);
 }
 
-void TraderEngine::RegisterRiskClient(const char *ip, unsigned int port)
-{
-    m_RiskClient = new HPPackRiskClient(ip, port);
-    m_RiskClient->Start();
-    Message::TLoginRequest login;
-    login.ClientType = Message::EClientType::EXTRADER;
-    strncpy(login.Account, m_XTraderConfig.Account.c_str(), sizeof(login.Account));
-    m_RiskClient->Login(login);
-}
 
-void TraderEngine::ReadRequestFromMemory()
+void TraderEngine::ReadRequestFromQuant()
 {
-    std::list<Message::PackMessage> items;
-    if(m_OrderChannelQueue.Pop(m_XTraderConfig.Account.c_str(), items))
+    Message::PackMessage message;
+    bool ok = m_QuantClient->Pop(message);
+    if(ok)
     {
-        for(auto it = items.begin(); it != items.end(); it++)
-        {
-            while(!m_RequestMessageQueue.Push(*it));
-        }
+        // Utils::gLogger->Log->debug("TraderEngine::ReadRequestFromQuant recv msg from ChannelID:{}", message.ChannelID);
+        // Utils::gLogger->Log->debug("Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
+        //                             message.OrderRequest.Account, message.OrderRequest.Ticker, message.OrderRequest.RiskStatus, 
+        //                             message.OrderRequest.OrderToken, message.OrderRequest.RiskID, message.OrderRequest.Price, 
+        //                             message.OrderRequest.Volume, message.OrderRequest.ErrorMsg, message.MessageType);
+        while(!m_RequestMessageQueue.Push(message));
     }
 }
 
@@ -229,10 +208,12 @@ void TraderEngine::HandleRequestMessage()
                     else if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
                     {
                         SendRiskCheckReqeust(request);
+                        // Utils::gLogger->Log->debug("TraderEngine::HandleRequestMessage send msg to ChannelID:{}", request.ChannelID);
                     }
                     else if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ECHECK_INIT)
                     {
                         SendRiskCheckReqeust(request);
+                        // Utils::gLogger->Log->debug("TraderEngine::HandleRequestMessage send msg to ChannelID:{}", request.ChannelID);
                     }
                     break;
                 }
@@ -245,6 +226,7 @@ void TraderEngine::HandleRequestMessage()
                     else if(request.ActionRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
                     {
                         SendRiskCheckReqeust(request);
+                        // Utils::gLogger->Log->debug("TraderEngine::HandleRequestMessage send msg to ChannelID:{}", request.ChannelID);
                     }
                     break;
                 }
@@ -270,9 +252,10 @@ void TraderEngine::HandleRiskResponse()
     while(true)
     {
         Message::PackMessage message;
-        bool ok = m_RiskClient->m_PackMessageQueue.Pop(message);
+        bool ok = m_RiskClient->Pop(message);
         if(ok)
         {
+            // Utils::gLogger->Log->debug("TraderEngine::HandleRiskResponse recv msg from ChannelID:{}", message.ChannelID);
             switch(message.MessageType)
             {
                 case Message::EMessageType::EOrderRequest:
@@ -322,7 +305,7 @@ void TraderEngine::HandleExecuteReport()
                 case Message::EMessageType::EAccountFund:
                 case Message::EMessageType::EAccountPosition:
                 {
-                    while(!m_ReportMessageQueue.Push(report));
+                    m_ReportMessageQueue.Push(report);
                     SendMonitorMessage(report);
                     break;
                 }
@@ -444,7 +427,7 @@ void TraderEngine::HandleCommand(const Message::PackMessage& msg)
     }
 }
 
-void TraderEngine::WriteExecuteReportToMemory()
+void TraderEngine::SendReportToQuant()
 {
     while(true)
     {
@@ -452,13 +435,7 @@ void TraderEngine::WriteExecuteReportToMemory()
         bool ok = m_ReportMessageQueue.Pop(report);
         if(ok)
         {
-            if(!m_ReportChannelQueue.Push(m_XTraderConfig.Account.c_str(), report))
-            {
-                char buffer[32] = {0};
-                sprintf(buffer, "0X%X", m_XTraderConfig.ReportChannelKey);
-                Utils::gLogger->Log->warn("TraderEngine::WriteExecuteReportToMemory failed, ReportChannelKey:{} Channel:{} Queue is full.", 
-                                          buffer, m_XTraderConfig.Account);
-            }
+            m_QuantClient->Push(report);
         }
         else
         {
@@ -474,7 +451,7 @@ void TraderEngine::SendRequest(const Message::PackMessage& request)
 
 void TraderEngine::SendRiskCheckReqeust(const Message::PackMessage& request)
 {
-    m_RiskClient->SendData((const unsigned char*)&request, sizeof(request));
+    m_RiskClient->Push(request);
 }
 
 void TraderEngine::SendMonitorMessage(const Message::PackMessage& message)
@@ -484,7 +461,7 @@ void TraderEngine::SendMonitorMessage(const Message::PackMessage& message)
         case Message::EMessageType::EOrderStatus:
         {
             m_HPPackClient->SendData((const unsigned char*)&message, sizeof(message));
-            m_RiskClient->SendData((const unsigned char*)&message, sizeof(message));
+            m_RiskClient->Push(message);
             break;
         }
         case Message::EMessageType::EEventLog:
@@ -530,8 +507,7 @@ void TraderEngine::InitRiskCheck()
     message.OrderRequest.OrderType = Message::EOrderType::ELIMIT;
     message.OrderRequest.Direction = Message::EOrderDirection::EBUY;
     message.OrderRequest.Offset = Message::EOrderOffset::EOPEN;
-    
-    while(!m_RequestMessageQueue.Push(message));
+    m_RequestMessageQueue.Push(message);
 }
 
 bool TraderEngine::IsTrading()const
