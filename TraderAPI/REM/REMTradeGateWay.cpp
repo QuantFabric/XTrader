@@ -269,7 +269,7 @@ void REMTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     sprintf(secBuffer, "%u", reqOrderField.m_ClientOrderToken);
     std::string OrderRef = secBuffer;
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[OrderRef];
-    OrderStatus.BussinessType = m_XTraderConfig.BussinessType;
+    OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
     strcpy(OrderStatus.OrderRef, secBuffer);
     strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
     strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
@@ -284,7 +284,7 @@ void REMTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     OrderStatus.OrderSide = OrderSide(reqOrderField.m_Side, Key);
     strncpy(OrderStatus.SendTime, request.SendTime, sizeof(OrderStatus.SendTime));
     strncpy(OrderStatus.InsertTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.InsertTime));
-    OrderStatus.OrderStatus = Message::EOrderStatus::EORDER_SENDED;
+    OrderStatus.OrderStatus = Message::EOrderStatusType::EORDER_SENDED;
     OrderStatus.OrderToken = request.OrderToken;
     OrderStatus.EngineID = request.EngineID;
     RESULT ret = m_TraderAPI->EnterOrder(&reqOrderField);
@@ -321,7 +321,7 @@ void REMTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& reque
     sprintf(OrderRef, "%d", Utils::getCurrentTodaySec() * 10000 + order_token % 10000 + 1);
     Message::TOrderStatus OrderStatus;
     memset(&OrderStatus, 0, sizeof(OrderStatus));
-    OrderStatus.BussinessType = m_XTraderConfig.BussinessType;
+    OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
     strcpy(OrderStatus.OrderRef, OrderRef);
     strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
     strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
@@ -340,11 +340,11 @@ void REMTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& reque
     OrderStatus.EngineID = request.EngineID;
     if(Message::ERiskStatusType::ECHECK_INIT == request.RiskStatus)
     {
-        OrderStatus.OrderStatus = Message::EOrderStatus::ERISK_CHECK_INIT;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::ERISK_CHECK_INIT;
     }
     else
     {
-        OrderStatus.OrderStatus = Message::EOrderStatus::ERISK_ORDER_REJECTED;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::ERISK_ORDER_REJECTED;
     }
     OrderStatus.ErrorID = request.ErrorID;
     strncpy(OrderStatus.ErrorMsg, request.ErrorMsg, sizeof(OrderStatus.ErrorMsg));
@@ -371,7 +371,7 @@ void REMTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
     HandleRetResult(ret, op);
     if(0 == ret)
     {
-        OrderStatus.OrderStatus = Message::EOrderStatus::ECANCELLING;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::ECANCELLING;
         UpdateOrderStatus(OrderStatus);
     }
 }
@@ -385,7 +385,7 @@ void REMTradeGateWay::ReqCancelOrderRejected(const Message::TActionRequest& requ
         return ;
     }
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[request.OrderRef];
-    OrderStatus.OrderStatus = Message::EOrderStatus::ERISK_ACTION_REJECTED;
+    OrderStatus.OrderStatus = Message::EOrderStatusType::ERISK_ACTION_REJECTED;
     OrderStatus.ErrorID = request.ErrorID;
     strncpy(OrderStatus.ErrorMsg, request.ErrorMsg, sizeof(OrderStatus.ErrorMsg));
     UpdateOrderStatus(OrderStatus);
@@ -400,7 +400,7 @@ void REMTradeGateWay::InitPosition()
         {
             std::string Key = *it1 + ":" + it2->Ticker;
             Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
-            AccountPosition.BussinessType = m_XTraderConfig.BussinessType;
+            AccountPosition.BusinessType = m_XTraderConfig.BusinessType;
             strncpy(AccountPosition.Product,  m_XTraderConfig.Product.c_str(), sizeof(AccountPosition.Product));
             strncpy(AccountPosition.Broker,  m_XTraderConfig.Broker.c_str(), sizeof(AccountPosition.Broker));
             strncpy(AccountPosition.Account, it1->c_str(), sizeof(AccountPosition.Account));
@@ -900,7 +900,7 @@ void REMTradeGateWay::OnOrderAccept(EES_OrderAcceptField* pAccept )
     {
         // Order Status
         Message::TOrderStatus& OrderStatus = m_OrderStatusMap[OrderRef];
-        OrderStatus.BussinessType = m_XTraderConfig.BussinessType;
+        OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
         strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
         strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
         strncpy(OrderStatus.Account, pAccept->m_Account, sizeof(OrderStatus.Account));
@@ -915,7 +915,7 @@ void REMTradeGateWay::OnOrderAccept(EES_OrderAcceptField* pAccept )
         std::string Key = Account + ":" + Ticker;
         strncpy(OrderStatus.SendTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.SendTime));
         strncpy(OrderStatus.UpdateTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.UpdateTime));
-        OrderStatus.OrderStatus = Message::EOrderStatus::EORDER_SENDED;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::EORDER_SENDED;
         OrderStatus.OrderSide = OrderSide(pAccept->m_Side, Key);
         Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
         UpdatePosition(OrderStatus, AccountPosition); 
@@ -927,7 +927,7 @@ void REMTradeGateWay::OnOrderAccept(EES_OrderAcceptField* pAccept )
         Message::TOrderStatus& OrderStatus= m_OrderStatusMap[OrderRef];
         // Update OrderStatus
         sprintf(OrderStatus.OrderLocalID, "%ld", pAccept->m_MarketOrderToken);
-        OrderStatus.OrderStatus = Message::EOrderStatus::EBROKER_ACK;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ACK;
         std::string Key = std::string(OrderStatus.Account) + ":" + OrderStatus.Ticker;
         OrderStatus.OrderSide = OrderSide(pAccept->m_Side, Key);
         strncpy(OrderStatus.BrokerACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.BrokerACKTime));
@@ -1000,7 +1000,7 @@ void REMTradeGateWay::OnOrderReject(EES_OrderRejectField* pReject )
     if(it != m_OrderStatusMap.end())
     {
         Message::TOrderStatus& OrderStatus= m_OrderStatusMap[OrderRef];
-        OrderStatus.OrderStatus = Message::EOrderStatus::EBROKER_ERROR;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ERROR;
         OrderStatus.CanceledVolume = OrderStatus.SendVolume;
         strncpy(OrderStatus.ErrorMsg, errorString.c_str(), sizeof(OrderStatus.ErrorMsg));
         OrderStatus.ErrorID = pReject->m_ReasonCode;
@@ -1052,7 +1052,7 @@ void REMTradeGateWay::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
     {
         Message::TOrderStatus& OrderStatus = m_OrderStatusMap[OrderRef];
         sprintf(OrderStatus.OrderSysID, "%s", pAccept->m_MarketOrderId);
-        OrderStatus.OrderStatus = Message::EOrderStatus::EEXCHANGE_ACK;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ACK;
         strncpy(OrderStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.ExchangeACKTime));
         UpdateOrderStatus(OrderStatus);
 
@@ -1099,7 +1099,7 @@ void REMTradeGateWay::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
     {
         Message::TOrderStatus& OrderStatus= m_OrderStatusMap[OrderRef];
         // Update OrderStatus
-        OrderStatus.OrderStatus = Message::EOrderStatus::EEXCHANGE_ERROR;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ERROR;
         OrderStatus.CanceledVolume = OrderStatus.SendVolume;
         Utils::CodeConvert(pReject->m_ReasonText, sizeof(pReject->m_ReasonText), OrderStatus.ErrorMsg,
                            sizeof(OrderStatus.ErrorMsg), "gb2312", "utf-8");
@@ -1159,11 +1159,11 @@ void REMTradeGateWay::OnOrderExecution(EES_OrderExecutionField* pExec )
         OrderStatus.TotalTradedVolume += pExec->m_Quantity;
         if(OrderStatus.TotalTradedVolume == OrderStatus.SendVolume)
         {
-            OrderStatus.OrderStatus = Message::EOrderStatus::EALLTRADED;
+            OrderStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
         }
         else
         {
-            OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+            OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
         }
         UpdateOrderStatus(OrderStatus);
         // Update Position
@@ -1175,7 +1175,7 @@ void REMTradeGateWay::OnOrderExecution(EES_OrderExecutionField* pExec )
 
         PrintOrderStatus(OrderStatus, "REMTrader::OnOrderExecution ");
         PrintAccountPosition(AccountPosition, "REMTrader::OnOrderExecution ");
-        if(Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus)
+        if(Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus)
         {
             m_OrderStatusMap.erase(it);
         }
@@ -1219,11 +1219,11 @@ void REMTradeGateWay::OnOrderCxled(EES_OrderCxled* pCxled )
         // Update OrderStatus
         if(OrderStatus.TotalTradedVolume > 0)
         {
-            OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED_CANCELLED;
+            OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED_CANCELLED;
         }
         else
         {
-            OrderStatus.OrderStatus = Message::EOrderStatus::ECANCELLED;
+            OrderStatus.OrderStatus = Message::EOrderStatusType::ECANCELLED;
         }
         OrderStatus.CanceledVolume = pCxled->m_Decrement;
         UpdateOrderStatus(OrderStatus);
@@ -1275,7 +1275,7 @@ void REMTradeGateWay::OnCxlOrderReject(EES_CxlOrderRej* pReject )
     {
         Message::TOrderStatus& OrderStatus = m_OrderStatusMap[OrderRef];
         // Update OrderStatus
-        OrderStatus.OrderStatus = Message::EOrderStatus::EACTION_ERROR;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::EACTION_ERROR;
         OrderStatus.ErrorID = pReject->m_ReasonCode;
         Utils::CodeConvert(pReject->m_ReasonText, sizeof(pReject->m_ReasonText), OrderStatus.ErrorMsg,
                            sizeof(OrderStatus.ErrorMsg), "gb2312", "utf-8");
@@ -1363,7 +1363,7 @@ void REMTradeGateWay::OnQueryAccountBP(const char* pAccount, EES_AccountBP* pAcc
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EAccountFund;
-        AccountFund.BussinessType = m_XTraderConfig.BussinessType;
+        AccountFund.BusinessType = m_XTraderConfig.BusinessType;
         strncpy(AccountFund.Product, m_XTraderConfig.Product.c_str(), sizeof(AccountFund.Product));
         strncpy(AccountFund.Account, pAccountBP->m_account, sizeof(AccountFund.Account));
         AccountFund.Deposit = 0;
@@ -1467,7 +1467,7 @@ void REMTradeGateWay::OnQueryTradeOrder(const char* pAccount, EES_QueryAccountOr
         sprintf(buffer, "%d", pQueryOrder->m_ClientOrderToken);
         std::string OrderRef = buffer;
         Message::TOrderStatus& OrderStatus = m_OrderStatusMap[OrderRef];
-        OrderStatus.BussinessType = m_XTraderConfig.BussinessType;
+        OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
         // Update OrderStatus
         strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
         strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
@@ -1511,12 +1511,12 @@ void REMTradeGateWay::OnQueryTradeOrder(const char* pAccount, EES_QueryAccountOr
         status = pQueryOrder->m_OrderStatus & EES_OrderStatus_mkt_accept;
         if(EES_OrderStatus_mkt_accept == status)
         {
-            OrderStatus.OrderStatus = Message::EOrderStatus::EEXCHANGE_ACK;
+            OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ACK;
         }
         status = pQueryOrder->m_OrderStatus & EES_OrderStatus_executed;
         if(EES_OrderStatus_executed == status)
         {
-            OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+            OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
             OrderStatus.TradedVolume =  pQueryOrder->m_FilledQty;
             OrderStatus.TotalTradedVolume =  pQueryOrder->m_FilledQty;
             OrderStatus.TradedPrice =  pQueryOrder->m_Price;

@@ -325,7 +325,7 @@ void CTPTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     }
     // Order Status
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[reqOrderField.OrderRef];
-    OrderStatus.BussinessType = m_XTraderConfig.BussinessType;
+    OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
     strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
     strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
     strncpy(OrderStatus.Account, reqOrderField.InvestorID, sizeof(OrderStatus.Account));
@@ -345,7 +345,7 @@ void CTPTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     strncpy(OrderStatus.SendTime, request.SendTime, sizeof(OrderStatus.SendTime));
     strncpy(OrderStatus.InsertTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.InsertTime));
     strncpy(OrderStatus.RecvMarketTime, request.RecvMarketTime, sizeof(OrderStatus.RecvMarketTime));
-    OrderStatus.OrderStatus = Message::EOrderStatus::EORDER_SENDED;
+    OrderStatus.OrderStatus = Message::EOrderStatusType::EORDER_SENDED;
     PrintOrderStatus(OrderStatus, "CTPTrader::ReqInsertOrder ");
     
     int ret = m_CTPTraderAPI->ReqOrderInsert(&reqOrderField, m_RequestID);
@@ -405,7 +405,7 @@ void CTPTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& reque
     // Order Status
     Message::TOrderStatus OrderStatus;
     memset(&OrderStatus, 0, sizeof(OrderStatus));
-    OrderStatus.BussinessType = m_XTraderConfig.BussinessType;
+    OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
     strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
     strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
     strncpy(OrderStatus.Account, m_XTraderConfig.Account.c_str(), sizeof(OrderStatus.Account));
@@ -427,11 +427,11 @@ void CTPTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& reque
     strncpy(OrderStatus.RecvMarketTime, request.RecvMarketTime, sizeof(OrderStatus.RecvMarketTime));
     if(Message::ERiskStatusType::ECHECK_INIT == request.RiskStatus)
     {
-        OrderStatus.OrderStatus = Message::EOrderStatus::ERISK_CHECK_INIT;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::ERISK_CHECK_INIT;
     }
     else
     {
-        OrderStatus.OrderStatus = Message::EOrderStatus::ERISK_ORDER_REJECTED;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::ERISK_ORDER_REJECTED;
     }
     OrderStatus.ErrorID = request.ErrorID;
     strncpy(OrderStatus.ErrorMsg, request.ErrorMsg, sizeof(OrderStatus.ErrorMsg));
@@ -465,7 +465,7 @@ void CTPTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
     HandleRetCode(ret, op);
     if(0 == ret)
     {
-        OrderStatus.OrderStatus = Message::EOrderStatus::ECANCELLING;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::ECANCELLING;
     }
     UpdateOrderStatus(OrderStatus);
     PrintOrderStatus(OrderStatus, "CTPTrader::ReqCancelOrder ");
@@ -480,7 +480,7 @@ void CTPTradeGateWay::ReqCancelOrderRejected(const Message::TActionRequest& requ
         return ;
     }
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[request.OrderRef];
-    OrderStatus.OrderStatus = Message::EOrderStatus::ERISK_ACTION_REJECTED;
+    OrderStatus.OrderStatus = Message::EOrderStatusType::ERISK_ACTION_REJECTED;
     OrderStatus.ErrorID = request.ErrorID;
     strncpy(OrderStatus.ErrorMsg, request.ErrorMsg, sizeof(OrderStatus.ErrorMsg));
     UpdateOrderStatus(OrderStatus);
@@ -861,7 +861,7 @@ void CTPTradeGateWay::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder
         {
             Message::TOrderStatus& OrderStatus = it1->second;
             strncpy(OrderStatus.BrokerACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.BrokerACKTime));
-            OrderStatus.OrderStatus = Message::EOrderStatus::EBROKER_ERROR;
+            OrderStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ERROR;
             OrderStatus.CanceledVolume = OrderStatus.SendVolume;
             Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), OrderStatus.ErrorMsg,
                             sizeof(OrderStatus.ErrorMsg), "gb2312", "utf-8");
@@ -951,7 +951,7 @@ void CTPTradeGateWay::OnRspOrderAction(CThostFtdcInputOrderActionField *pInputOr
         if(it != m_OrderStatusMap.end())
         {
             // Update OrderStatus
-            it->second.OrderStatus = Message::EOrderStatus::EACTION_ERROR;
+            it->second.OrderStatus = Message::EOrderStatusType::EACTION_ERROR;
             strncpy(it->second.Product, m_XTraderConfig.Product.c_str(), sizeof(it->second.Product));
             strncpy(it->second.Broker, m_XTraderConfig.Broker.c_str(), sizeof(it->second.Broker));
             strncpy(it->second.Account, pInputOrderAction->InvestorID, sizeof(it->second.Account));
@@ -980,7 +980,7 @@ void CTPTradeGateWay::OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderActi
         if(it1 != m_OrderStatusMap.end())
         {
             Message::TOrderStatus& OrderStatus = it1->second;
-            OrderStatus.OrderStatus = Message::EOrderStatus::EACTION_ERROR;
+            OrderStatus.OrderStatus = Message::EOrderStatusType::EACTION_ERROR;
             Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), OrderStatus.ErrorMsg,
                             sizeof(OrderStatus.ErrorMsg), "gb2312", "utf-8");
             OrderStatus.ErrorID = pRspInfo->ErrorID;
@@ -1070,7 +1070,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
     {
         // Order Status
         Message::TOrderStatus& OrderStatus = m_OrderStatusMap[OrderRef];
-        OrderStatus.BussinessType = m_XTraderConfig.BussinessType;
+        OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
         strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
         strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
         strncpy(OrderStatus.Account, pOrder->InvestorID, sizeof(OrderStatus.Account));
@@ -1079,7 +1079,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
         strncpy(OrderStatus.OrderRef, pOrder->OrderRef, sizeof(OrderStatus.OrderRef));
         OrderStatus.SendPrice = pOrder->LimitPrice;
         OrderStatus.SendVolume = pOrder->VolumeTotalOriginal;
-        OrderStatus.OrderStatus = Message::EOrderStatus::EORDER_SENDED;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::EORDER_SENDED;
         OrderStatus.OrderType = Ordertype(pOrder->TimeCondition, pOrder->VolumeCondition);
         OrderStatus.OrderToken = pOrder->RequestID;
         std::string Account = pOrder->InvestorID;
@@ -1112,25 +1112,25 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
                 {
                     strncpy(OrderStatus.OrderLocalID, pOrder->OrderLocalID, sizeof(OrderStatus.OrderLocalID));
                     strncpy(OrderStatus.BrokerACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.BrokerACKTime));
-                    OrderStatus.OrderStatus = Message::EOrderStatus::EBROKER_ACK;
+                    OrderStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ACK;
                 }
                 else // Exchange ACK
                 {
                     strncpy(OrderStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.ExchangeACKTime));
                     strncpy(OrderStatus.OrderSysID, pOrder->OrderSysID, sizeof(OrderStatus.OrderSysID));
-                    OrderStatus.OrderStatus = Message::EOrderStatus::EEXCHANGE_ACK;
+                    OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ACK;
                     OnExchangeACK(OrderStatus);
                 }
             }
             // 报单提交到交易所立即部分成交
             else if(THOST_FTDC_OST_PartTradedQueueing == pOrder->OrderStatus)
             {
-                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
             }
             // 报单提交到交易所立即全部成交
             else if(THOST_FTDC_OST_AllTraded == pOrder->OrderStatus)
             {
-                OrderStatus.OrderStatus = Message::EOrderStatus::EALLTRADED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
             }
             // 撤单状态， FAK、FOK
             else if(THOST_FTDC_OST_Canceled == pOrder->OrderStatus)
@@ -1139,12 +1139,12 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
                 strncpy(OrderStatus.OrderSysID, pOrder->OrderSysID, sizeof(OrderStatus.OrderSysID));
                 if(pOrder->VolumeTraded > 0)
                 {
-                    OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED_CANCELLED;
+                    OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED_CANCELLED;
                     OrderStatus.CanceledVolume = pOrder->VolumeTotalOriginal - pOrder->VolumeTraded;
                 }
                 else
                 {
-                    OrderStatus.OrderStatus = Message::EOrderStatus::ECANCELLED;
+                    OrderStatus.OrderStatus = Message::EOrderStatusType::ECANCELLED;
                     OrderStatus.CanceledVolume = pOrder->VolumeTotalOriginal;
                 }
             }
@@ -1160,30 +1160,30 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
             {
                 strncpy(OrderStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.ExchangeACKTime));
                 strncpy(OrderStatus.OrderSysID, pOrder->OrderSysID, sizeof(OrderStatus.OrderSysID));
-                OrderStatus.OrderStatus = Message::EOrderStatus::EEXCHANGE_ACK;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ACK;
                 OnExchangeACK(OrderStatus);
             }
             // Order PartTraded
             else if(THOST_FTDC_OST_PartTradedQueueing == pOrder->OrderStatus)
             {
-                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
             }
             // Order AllTraded
             else if(THOST_FTDC_OST_AllTraded == pOrder->OrderStatus)
             {
-                OrderStatus.OrderStatus = Message::EOrderStatus::EALLTRADED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
             }
             // Order Cancelled
             else if(THOST_FTDC_OST_Canceled == pOrder->OrderStatus)
             {
                 if(pOrder->VolumeTraded > 0)
                 {
-                    OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED_CANCELLED;
+                    OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED_CANCELLED;
                     OrderStatus.CanceledVolume = pOrder->VolumeTotalOriginal - pOrder->VolumeTraded;
                 }
                 else
                 {
-                    OrderStatus.OrderStatus = Message::EOrderStatus::ECANCELLED;
+                    OrderStatus.OrderStatus = Message::EOrderStatusType::ECANCELLED;
                     OrderStatus.CanceledVolume = pOrder->VolumeTotalOriginal;
                 }
             }
@@ -1193,7 +1193,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
         {
             strncpy(OrderStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.ExchangeACKTime));
             strncpy(OrderStatus.OrderSysID, pOrder->OrderSysID, sizeof(OrderStatus.OrderSysID));
-            OrderStatus.OrderStatus = Message::EOrderStatus::EEXCHANGE_ERROR;
+            OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ERROR;
         }
         // 撤单被交易所拒绝
         else if(THOST_FTDC_OSS_CancelRejected == pOrder->OrderSubmitStatus)
@@ -1222,14 +1222,14 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
         if(OrderStatus.OrderType == Message::EOrderType::ELIMIT)
         {
             // 对于LIMIT订单，在成交回报更新时更新订单状态
-            if(Message::EOrderStatus::EALLTRADED != OrderStatus.OrderStatus && Message::EOrderStatus::EPARTTRADED != OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EALLTRADED != OrderStatus.OrderStatus && Message::EOrderStatusType::EPARTTRADED != OrderStatus.OrderStatus)
             {
                 UpdateOrderStatus(OrderStatus);
             }
             // Update Position
-            if(Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::ECANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
             {
                 UpdatePosition(OrderStatus, AccountPosition);
                 // remove Order
@@ -1238,14 +1238,14 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
         }
         else if(OrderStatus.OrderType == Message::EOrderType::EFAK || OrderStatus.OrderType == Message::EOrderType::EFOK)
         {
-            if(Message::EOrderStatus::EALLTRADED != OrderStatus.OrderStatus && 
-                    Message::EOrderStatus::EPARTTRADED_CANCELLED != OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EALLTRADED != OrderStatus.OrderStatus && 
+                    Message::EOrderStatusType::EPARTTRADED_CANCELLED != OrderStatus.OrderStatus)
             {
                 UpdateOrderStatus(OrderStatus);
             }
             // Update Position
-            if(Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::ECANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
             {
                 UpdatePosition(OrderStatus, AccountPosition);
                 // remove Order
@@ -1331,17 +1331,17 @@ void CTPTradeGateWay::OnRtnTrade(CThostFtdcTradeField *pTrade)
             // Upadte OrderStatus
             if(OrderStatus.TotalTradedVolume == OrderStatus.SendVolume)
             {
-                OrderStatus.OrderStatus = Message::EOrderStatus::EALLTRADED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
             }
             else
             {
-                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
             }
             UpdateOrderStatus(OrderStatus);
             // Position Update
             UpdatePosition(OrderStatus, AccountPosition);
             // remove Order When AllTraded
-            if(Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus && OrderStatus.TotalTradedVolume == OrderStatus.SendVolume)
+            if(Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus && OrderStatus.TotalTradedVolume == OrderStatus.SendVolume)
             {
                 m_OrderStatusMap.erase(it);
             }
@@ -1350,28 +1350,28 @@ void CTPTradeGateWay::OnRtnTrade(CThostFtdcTradeField *pTrade)
         {
             if(OrderStatus.TotalTradedVolume == OrderStatus.SendVolume)
             {
-                OrderStatus.OrderStatus = Message::EOrderStatus::EALLTRADED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
                 UpdatePosition(OrderStatus, AccountPosition);
                 UpdateOrderStatus(OrderStatus);
             }
             else if(OrderStatus.TotalTradedVolume == OrderStatus.SendVolume - OrderStatus.CanceledVolume)
             {
                 // 更新成交数量仓位
-                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
                 UpdatePosition(OrderStatus, AccountPosition);
                 // 更新订单终结状态冻结仓位
-                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED_CANCELLED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED_CANCELLED;
                 UpdatePosition(OrderStatus, AccountPosition);
                 UpdateOrderStatus(OrderStatus);
             }
             else
             {
-                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
                 UpdatePosition(OrderStatus, AccountPosition);
             }
             PrintOrderStatus(OrderStatus, "CTPTrader::OnRtnTrade ");
-            if(Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus)
             {
                 m_OrderStatusMap.erase(it);
             }
@@ -1445,7 +1445,7 @@ void CTPTradeGateWay::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTra
                                   nRequestID, bIsLast);
         std::string Account = pTradingAccount->AccountID;
         Message::TAccountFund& AccountFund = m_AccountFundMap[Account];
-        AccountFund.BussinessType = m_XTraderConfig.BussinessType;
+        AccountFund.BusinessType = m_XTraderConfig.BusinessType;
         strncpy(AccountFund.Product, m_XTraderConfig.Product.c_str(), sizeof(AccountFund.Product));
         strncpy(AccountFund.Broker, m_XTraderConfig.Broker.c_str(), sizeof(AccountFund.Broker));
         strncpy(AccountFund.Account, pTradingAccount->AccountID, sizeof(AccountFund.Account));
@@ -1519,7 +1519,7 @@ void CTPTradeGateWay::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *
         {
             Message::TAccountPosition AccountPosition;
             memset(&AccountPosition, 0, sizeof(AccountPosition));
-            AccountPosition.BussinessType = m_XTraderConfig.BussinessType;
+            AccountPosition.BusinessType = m_XTraderConfig.BusinessType;
             strncpy(AccountPosition.Product,  m_XTraderConfig.Product.c_str(), sizeof(AccountPosition.Product));
             strncpy(AccountPosition.Broker,  m_XTraderConfig.Broker.c_str(), sizeof(AccountPosition.Broker));
             strncpy(AccountPosition.Account, pInvestorPosition->InvestorID, sizeof(AccountPosition.Account));
@@ -1628,7 +1628,7 @@ void CTPTradeGateWay::OnRspQryOrder(CThostFtdcOrderField *pOrder, CThostFtdcRspI
         if(!(THOST_FTDC_OST_Canceled == pOrder->OrderStatus || THOST_FTDC_OST_AllTraded == pOrder->OrderStatus))
         {
             Message::TOrderStatus& OrderStatus = m_OrderStatusMap[pOrder->OrderRef];
-            OrderStatus.BussinessType = m_XTraderConfig.BussinessType;
+            OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
             // Update OrderStatus
             strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
             strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
@@ -1649,7 +1649,7 @@ void CTPTradeGateWay::OnRspQryOrder(CThostFtdcOrderField *pOrder, CThostFtdcRspI
             strncpy(OrderStatus.ExchangeACKTime, InsertTime.c_str(), sizeof(OrderStatus.ExchangeACKTime));
             if(THOST_FTDC_OST_PartTradedQueueing == pOrder->OrderStatus)
             {
-                OrderStatus.OrderStatus = Message::EOrderStatus::EPARTTRADED;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
                 OrderStatus.TradedVolume =  pOrder->VolumeTraded - OrderStatus.TotalTradedVolume;
                 OrderStatus.TotalTradedVolume =  pOrder->VolumeTraded;
                 OrderStatus.TradedPrice = pOrder->LimitPrice;
@@ -1657,7 +1657,7 @@ void CTPTradeGateWay::OnRspQryOrder(CThostFtdcOrderField *pOrder, CThostFtdcRspI
             }
             else if(THOST_FTDC_OST_NoTradeQueueing == pOrder->OrderStatus)
             {
-                OrderStatus.OrderStatus = Message::EOrderStatus::EEXCHANGE_ACK;
+                OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ACK;
             }
             std::string Account = pOrder->InvestorID;
             std::string Ticker = pOrder->InstrumentID;

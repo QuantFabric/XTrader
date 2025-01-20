@@ -10,6 +10,11 @@
 #include "TraderAPI/TradeGateWay.hpp"
 #include "SHMConnection.hpp"
 
+struct ClientConf : public SHMIPC::CommonConf
+{
+    static const bool Performance = true;
+};
+
 class TraderEngine
 {
 public:
@@ -41,8 +46,8 @@ protected:
     void UpdateAppStatus(const std::string& cmd, Message::TAppStatus& AppStatus);
 private:
     HPPackClient* m_HPPackClient;
-    SHMIPC::SHMConnection<Message::PackMessage, SHMIPC::CommonConf>* m_RiskClient;
-    SHMIPC::SHMConnection<Message::PackMessage, SHMIPC::CommonConf>* m_QuantClient;
+    SHMIPC::SHMConnection<Message::PackMessage, ClientConf>* m_RiskClient;
+    SHMIPC::SHMConnection<Message::PackMessage, ClientConf>* m_QuantClient;
     Utils::XTraderConfig m_XTraderConfig;
     bool m_Trading;
     unsigned long m_CurrentTimeStamp;

@@ -72,8 +72,8 @@ public:
         switch (OrderStatus.OrderSide)
         {
         case Message::EOrderSide::EOPEN_LONG:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongOpenVolume += OrderStatus.TradedVolume;
                 position.FuturePosition.LongTdVolume += OrderStatus.TradedVolume;
@@ -84,21 +84,21 @@ public:
                 }
                 position.FuturePosition.LongOpeningVolume -= OrderStatus.TradedVolume;  
             }
-            else if(Message::EOrderStatus::EORDER_SENDED == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EORDER_SENDED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongOpeningVolume += OrderStatus.SendVolume;
             }
-            else if(Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EBROKER_ERROR == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::ECANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EBROKER_ERROR == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongOpeningVolume -= OrderStatus.CanceledVolume;
             }
             break;
         case Message::EOrderSide::EOPEN_SHORT:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus  ||
-                    Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus  ||
+                    Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortOpenVolume += OrderStatus.TradedVolume;
                 position.FuturePosition.ShortTdVolume += OrderStatus.TradedVolume;
@@ -109,90 +109,90 @@ public:
                 }
                 position.FuturePosition.ShortOpeningVolume -= OrderStatus.TradedVolume;
             }
-            else if(Message::EOrderStatus::EORDER_SENDED == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EORDER_SENDED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortOpeningVolume += OrderStatus.SendVolume;
             }
-            else if(Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EBROKER_ERROR == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::ECANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EBROKER_ERROR == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortOpeningVolume -= OrderStatus.CanceledVolume;
             }
             break;
         case Message::EOrderSide::ECLOSE_TD_LONG:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus  ||
-                    Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus  ||
+                    Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongTdVolume -= OrderStatus.TradedVolume;
                 position.FuturePosition.LongClosingTdVolume -= OrderStatus.TradedVolume;
             }
-            else if(Message::EOrderStatus::EORDER_SENDED == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EORDER_SENDED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongClosingTdVolume += OrderStatus.SendVolume;
             }
-            else if(Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EBROKER_ERROR == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::ECANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EBROKER_ERROR == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongClosingTdVolume -= OrderStatus.CanceledVolume;
             }
             break;
         case Message::EOrderSide::ECLOSE_TD_SHORT:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus  ||
-                    Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus  ||
+                    Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortTdVolume -= OrderStatus.TradedVolume;
                 position.FuturePosition.ShortClosingTdVolume -= OrderStatus.TradedVolume;
             }
-            else if(Message::EOrderStatus::EORDER_SENDED == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EORDER_SENDED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortClosingTdVolume += OrderStatus.SendVolume;
             }
-            else if(Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EBROKER_ERROR == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::ECANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EBROKER_ERROR == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortClosingTdVolume -= OrderStatus.CanceledVolume;
             }
             break;
         case Message::EOrderSide::ECLOSE_YD_LONG:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus  ||
-                    Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus  ||
+                    Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongYdVolume -= OrderStatus.TradedVolume;
                 position.FuturePosition.LongClosingYdVolume -= OrderStatus.TradedVolume;
             }
-            else if(Message::EOrderStatus::EORDER_SENDED == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EORDER_SENDED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongClosingYdVolume += OrderStatus.SendVolume;
             }
-            else if(Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EBROKER_ERROR == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::ECANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EBROKER_ERROR == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongClosingYdVolume -= OrderStatus.CanceledVolume;
             }
             break;
         case Message::EOrderSide::ECLOSE_YD_SHORT:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus  ||
-                    Message::EOrderStatus::EALLTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus  ||
+                    Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortYdVolume -= OrderStatus.TradedVolume;
                 position.FuturePosition.ShortClosingYdVolume -= OrderStatus.TradedVolume;
             }
-            else if(Message::EOrderStatus::EORDER_SENDED == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EORDER_SENDED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortClosingYdVolume += OrderStatus.SendVolume;
             }
-            else if(Message::EOrderStatus::ECANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EBROKER_ERROR == OrderStatus.OrderStatus ||
-                    Message::EOrderStatus::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::ECANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EBROKER_ERROR == OrderStatus.OrderStatus ||
+                    Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortClosingYdVolume -= OrderStatus.CanceledVolume;
             }
@@ -214,61 +214,61 @@ public:
         switch (OrderStatus.OrderSide)
         {
         case Message::EOrderSide::EOPEN_LONG:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongOpeningVolume += (OrderStatus.SendVolume - OrderStatus.TotalTradedVolume);
             }
-            else if(Message::EOrderStatus::EEXCHANGE_ACK == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EEXCHANGE_ACK == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongOpeningVolume += OrderStatus.SendVolume;
             }
             break;
         case Message::EOrderSide::EOPEN_SHORT:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortOpeningVolume += (OrderStatus.SendVolume - OrderStatus.TotalTradedVolume);
             }
-            else if(Message::EOrderStatus::EEXCHANGE_ACK == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EEXCHANGE_ACK == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortOpeningVolume += OrderStatus.SendVolume;
             }
             break;
         case Message::EOrderSide::ECLOSE_TD_LONG:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongClosingTdVolume += (OrderStatus.SendVolume - OrderStatus.TotalTradedVolume);
             }
-            else if(Message::EOrderStatus::EEXCHANGE_ACK == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EEXCHANGE_ACK == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongClosingTdVolume += OrderStatus.SendVolume;
             }
             break;
         case Message::EOrderSide::ECLOSE_TD_SHORT:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortClosingTdVolume += (OrderStatus.SendVolume - OrderStatus.TotalTradedVolume);
             }
-            else if(Message::EOrderStatus::EEXCHANGE_ACK == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EEXCHANGE_ACK == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortClosingTdVolume += OrderStatus.SendVolume;
             }
             break;
         case Message::EOrderSide::ECLOSE_YD_LONG:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongClosingYdVolume += (OrderStatus.SendVolume - OrderStatus.TotalTradedVolume);
             }
-            else if(Message::EOrderStatus::EEXCHANGE_ACK == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EEXCHANGE_ACK == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.LongClosingYdVolume += OrderStatus.SendVolume;
             }
             break;
         case Message::EOrderSide::ECLOSE_YD_SHORT:
-            if(Message::EOrderStatus::EPARTTRADED == OrderStatus.OrderStatus)
+            if(Message::EOrderStatusType::EPARTTRADED == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortClosingYdVolume += (OrderStatus.SendVolume - OrderStatus.TotalTradedVolume);
             }
-            else if(Message::EOrderStatus::EEXCHANGE_ACK == OrderStatus.OrderStatus)
+            else if(Message::EOrderStatusType::EEXCHANGE_ACK == OrderStatus.OrderStatus)
             {
                 position.FuturePosition.ShortClosingYdVolume += OrderStatus.SendVolume;
             }
@@ -290,7 +290,7 @@ public:
         {
             std::string Key = m_XTraderConfig.Account + ":" + it->Ticker;
             Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
-            AccountPosition.BussinessType = m_XTraderConfig.BussinessType;
+            AccountPosition.BusinessType = m_XTraderConfig.BusinessType;
             strncpy(AccountPosition.Product,  m_XTraderConfig.Product.c_str(), sizeof(AccountPosition.Product));
             strncpy(AccountPosition.Broker,  m_XTraderConfig.Broker.c_str(), sizeof(AccountPosition.Broker));
             strncpy(AccountPosition.Account, m_XTraderConfig.Account.c_str(), sizeof(AccountPosition.Account));

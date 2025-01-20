@@ -67,7 +67,7 @@ int TestTradeGateWay::ReqQryFund()
     m_Logger->Log->info("TestTradeGateWay Account:{} ReqQryFund", m_XTraderConfig.Account);
 
     Message::TAccountFund& AccountFund = m_AccountFundMap[m_XTraderConfig.Account];
-    AccountFund.BussinessType = m_XTraderConfig.BussinessType;
+    AccountFund.BusinessType = m_XTraderConfig.BusinessType;
     strncpy(AccountFund.Product, m_XTraderConfig.Product.c_str(), sizeof(AccountFund.Product));
     strncpy(AccountFund.Broker, m_XTraderConfig.Broker.c_str(), sizeof(AccountFund.Broker));
     strncpy(AccountFund.Account, m_XTraderConfig.Account.c_str(), sizeof(AccountFund.Account));
@@ -129,7 +129,7 @@ void TestTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& requ
     // Order Status
     Message::TOrderStatus OrderStatus;
     memset(&OrderStatus, 0, sizeof(OrderStatus));
-    OrderStatus.BussinessType = m_XTraderConfig.BussinessType;
+    OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
     strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
     strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
     strncpy(OrderStatus.Account, m_XTraderConfig.Account.c_str(), sizeof(OrderStatus.Account));
@@ -147,11 +147,11 @@ void TestTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& requ
     strncpy(OrderStatus.RecvMarketTime, request.RecvMarketTime, sizeof(OrderStatus.RecvMarketTime));
     if(Message::ERiskStatusType::ECHECK_INIT == request.RiskStatus)
     {
-        OrderStatus.OrderStatus = Message::EOrderStatus::ERISK_CHECK_INIT;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::ERISK_CHECK_INIT;
     }
     else
     {
-        OrderStatus.OrderStatus = Message::EOrderStatus::ERISK_ORDER_REJECTED;
+        OrderStatus.OrderStatus = Message::EOrderStatusType::ERISK_ORDER_REJECTED;
     }
     OrderStatus.ErrorID = request.ErrorID;
     strncpy(OrderStatus.ErrorMsg, request.ErrorMsg, sizeof(OrderStatus.ErrorMsg));

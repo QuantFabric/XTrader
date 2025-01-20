@@ -63,11 +63,11 @@ void TraderEngine::Run()
     RegisterClient(m_XTraderConfig.ServerIP.c_str(), m_XTraderConfig.Port);
     // Connect to RiskServer
     Utils::gLogger->Log->info("TraderEngine::Run connect to RiskServer:{}", m_XTraderConfig.RiskServerName);
-    m_RiskClient = new SHMIPC::SHMConnection<Message::PackMessage, SHMIPC::CommonConf>(m_XTraderConfig.RiskServerName + m_XTraderConfig.Account);
+    m_RiskClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.RiskServerName + m_XTraderConfig.Account);
     m_RiskClient->Start(m_XTraderConfig.RiskServerName);
     // Connect to QuantServer
     Utils::gLogger->Log->info("TraderEngine::Run connect to QuantServer:{}", m_XTraderConfig.QuantServerName);
-    m_QuantClient = new SHMIPC::SHMConnection<Message::PackMessage, SHMIPC::CommonConf>(m_XTraderConfig.QuantServerName + m_XTraderConfig.Account);
+    m_QuantClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.QuantServerName + m_XTraderConfig.Account);
     m_QuantClient->Start(m_XTraderConfig.QuantServerName);
     sleep(1);
     // Update App Status
@@ -81,6 +81,9 @@ void TraderEngine::Run()
 
     usleep(1000000);
     m_pWorkThread = new std::thread(&TraderEngine::WorkFunc, this);
+
+    m_RiskClient->Join();
+    m_QuantClient->Join();
     m_pWorkThread->join();
 }
 
@@ -200,7 +203,7 @@ void TraderEngine::HandleRequestMessage()
             {
                 case Message::EMessageType::EOrderRequest:
                 {
-                    request.OrderRequest.BussinessType = m_XTraderConfig.BussinessType;
+                    request.OrderRequest.BusinessType = m_XTraderConfig.BusinessType;
                     if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ENOCHECKED)
                     {
                         SendRequest(request);
@@ -332,7 +335,7 @@ void TraderEngine::HandleExecuteReport()
 
 void TraderEngine::HandleCommand(const Message::PackMessage& msg)
 {
-    if(Message::EBusinessType::ESTOCK ==  m_XTraderConfig.BussinessType)
+    if(Message::EBusinessType::ESTOCK ==  m_XTraderConfig.BusinessType)
     {
         if(Message::ECommandType::ETRANSFER_FUND_IN == msg.Command.CmdType)
         {
@@ -369,7 +372,7 @@ void TraderEngine::HandleCommand(const Message::PackMessage& msg)
             Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid Command:{}", m_XTraderConfig.Account, msg.Command.Command);
         }
     }
-    else if(Message::EBusinessType::ECREDIT ==  m_XTraderConfig.BussinessType)
+    else if(Message::EBusinessType::ECREDIT ==  m_XTraderConfig.BusinessType)
     {
         if(Message::ECommandType::ETRANSFER_FUND_IN == msg.Command.CmdType)
         {

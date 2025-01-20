@@ -4,7 +4,7 @@ XTraderConfig:
   BrokerID : 9999
   Account : 188795
   Password : xxxxxx
-  BussinessType: 3
+  BusinessType: 3
   CloseToday: true
   AppID : simnow_client_test
   AuthCode : 0000000000000000
