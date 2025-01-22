@@ -63,11 +63,11 @@ void TraderEngine::Run()
     RegisterClient(m_XTraderConfig.ServerIP.c_str(), m_XTraderConfig.Port);
     // Connect to RiskServer
     Utils::gLogger->Log->info("TraderEngine::Run connect to RiskServer:{}", m_XTraderConfig.RiskServerName);
-    m_RiskClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.RiskServerName + m_XTraderConfig.Account);
+    m_RiskClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.Account);
     m_RiskClient->Start(m_XTraderConfig.RiskServerName);
     // Connect to QuantServer
     Utils::gLogger->Log->info("TraderEngine::Run connect to QuantServer:{}", m_XTraderConfig.QuantServerName);
-    m_QuantClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.QuantServerName + m_XTraderConfig.Account);
+    m_QuantClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.Account);
     m_QuantClient->Start(m_XTraderConfig.QuantServerName);
     sleep(1);
     // Update App Status
@@ -82,8 +82,8 @@ void TraderEngine::Run()
     usleep(1000000);
     m_pWorkThread = new std::thread(&TraderEngine::WorkFunc, this);
 
-    m_RiskClient->Join();
-    m_QuantClient->Join();
+    // m_RiskClient->Join();
+    // m_QuantClient->Join();
     m_pWorkThread->join();
 }
 
@@ -106,6 +106,9 @@ void TraderEngine::WorkFunc()
         HandleExecuteReport();
         // 写入回报到QuantServer内存通道
         SendReportToQuant();
+
+        m_RiskClient->HandleMsg();
+        m_QuantClient->HandleMsg();
         unsigned long CurrentTimeStamp = Utils::getTimeMs();
         static unsigned long PreTimeStamp = CurrentTimeStamp / 1000;
         if(PreTimeStamp < CurrentTimeStamp / 1000)
@@ -138,15 +141,16 @@ void TraderEngine::RegisterClient(const char *ip, unsigned int port)
 
 void TraderEngine::ReadRequestFromQuant()
 {
-    Message::PackMessage message;
+    static Message::PackMessage message;
+    m_QuantClient->HandleMsg();
     bool ok = m_QuantClient->Pop(message);
     if(ok)
     {
-        // Utils::gLogger->Log->debug("TraderEngine::ReadRequestFromQuant recv msg from ChannelID:{}", message.ChannelID);
-        // Utils::gLogger->Log->debug("Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
-        //                             message.OrderRequest.Account, message.OrderRequest.Ticker, message.OrderRequest.RiskStatus, 
-        //                             message.OrderRequest.OrderToken, message.OrderRequest.RiskID, message.OrderRequest.Price, 
-        //                             message.OrderRequest.Volume, message.OrderRequest.ErrorMsg, message.MessageType);
+        Utils::gLogger->Log->info("TraderEngine::ReadRequestFromQuant recv msg from ChannelID:{}", message.ChannelID);
+        Utils::gLogger->Log->debug("Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
+                                    message.OrderRequest.Account, message.OrderRequest.Ticker, message.OrderRequest.RiskStatus, 
+                                    message.OrderRequest.OrderToken, message.OrderRequest.RiskID, message.OrderRequest.Price, 
+                                    message.OrderRequest.Volume, message.OrderRequest.ErrorMsg, message.MessageType);
         while(!m_RequestMessageQueue.Push(message));
     }
 }
@@ -254,11 +258,12 @@ void TraderEngine::HandleRiskResponse()
     // 处理风控检查结果
     while(true)
     {
+        m_RiskClient->HandleMsg();
         Message::PackMessage message;
         bool ok = m_RiskClient->Pop(message);
         if(ok)
         {
-            // Utils::gLogger->Log->debug("TraderEngine::HandleRiskResponse recv msg from ChannelID:{}", message.ChannelID);
+            Utils::gLogger->Log->info("TraderEngine::HandleRiskResponse recv msg from ChannelID:{}", message.ChannelID);
             switch(message.MessageType)
             {
                 case Message::EMessageType::EOrderRequest:
@@ -439,6 +444,7 @@ void TraderEngine::SendReportToQuant()
         if(ok)
         {
             m_QuantClient->Push(report);
+            m_QuantClient->HandleMsg();
         }
         else
         {
@@ -455,6 +461,7 @@ void TraderEngine::SendRequest(const Message::PackMessage& request)
 void TraderEngine::SendRiskCheckReqeust(const Message::PackMessage& request)
 {
     m_RiskClient->Push(request);
+    m_RiskClient->HandleMsg();
 }
 
 void TraderEngine::SendMonitorMessage(const Message::PackMessage& message)
@@ -465,6 +472,7 @@ void TraderEngine::SendMonitorMessage(const Message::PackMessage& message)
         {
             m_HPPackClient->SendData((const unsigned char*)&message, sizeof(message));
             m_RiskClient->Push(message);
+            m_RiskClient->HandleMsg();
             break;
         }
         case Message::EMessageType::EEventLog:

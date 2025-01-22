@@ -12,7 +12,7 @@
 
 struct ClientConf : public SHMIPC::CommonConf
 {
-    static const bool Performance = true;
+    static const bool Performance = false;
 };
 
 class TraderEngine
