@@ -2,7 +2,7 @@
 #define HPPACKCLIENT_H
 
 #include "HPSocket4C.h"
-#include "Logger.h"
+#include "FMTLogger.hpp"
 #include "PackMessage.hpp"
 #include <cstdlib>
 #include <stdio.h>

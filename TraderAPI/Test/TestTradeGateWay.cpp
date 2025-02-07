@@ -15,7 +15,7 @@ TestTradeGateWay::~TestTradeGateWay()
 
 void TestTradeGateWay::LoadAPIConfig()
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} LoadAPIConfig {}", m_XTraderConfig.Account, m_XTraderConfig.TraderAPIConfig);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} LoadAPIConfig {}", m_XTraderConfig.Account, m_XTraderConfig.TraderAPIConfig);
 }
 
 void TestTradeGateWay::GetCommitID(std::string& CommitID, std::string& UtilsCommitID)
@@ -30,23 +30,23 @@ void TestTradeGateWay::GetAPIVersion(std::string& APIVersion)
 
 void TestTradeGateWay::CreateTraderAPI()
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} CreateTraderAPI", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} CreateTraderAPI", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::DestroyTraderAPI()
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} DestroyTraderAPI", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} DestroyTraderAPI", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::ReqUserLogin()
 {
     m_ConnectedStatus = Message::ELoginStatus::ELOGIN_SUCCESSED;
-    m_Logger->Log->info("TestTradeGateWay Account:{} ReqUserLogin", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReqUserLogin", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::LoadTrader()
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} LoadTrader", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} LoadTrader", m_XTraderConfig.Account);
     ReqUserLogin();
 }
 
@@ -58,13 +58,13 @@ void TestTradeGateWay::ReLoadTrader()
         CreateTraderAPI();
         LoadTrader();
 
-        m_Logger->Log->info("TestTradeGateWay Account:{} ReLoadTrader", m_XTraderConfig.Account);
+        FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReLoadTrader", m_XTraderConfig.Account);
     }
 }
 
 int TestTradeGateWay::ReqQryFund()
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} ReqQryFund", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReqQryFund", m_XTraderConfig.Account);
 
     Message::TAccountFund& AccountFund = m_AccountFundMap[m_XTraderConfig.Account];
     AccountFund.BusinessType = m_XTraderConfig.BusinessType;
@@ -94,31 +94,31 @@ int TestTradeGateWay::ReqQryFund()
 
 int TestTradeGateWay::ReqQryPoistion()
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} ReqQryPoistion", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReqQryPoistion", m_XTraderConfig.Account);
     return 0;
 }
 
 int TestTradeGateWay::ReqQryTrade()
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} ReqQryTrade", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReqQryTrade", m_XTraderConfig.Account);
     return 0;
 }
 
 int TestTradeGateWay::ReqQryOrder()
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} ReqQryOrder", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReqQryOrder", m_XTraderConfig.Account);
     return 0;
 }
 
 int TestTradeGateWay::ReqQryTickerRate()
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} ReqQryTickerRate", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReqQryTickerRate", m_XTraderConfig.Account);
     return 0;
 }
 
 void TestTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} ReqInsertOrder", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReqInsertOrder", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& request)
@@ -157,40 +157,40 @@ void TestTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& requ
     strncpy(OrderStatus.ErrorMsg, request.ErrorMsg, sizeof(OrderStatus.ErrorMsg));
     PrintOrderStatus(OrderStatus, "TestTrader::ReqInsertOrderRejected ");
     UpdateOrderStatus(OrderStatus);
-    m_Logger->Log->info("TestTradeGateWay Account:{} ReqInsertOrderRejected", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReqInsertOrderRejected", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} ReqCancelOrder", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReqCancelOrder", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::ReqCancelOrderRejected(const Message::TActionRequest& request)
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} ReqCancelOrderRejected", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} ReqCancelOrderRejected", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::RepayMarginDirect(double value)
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} RepayMarginDirect", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} RepayMarginDirect", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::TransferFundIn(double value)
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} TransferFundIn", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} TransferFundIn", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::TransferFundOut(double value)
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} TransferFundOut", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} TransferFundOut", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::UpdatePosition(const Message::TOrderStatus& OrderStatus, Message::TAccountPosition& Position)
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} UpdatePosition", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} UpdatePosition", m_XTraderConfig.Account);
 }
 
 void TestTradeGateWay::UpdateFund(const Message::TOrderStatus& OrderStatus, Message::TAccountFund& Fund)
 {
-    m_Logger->Log->info("TestTradeGateWay Account:{} UpdateFund", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TestTradeGateWay Account:{} UpdateFund", m_XTraderConfig.Account);
 }

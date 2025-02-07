@@ -9,6 +9,7 @@
 #include "LockFreeQueue.hpp"
 #include "TraderAPI/TradeGateWay.hpp"
 #include "SHMConnection.hpp"
+#include "FMTLogger.hpp"
 
 struct ClientConf : public SHMIPC::CommonConf
 {

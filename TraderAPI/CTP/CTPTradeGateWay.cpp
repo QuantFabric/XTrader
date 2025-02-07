@@ -20,20 +20,20 @@ void CTPTradeGateWay::LoadAPIConfig()
     bool ok = Utils::LoadCTPConfig(m_XTraderConfig.TraderAPIConfig.c_str(), m_CTPConfig, errorString);
     if(ok)
     {
-        m_Logger->Log->info("CTPTrader LoadAPIConfig Account:{} LoadCTPConfig successed, FrontAddr:{}", m_XTraderConfig.Account, m_CTPConfig.FrontAddr);
+        FMTLOG(fmtlog::INF, "CTPTrader LoadAPIConfig Account:{} LoadCTPConfig successed, FrontAddr:{}", m_XTraderConfig.Account, m_CTPConfig.FrontAddr);
     }
     else
     {
-        m_Logger->Log->error("CTPTrader LoadAPIConfig Account:{} LoadCTPConfig failed, FrontAddr:{} {}", m_XTraderConfig.Account, m_CTPConfig.FrontAddr, errorString);
+        FMTLOG(fmtlog::ERR, "CTPTrader LoadAPIConfig Account:{} LoadCTPConfig failed, FrontAddr:{} {}", m_XTraderConfig.Account, m_CTPConfig.FrontAddr, errorString);
     }
     ok = Utils::LoadCTPError(m_XTraderConfig.ErrorPath.c_str(), m_CodeErrorMap, errorString);
     if(ok)
     {
-        m_Logger->Log->info("CTPTrader LoadAPIConfig Account:{} LoadCTPError {} successed", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath);
+        FMTLOG(fmtlog::INF, "CTPTrader LoadAPIConfig Account:{} LoadCTPError {} successed", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath);
     }
     else
     {
-        m_Logger->Log->error("CTPTrader LoadAPIConfig Account:{} LoadCTPError {} failed, {}", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath, errorString);
+        FMTLOG(fmtlog::ERR, "CTPTrader LoadAPIConfig Account:{} LoadCTPError {} failed, {}", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath, errorString);
     }
 
     std::string app_log_path;
@@ -102,7 +102,7 @@ void CTPTradeGateWay::LoadTrader()
     m_CTPTraderAPI->SubscribePrivateTopic(THOST_TERT_QUICK);
     m_CTPTraderAPI->RegisterFront(const_cast<char*>(m_CTPConfig.FrontAddr.c_str()));
     m_CTPTraderAPI->Init();
-    m_Logger->Log->info("CTPTrader::LoadTrader Account:{} Front:{}", m_XTraderConfig.Account, m_CTPConfig.FrontAddr);
+    FMTLOG(fmtlog::INF, "CTPTrader::LoadTrader Account:{} Front:{}", m_XTraderConfig.Account, m_CTPConfig.FrontAddr);
 }
 
 void CTPTradeGateWay::ReLoadTrader()
@@ -126,7 +126,7 @@ void CTPTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
-        m_Logger->Log->warn(buffer);
+        FMTLOG(fmtlog::WRN, buffer);
     }
 }
 
@@ -357,14 +357,14 @@ void CTPTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
         Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
         UpdatePosition(OrderStatus, AccountPosition);
         UpdateOrderStatus(OrderStatus);
-        m_Logger->Log->debug("CTPTrader:ReqInsertOrder, InvestorID:{} ExchangeID:{} Ticker:{} UserID:{} OrderPriceType:{} Direction:{}\n\
-                              \t\t\t\t\t\tCombOffsetFlag:{} CombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} MinVolume:{} ContingentCondition:{} StopPrice:{}\n\
-                              \t\t\t\t\t\tForceCloseReason:{} IsAutoSuspend:{} TimeCondition:{} VolumeCondition:{} RequestID:{}",
-                                reqOrderField.InvestorID, reqOrderField.ExchangeID, reqOrderField.InstrumentID,
-                                reqOrderField.UserID, reqOrderField.OrderPriceType, reqOrderField.Direction, reqOrderField.CombOffsetFlag,
-                                reqOrderField.CombHedgeFlag, reqOrderField.LimitPrice, reqOrderField.VolumeTotalOriginal,
-                                reqOrderField.MinVolume, reqOrderField.ContingentCondition, reqOrderField.StopPrice, reqOrderField.ForceCloseReason,
-                                reqOrderField.IsAutoSuspend, reqOrderField.TimeCondition, reqOrderField.VolumeCondition, reqOrderField.RequestID);
+        FMTLOG(fmtlog::DBG, "CTPTrader:ReqInsertOrder, InvestorID:{} ExchangeID:{} Ticker:{} UserID:{} OrderPriceType:{} Direction:{} "
+                            "CombOffsetFlag:{} CombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} MinVolume:{} ContingentCondition:{} "
+                            "StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} TimeCondition:{} VolumeCondition:{} RequestID:{}",
+                reqOrderField.InvestorID, reqOrderField.ExchangeID, reqOrderField.InstrumentID,
+                reqOrderField.UserID, reqOrderField.OrderPriceType, reqOrderField.Direction, reqOrderField.CombOffsetFlag,
+                reqOrderField.CombHedgeFlag, reqOrderField.LimitPrice, reqOrderField.VolumeTotalOriginal,
+                reqOrderField.MinVolume, reqOrderField.ContingentCondition, reqOrderField.StopPrice, reqOrderField.ForceCloseReason,
+                reqOrderField.IsAutoSuspend, reqOrderField.TimeCondition, reqOrderField.VolumeCondition, reqOrderField.RequestID);
     }
     else
     {
@@ -444,7 +444,7 @@ void CTPTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
     auto it = m_OrderStatusMap.find(request.OrderRef);
     if(it == m_OrderStatusMap.end())
     {
-        m_Logger->Log->warn("CTPTrader::ReqCancelOrder Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
+        FMTLOG(fmtlog::WRN, "CTPTrader::ReqCancelOrder Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
         return ;
     }
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[request.OrderRef];
@@ -476,7 +476,7 @@ void CTPTradeGateWay::ReqCancelOrderRejected(const Message::TActionRequest& requ
     auto it = m_OrderStatusMap.find(request.OrderRef);
     if(it == m_OrderStatusMap.end())
     {
-        m_Logger->Log->warn("CTPTrader::ReqCancelOrderRejected Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
+        FMTLOG(fmtlog::WRN, "CTPTrader::ReqCancelOrderRejected Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
         return ;
     }
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[request.OrderRef];
@@ -519,23 +519,23 @@ void CTPTradeGateWay::HandleRetCode(int code, const std::string& op)
     {
     case 0:
         errorString = op + " successed";
-        m_Logger->Log->info(errorString.c_str());
+        FMTLOG(fmtlog::INF, errorString);
         break;
     case -1:
         errorString = op + " failed, 网络连接失败.";
-        m_Logger->Log->warn(errorString.c_str());
+        FMTLOG(fmtlog::WRN, errorString);
         break;
     case -2:
         errorString = op + " failed, 未处理请求超过许可数.";
-        m_Logger->Log->warn(errorString.c_str());
+        FMTLOG(fmtlog::WRN, errorString);
         break;
     case -3:
         errorString = op + " failed, 每秒发送请求数超过许可数.";
-        m_Logger->Log->warn(errorString.c_str());
+        FMTLOG(fmtlog::WRN, errorString);
         break;
     default:
         errorString = op + " failed, unkown error.";
-        m_Logger->Log->warn(errorString.c_str());
+        FMTLOG(fmtlog::WRN, errorString);
         break;
     }
     // 错误发送监控EventLog
@@ -636,7 +636,7 @@ void CTPTradeGateWay::OnFrontConnected()
     char buffer[512] = {0};
     sprintf(buffer, "CTPTrader::OnFrontConnected Account:%s TradingDay:%s Connected to Front:%s, API:%s",
             m_XTraderConfig.Account.c_str(), m_CTPTraderAPI->GetTradingDay(), m_CTPConfig.FrontAddr.c_str(), m_CTPTraderAPI->GetApiVersion());
-    m_Logger->Log->info(buffer);
+    FMTLOG(fmtlog::INF, buffer);
     Message::PackMessage message;
     memset(&message, 0, sizeof(message));
     message.MessageType = Message::EMessageType::EEventLog;
@@ -668,7 +668,7 @@ void CTPTradeGateWay::OnFrontDisconnected(int nReason)
     char errorString[512] = {0};
     sprintf(errorString, "CTPTrader::OnFrontDisconnected Account:%s Code:0X%X, Error:%s",
             m_XTraderConfig.Account.c_str(), nReason, buffer.c_str());
-    m_Logger->Log->warn(errorString);
+    FMTLOG(fmtlog::WRN, errorString);
     Message::PackMessage message;
     memset(&message, 0, sizeof(message));
     message.MessageType = Message::EMessageType::EEventLog;
@@ -698,7 +698,7 @@ void CTPTradeGateWay::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuth
     {
         sprintf(errorString, "CTPTrader::OnRspAuthenticate Authenticate successed, BrokerID:%s, Account:%s, UserID:%s, AppID:%s",
                 pRspAuthenticateField->BrokerID,  m_XTraderConfig.Account.c_str(), pRspAuthenticateField->UserID, pRspAuthenticateField->AppID);
-        m_Logger->Log->info(errorString);
+        FMTLOG(fmtlog::INF, errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
 
@@ -711,7 +711,7 @@ void CTPTradeGateWay::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuth
                        sizeof(errorBuffer), "gb2312", "utf-8");
         sprintf(errorString, "CTPTrader::OnRspAuthenticate Authenticate failed, BrokerID:%s, Account:%s, ErrorID:%d, ErrorMessage:%s",
                 m_XTraderConfig.BrokerID.c_str(), m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
     }
@@ -738,7 +738,7 @@ void CTPTradeGateWay::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
         sprintf(errorString, "CTPTrader::OnRspUserLogin Login successed, BrokerID:%s, Account:%s, TradingDay:%s, LoginTime:%s, SystemName:%s, MaxOrderRef:%s, FrontID:%d, SessionID:%d",
                 pRspUserLogin->BrokerID,  m_XTraderConfig.Account.c_str(), pRspUserLogin->TradingDay, pRspUserLogin->LoginTime,
                 pRspUserLogin->SystemName, pRspUserLogin->MaxOrderRef, pRspUserLogin->FrontID, pRspUserLogin->SessionID);
-        m_Logger->Log->info(errorString);
+        FMTLOG(fmtlog::INF, errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
         // 请求结算单确认
@@ -751,7 +751,7 @@ void CTPTradeGateWay::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                        sizeof(errorBuffer), "gb2312", "utf-8");
         sprintf(errorString, "CTPTrader::OnRspUserLogin Login failed, BrokerID:%s, Account:%s, ErrorID:%d, ErrorMessage:%s",
                 m_XTraderConfig.BrokerID.c_str(), m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
     }
@@ -764,7 +764,7 @@ void CTPTradeGateWay::OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CT
     {
         sprintf(errorString, "BrokerID:%s, Account:%s, UserID:%s",
                 pUserLogout->BrokerID, m_XTraderConfig.Account.c_str(), pUserLogout->UserID);
-        m_Logger->Log->info("CTPTrader::Logout successed, {}", errorString);
+        FMTLOG(fmtlog::INF, "CTPTrader::Logout successed, {}", errorString);
     }
     else if(NULL != pRspInfo)
     {
@@ -773,7 +773,7 @@ void CTPTradeGateWay::OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CT
                        sizeof(errorBuffer), "gb2312", "utf-8");
         sprintf(errorString, "CTPTrader::Logout failed, BrokerID:%s, Account:%s, ErrorID:%d, ErrorMessage:%s",
                 m_XTraderConfig.BrokerID.c_str(), m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
     }
 
     Message::PackMessage message;
@@ -807,7 +807,7 @@ void CTPTradeGateWay::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfirm
         m_ConnectedStatus = Message::ELoginStatus::ELOGIN_SUCCESSED;
         sprintf(errorString, "CTPTrader::OnRspSettlementInfoConfirm successed, BrokerID:%s Account:%s", 
                             pSettlementInfoConfirm->BrokerID, pSettlementInfoConfirm->InvestorID);
-        m_Logger->Log->info(errorString);
+        FMTLOG(fmtlog::INF, errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
         // 初始化仓位
@@ -820,7 +820,7 @@ void CTPTradeGateWay::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfirm
                        sizeof(errorBuffer), "gb2312", "utf-8");
         sprintf(errorString, "CTPTrader::OnRspSettlementInfoConfirm failed, BrokerID:%s Account:%s, ErrorID:%d, ErrorMessage:%s",
                             m_XTraderConfig.BrokerID.c_str(), m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
     }
@@ -833,20 +833,19 @@ void CTPTradeGateWay::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, C
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                         sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->info("CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{}\n"
-                              "\t\t\t\t\t\tOrderRef:{} UserID:{} OrderPriceType:{} Direction:{} CombOffsetFlag:{} CombHedgeFlag:{}\n"
-                              "\t\t\t\t\t\tLimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} VolumeCondition:{} MinVolume:{}\n"
-                              "\t\t\t\t\t\tContingentCondition:{} StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} BusinessUnit:{}\n"
-                              "\t\t\t\t\t\tRequestID:{} UserForceClose:{} IsSwapOrder:{} ExchangeID:{} InvestUnitID:{} AccountID:{}\n"
-                              "\t\t\t\t\t\tClientID:{} MacAddress:{} IPAddress:{} ErrorID:{} ErrorMsg:{}",
-                              pInputOrder->BrokerID, pInputOrder->InvestorID, pInputOrder->InstrumentID, pInputOrder->OrderRef,
-                              pInputOrder->UserID, pInputOrder->OrderPriceType, pInputOrder->Direction, pInputOrder->CombOffsetFlag,
-                              pInputOrder->CombHedgeFlag, pInputOrder->LimitPrice, pInputOrder->VolumeTotalOriginal,
-                              pInputOrder->TimeCondition, pInputOrder->VolumeCondition, pInputOrder->MinVolume,
-                              pInputOrder->ContingentCondition, pInputOrder->StopPrice, pInputOrder->ForceCloseReason,
-                              pInputOrder->IsAutoSuspend, pInputOrder->BusinessUnit, pInputOrder->RequestID, pInputOrder->UserForceClose,
-                              pInputOrder->IsSwapOrder, pInputOrder->ExchangeID, pInputOrder->InvestUnitID, pInputOrder->AccountID,
-                              pInputOrder->ClientID, pInputOrder->MacAddress, pInputOrder->IPAddress, pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} UserID:{} OrderPriceType:{} "
+                            "Direction:{} CombOffsetFlag:{} CombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} "
+                            "VolumeCondition:{} MinVolume:{} ContingentCondition:{} StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} "
+                            "BusinessUnit:{} RequestID:{} UserForceClose:{} IsSwapOrder:{} ExchangeID:{} InvestUnitID:{} AccountID:{} "
+                            "ClientID:{} MacAddress:{} IPAddress:{} ErrorID:{} ErrorMsg:{}",
+                pInputOrder->BrokerID, pInputOrder->InvestorID, pInputOrder->InstrumentID, pInputOrder->OrderRef,
+                pInputOrder->UserID, pInputOrder->OrderPriceType, pInputOrder->Direction, pInputOrder->CombOffsetFlag,
+                pInputOrder->CombHedgeFlag, pInputOrder->LimitPrice, pInputOrder->VolumeTotalOriginal,
+                pInputOrder->TimeCondition, pInputOrder->VolumeCondition, pInputOrder->MinVolume,
+                pInputOrder->ContingentCondition, pInputOrder->StopPrice, pInputOrder->ForceCloseReason,
+                pInputOrder->IsAutoSuspend, pInputOrder->BusinessUnit, pInputOrder->RequestID, pInputOrder->UserForceClose,
+                pInputOrder->IsSwapOrder, pInputOrder->ExchangeID, pInputOrder->InvestUnitID, pInputOrder->AccountID,
+                pInputOrder->ClientID, pInputOrder->MacAddress, pInputOrder->IPAddress, pRspInfo->ErrorID, errorBuffer);
     }
 }
 
@@ -889,7 +888,7 @@ void CTPTradeGateWay::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder
                 strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
                 strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
                 while(!m_ReportMessageQueue.Push(message));
-                m_Logger->Log->warn(errorString);
+                FMTLOG(fmtlog::WRN, errorString);
             }
 
             PrintOrderStatus(OrderStatus, "CTPTrader::OnErrRtnOrderInsert ");
@@ -913,22 +912,21 @@ void CTPTradeGateWay::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder
             strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
             while(!m_ReportMessageQueue.Push(message));
-            m_Logger->Log->warn(errorString);
+            FMTLOG(fmtlog::WRN, errorString);
         }
-        m_Logger->Log->info("CTPTrader:OnErrRtnOrderInsert, BrokerID:{}, Account:{} InstrumentID:{}\n"
-                                "\t\t\t\t\t\tOrderRef:{} UserID:{} OrderPriceType:{} Direction:{} CombOffsetFlag:{} CombHedgeFlag:{}\n"
-                                "\t\t\t\t\t\tLimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} VolumeCondition:{} MinVolume:{}\n"
-                                "\t\t\t\t\t\tContingentCondition:{} StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} BusinessUnit:{}"
-                                "\t\t\t\t\t\tRequestID:{} UserForceClose:{} IsSwapOrder:{} ExchangeID:{} InvestUnitID:{} AccountID:{}"
-                                "\t\t\t\t\t\tClientID:{} MacAddress:{} IPAddress:{}",
-                                pInputOrder->BrokerID, pInputOrder->InvestorID, pInputOrder->InstrumentID, pInputOrder->OrderRef,
-                                pInputOrder->UserID, pInputOrder->OrderPriceType, pInputOrder->Direction, pInputOrder->CombOffsetFlag,
-                                pInputOrder->CombHedgeFlag, pInputOrder->LimitPrice, pInputOrder->VolumeTotalOriginal,
-                                pInputOrder->TimeCondition, pInputOrder->VolumeCondition, pInputOrder->MinVolume,
-                                pInputOrder->ContingentCondition, pInputOrder->StopPrice, pInputOrder->ForceCloseReason,
-                                pInputOrder->IsAutoSuspend, pInputOrder->BusinessUnit, pInputOrder->RequestID, pInputOrder->UserForceClose,
-                                pInputOrder->IsSwapOrder, pInputOrder->ExchangeID, pInputOrder->InvestUnitID, pInputOrder->AccountID,
-                                pInputOrder->ClientID, pInputOrder->MacAddress, pInputOrder->IPAddress);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnErrRtnOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} UserID:{} OrderPriceType:{} "
+                            "Direction:{} CombOffsetFlag:{} CombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} "
+                            "VolumeCondition:{} MinVolume:{} ContingentCondition:{} StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} "
+                            "BusinessUnit:{} RequestID:{} UserForceClose:{} IsSwapOrder:{} ExchangeID:{} InvestUnitID:{} AccountID:{} "
+                            "ClientID:{} MacAddress:{} IPAddress:{}",
+                pInputOrder->BrokerID, pInputOrder->InvestorID, pInputOrder->InstrumentID, pInputOrder->OrderRef,
+                pInputOrder->UserID, pInputOrder->OrderPriceType, pInputOrder->Direction, pInputOrder->CombOffsetFlag,
+                pInputOrder->CombHedgeFlag, pInputOrder->LimitPrice, pInputOrder->VolumeTotalOriginal,
+                pInputOrder->TimeCondition, pInputOrder->VolumeCondition, pInputOrder->MinVolume,
+                pInputOrder->ContingentCondition, pInputOrder->StopPrice, pInputOrder->ForceCloseReason,
+                pInputOrder->IsAutoSuspend, pInputOrder->BusinessUnit, pInputOrder->RequestID, pInputOrder->UserForceClose,
+                pInputOrder->IsSwapOrder, pInputOrder->ExchangeID, pInputOrder->InvestUnitID, pInputOrder->AccountID,
+                pInputOrder->ClientID, pInputOrder->MacAddress, pInputOrder->IPAddress);
     }
 }
 
@@ -936,16 +934,15 @@ void CTPTradeGateWay::OnRspOrderAction(CThostFtdcInputOrderActionField *pInputOr
 {
     if(IsRspError(pRspInfo) && pInputOrderAction != NULL)
     {
-        m_Logger->Log->info("CTPTrader:OnRspOrderAction, BrokerID:{}, Account:{} InstrumentID:{}\n"
-                              "\t\t\t\t\t\tOrderActionRef:{} OrderRef:{} RequestID:{} FrontID:{} SessionID:{} ExchangeID:{}\n"
-                              "\t\t\t\t\t\tOrderSysID:{} ActionFlag:{} LimitPrice:{} VolumeChange:{} UserID:{}\n"
-                              "\t\t\t\t\t\tInvestUnitID:{} MacAddress:{} IPAddress:{} ErrorID:{} ErrorMsg:{}",
-                              pInputOrderAction->BrokerID, pInputOrderAction->InvestorID, pInputOrderAction->InstrumentID,
-                              pInputOrderAction->OrderActionRef, pInputOrderAction->OrderRef, pInputOrderAction->RequestID,
-                              pInputOrderAction->FrontID, pInputOrderAction->SessionID, pInputOrderAction->ExchangeID,
-                              pInputOrderAction->OrderSysID, pInputOrderAction->ActionFlag, pInputOrderAction->LimitPrice,
-                              pInputOrderAction->VolumeChange, pInputOrderAction->UserID, pInputOrderAction->InvestUnitID,
-                              pInputOrderAction->MacAddress, pInputOrderAction->IPAddress, pRspInfo->ErrorID, pRspInfo->ErrorMsg);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspOrderAction, BrokerID:{}, Account:{} InstrumentID:{} OrderActionRef:{} OrderRef:{} RequestID:{} "
+                            "FrontID:{} SessionID:{} ExchangeID:{} OrderSysID:{} ActionFlag:{} LimitPrice:{} VolumeChange:{} UserID:{} "
+                            "InvestUnitID:{} MacAddress:{} IPAddress:{} ErrorID:{} ErrorMsg:{}",
+                pInputOrderAction->BrokerID, pInputOrderAction->InvestorID, pInputOrderAction->InstrumentID,
+                pInputOrderAction->OrderActionRef, pInputOrderAction->OrderRef, pInputOrderAction->RequestID,
+                pInputOrderAction->FrontID, pInputOrderAction->SessionID, pInputOrderAction->ExchangeID,
+                pInputOrderAction->OrderSysID, pInputOrderAction->ActionFlag, pInputOrderAction->LimitPrice,
+                pInputOrderAction->VolumeChange, pInputOrderAction->UserID, pInputOrderAction->InvestUnitID,
+                pInputOrderAction->MacAddress, pInputOrderAction->IPAddress, pRspInfo->ErrorID, pRspInfo->ErrorMsg);
         std::string OrderRef = pInputOrderAction->OrderRef;
         auto it = m_OrderStatusMap.find(OrderRef);
         if(it != m_OrderStatusMap.end())
@@ -1004,7 +1001,7 @@ void CTPTradeGateWay::OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderActi
                 strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
                 strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
                 while(!m_ReportMessageQueue.Push(message));
-                m_Logger->Log->warn(errorString);
+                FMTLOG(fmtlog::WRN, errorString);
             }
 
             PrintOrderStatus(OrderStatus, "CTPTrader::OnErrRtnOrderAction ");
@@ -1027,18 +1024,17 @@ void CTPTradeGateWay::OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderActi
             strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
             while(!m_ReportMessageQueue.Push(message));
-            m_Logger->Log->warn(errorString);
+            FMTLOG(fmtlog::WRN, errorString);
         }
-        m_Logger->Log->info("CTPTrader:OnErrRtnOrderAction, BrokerID:{}, Account:{} InstrumentID:{}\n"
-                                "\t\t\t\t\t\tOrderActionRef:{} OrderRef:{} RequestID:{} FrontID:{} SessionID:{} ExchangeID:{}\n"
-                                "\t\t\t\t\t\tOrderSysID:{} ActionFlag:{} LimitPrice:{} VolumeChange:{} UserID:{}\n"
-                                "\t\t\t\t\t\tInvestUnitID:{} MacAddress:{} IPAddress:{}",
-                                pOrderAction->BrokerID, pOrderAction->InvestorID,pOrderAction->InstrumentID,
-                                pOrderAction->OrderActionRef, pOrderAction->OrderRef, pOrderAction->RequestID,
-                                pOrderAction->FrontID, pOrderAction->SessionID, pOrderAction->ExchangeID,
-                                pOrderAction->OrderSysID, pOrderAction->ActionFlag, pOrderAction->LimitPrice,
-                                pOrderAction->VolumeChange, pOrderAction->UserID, pOrderAction->InvestUnitID,
-                                pOrderAction->MacAddress, pOrderAction->IPAddress);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnErrRtnOrderAction, BrokerID:{}, Account:{} InstrumentID:{} OrderActionRef:{} OrderRef:{} "
+                            "RequestID:{} FrontID:{} SessionID:{} ExchangeID:{} OrderSysID:{} ActionFlag:{} LimitPrice:{} VolumeChange:{} "
+                            "UserID:{} InvestUnitID:{} MacAddress:{} IPAddress:{}",
+                pOrderAction->BrokerID, pOrderAction->InvestorID,pOrderAction->InstrumentID,
+                pOrderAction->OrderActionRef, pOrderAction->OrderRef, pOrderAction->RequestID,
+                pOrderAction->FrontID, pOrderAction->SessionID, pOrderAction->ExchangeID,
+                pOrderAction->OrderSysID, pOrderAction->ActionFlag, pOrderAction->LimitPrice,
+                pOrderAction->VolumeChange, pOrderAction->UserID, pOrderAction->InvestUnitID,
+                pOrderAction->MacAddress, pOrderAction->IPAddress);
     }
 }
 
@@ -1049,9 +1045,8 @@ void CTPTradeGateWay::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestI
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                         sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->info("CTPTrader:OnRspError, BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
-                                m_XTraderConfig.BrokerID.c_str(), m_XTraderConfig.Account.c_str(),
-                                pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspError, BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
+                m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
     }
 }
 
@@ -1201,7 +1196,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
             char errorString[512] = {0};
             sprintf(errorString, "CTPTrader:OnRtnOrder, BrokerID:%s, Account:%s Ticker:%s Order OrderRef:%s OrderSysID:%s Cancel Rejected",
                     pOrder->BrokerID, pOrder->InvestorID, pOrder->InstrumentID, pOrder->OrderRef, pOrder->OrderSysID);
-            m_Logger->Log->warn(errorString);
+            FMTLOG(fmtlog::WRN, errorString);
             Message::PackMessage message;
             memset(&message, 0, sizeof(message));
             message.MessageType = Message::EMessageType::EEventLog;
@@ -1258,7 +1253,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
         char errorString[512] = {0};
         sprintf(errorString, "CTPTrader:OnRtnOrder, BrokerID:%s, Account:%s Ticker:%s not found Order, OrderRef:%s OrderSysID:%s",
                 pOrder->BrokerID, pOrder->InvestorID, pOrder->InstrumentID, pOrder->OrderRef, pOrder->OrderSysID);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -1273,35 +1268,31 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
-    m_Logger->Log->info("CTPTrader:OnRtnOrder, BrokerID:{}, Account:{} InstrumentID:{}\n"
-                              "\t\t\t\t\t\tOrderRef:{} UserID:{} OrderPriceType:{} Direction:{} CombOffsetFlag:{}\n"
-                              "\t\t\t\t\t\tCombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} VolumeCondition:{}\n"
-                              "\t\t\t\t\t\tMinVolume:{} ContingentCondition:{} StopPrice:{} ForceCloseReason:{}\n"
-                              "\t\t\t\t\t\tIsAutoSuspend:{} BusinessUnit:{} RequestID:{} OrderLocalID:{} ExchangeID:{}\n"
-                              "\t\t\t\t\t\tParticipantID:{} ClientID:{} TraderID:{} InstallID:{} OrderSubmitStatus:{}\n"
-                              "\t\t\t\t\t\tNotifySequence:{} SettlementID:{} OrderSysID:{} OrderSource:{} OrderStatus:{}\n"
-                              "\t\t\t\t\t\tOrderType:{} VolumeTraded:{} VolumeTotal:{} InsertDate:{} InsertTime:{} ActiveTime:{}\n"
-                              "\t\t\t\t\t\tSuspendTime:{} UpdateTime:{} CancelTime:{} ActiveTraderID:{} ClearingPartID:{}\n"
-                              "\t\t\t\t\t\tSequenceNo:{} FrontID:{} SessionID:{} UserProductInfo:{} StatusMsg:{} UserForceClose:{}\n"
-                              "\t\t\t\t\t\tActiveUserID:{} BrokerOrderSeq:{} RelativeOrderSysID:{} ZCETotalTradedVolume:{}\n"
-                              "\t\t\t\t\t\tIsSwapOrder:{} BranchID:{} InvestUnitID:{} AccountID:{} MacAddress:{}\n"
-                              "\t\t\t\t\t\tExchangeInstID:{} IPAddress:{}",
-                              pOrder->BrokerID, pOrder->InvestorID,pOrder->InstrumentID,pOrder->OrderRef, pOrder->UserID,
-                              pOrder->OrderPriceType, pOrder->Direction, pOrder->CombOffsetFlag,
-                              pOrder->CombHedgeFlag, pOrder->LimitPrice, pOrder->VolumeTotalOriginal,
-                              pOrder->TimeCondition, pOrder->VolumeCondition, pOrder->MinVolume,
-                              pOrder->ContingentCondition, pOrder->StopPrice, pOrder->ForceCloseReason,
-                              pOrder->IsAutoSuspend, pOrder->BusinessUnit,  pOrder->RequestID, pOrder->OrderLocalID,
-                              pOrder->ExchangeID, pOrder->ParticipantID, pOrder->ClientID, pOrder->TraderID,
-                              pOrder->InstallID, pOrder->OrderSubmitStatus, pOrder->NotifySequence, pOrder->SettlementID,
-                              pOrder->OrderSysID, pOrder->OrderSource, pOrder->OrderStatus, pOrder->OrderType,
-                              pOrder->VolumeTraded, pOrder->VolumeTotal, pOrder->InsertDate, pOrder->InsertTime,
-                              pOrder->ActiveTime, pOrder->SuspendTime, pOrder->UpdateTime, pOrder->CancelTime,
-                              pOrder->ActiveTraderID, pOrder->ClearingPartID, pOrder->SequenceNo, pOrder->FrontID,
-                              pOrder->SessionID, pOrder->UserProductInfo, errorBuffer, pOrder->UserForceClose,
-                              pOrder->ActiveUserID, pOrder->BrokerOrderSeq, pOrder->RelativeOrderSysID, pOrder->ZCETotalTradedVolume,
-                              pOrder->IsSwapOrder, pOrder->BranchID, pOrder->InvestUnitID, pOrder->AccountID, pOrder->MacAddress,
-                              pOrder->ExchangeInstID, pOrder->IPAddress);
+    FMTLOG(fmtlog::INF, "CTPTrader:OnRtnOrder, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} UserID:{} OrderPriceType:{} Direction:{} "
+                        "CombOffsetFlag:{} CombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} VolumeCondition:{} "
+                        "MinVolume:{} ContingentCondition:{} StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} BusinessUnit:{} "
+                        "RequestID:{} OrderLocalID:{} ExchangeID:{} ParticipantID:{} ClientID:{} TraderID:{} InstallID:{} "
+                        "OrderSubmitStatus:{} NotifySequence:{} SettlementID:{} OrderSysID:{} OrderSource:{} OrderStatus:{} "
+                        "OrderType:{} VolumeTraded:{} VolumeTotal:{} InsertDate:{} InsertTime:{} ActiveTime:{} SuspendTime:{} "
+                        "UpdateTime:{} CancelTime:{} ActiveTraderID:{} ClearingPartID:{} SequenceNo:{} FrontID:{} SessionID:{} "
+                        "UserProductInfo:{} StatusMsg:{} UserForceClose:{} ActiveUserID:{} BrokerOrderSeq:{} RelativeOrderSysID:{} "
+                        "ZCETotalTradedVolume:{} IsSwapOrder:{} BranchID:{} InvestUnitID:{} AccountID:{} MacAddress:{} ExchangeInstID:{} IPAddress:{}",
+            pOrder->BrokerID, pOrder->InvestorID,pOrder->InstrumentID,pOrder->OrderRef, pOrder->UserID,
+            pOrder->OrderPriceType, pOrder->Direction, pOrder->CombOffsetFlag,
+            pOrder->CombHedgeFlag, pOrder->LimitPrice, pOrder->VolumeTotalOriginal,
+            pOrder->TimeCondition, pOrder->VolumeCondition, pOrder->MinVolume,
+            pOrder->ContingentCondition, pOrder->StopPrice, pOrder->ForceCloseReason,
+            pOrder->IsAutoSuspend, pOrder->BusinessUnit,  pOrder->RequestID, pOrder->OrderLocalID,
+            pOrder->ExchangeID, pOrder->ParticipantID, pOrder->ClientID, pOrder->TraderID,
+            pOrder->InstallID, pOrder->OrderSubmitStatus, pOrder->NotifySequence, pOrder->SettlementID,
+            pOrder->OrderSysID, pOrder->OrderSource, pOrder->OrderStatus, pOrder->OrderType,
+            pOrder->VolumeTraded, pOrder->VolumeTotal, pOrder->InsertDate, pOrder->InsertTime,
+            pOrder->ActiveTime, pOrder->SuspendTime, pOrder->UpdateTime, pOrder->CancelTime,
+            pOrder->ActiveTraderID, pOrder->ClearingPartID, pOrder->SequenceNo, pOrder->FrontID,
+            pOrder->SessionID, pOrder->UserProductInfo, errorBuffer, pOrder->UserForceClose,
+            pOrder->ActiveUserID, pOrder->BrokerOrderSeq, pOrder->RelativeOrderSysID, pOrder->ZCETotalTradedVolume,
+            pOrder->IsSwapOrder, pOrder->BranchID, pOrder->InvestUnitID, pOrder->AccountID, pOrder->MacAddress,
+            pOrder->ExchangeInstID, pOrder->IPAddress);
 }
 
 void CTPTradeGateWay::OnRtnTrade(CThostFtdcTradeField *pTrade)
@@ -1382,7 +1373,7 @@ void CTPTradeGateWay::OnRtnTrade(CThostFtdcTradeField *pTrade)
         char errorString[512] = {0};
         sprintf(errorString, "CTPTrader:OnRtnTrade, BrokerID:%s, Account:%s Ticker:%s not found Order, OrderRef:%s OrderSysID:%s",
                 pTrade->BrokerID, pTrade->InvestorID, pTrade->InstrumentID, pTrade->OrderRef, pTrade->OrderSysID);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -1397,52 +1388,43 @@ void CTPTradeGateWay::OnRtnTrade(CThostFtdcTradeField *pTrade)
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
-    m_Logger->Log->info("CTPTrader:OnRtnTrade, BrokerID:{}, Account:{} InstrumentID:{}\n"
-                              "\t\t\t\t\t\tOrderRef:{} UserID:{} ExchangeID:{} TradeID:{} Direction:{}\n"
-                              "\t\t\t\t\t\tOrderSysID:{} ParticipantID:{} ClientID:{} TradingRole:{} OffsetFlag:{}\n"
-                              "\t\t\t\t\t\tHedgeFlag:{} Price:{} Volume:{} TradeDate:{}\n"
-                              "\t\t\t\t\t\tTradeTime:{} TradeType:{} PriceSource:{} TraderID:{} OrderLocalID:{}\n"
-                              "\t\t\t\t\t\tClearingPartID:{} BusinessUnit:{} SequenceNo:{} SettlementID:{} BrokerOrderSeq:{}\n"
-                              "\t\t\t\t\t\tTradeSource:{} InvestUnitID:{} ExchangeInstID:{}",
-                              pTrade->BrokerID, pTrade->InvestorID, pTrade->InstrumentID,pTrade->OrderRef, pTrade->UserID,
-                              pTrade->ExchangeID, pTrade->TradeID, pTrade->Direction,
-                              pTrade->OrderSysID, pTrade->ParticipantID, pTrade->ClientID,
-                              pTrade->TradingRole, pTrade->OffsetFlag, pTrade->HedgeFlag,
-                              pTrade->Price, pTrade->Volume, pTrade->TradeDate,
-                              pTrade->TradeTime, pTrade->TradeType,  pTrade->PriceSource, pTrade->TraderID,
-                              pTrade->OrderLocalID, pTrade->ClearingPartID, pTrade->BusinessUnit, pTrade->SequenceNo,
-                              pTrade->SettlementID, pTrade->BrokerOrderSeq, pTrade->TradeSource, pTrade->InvestUnitID,
-                              pTrade->ExchangeInstID);
+    FMTLOG(fmtlog::INF, "CTPTrader:OnRtnTrade, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} UserID:{} ExchangeID:{} TradeID:{} "
+                        "Direction:{} OrderSysID:{} ParticipantID:{} ClientID:{} TradingRole:{} OffsetFlag:{} HedgeFlag:{} Price:{} "
+                        "Volume:{} TradeDate:{} TradeTime:{} TradeType:{} PriceSource:{} TraderID:{} OrderLocalID:{} ClearingPartID:{} "
+                        "BusinessUnit:{} SequenceNo:{} SettlementID:{} BrokerOrderSeq:{} TradeSource:{} InvestUnitID:{} ExchangeInstID:{}",
+            pTrade->BrokerID, pTrade->InvestorID, pTrade->InstrumentID,pTrade->OrderRef, pTrade->UserID,
+            pTrade->ExchangeID, pTrade->TradeID, pTrade->Direction, pTrade->OrderSysID, pTrade->ParticipantID, 
+            pTrade->ClientID, pTrade->TradingRole, pTrade->OffsetFlag, pTrade->HedgeFlag, pTrade->Price, 
+            pTrade->Volume, pTrade->TradeDate, pTrade->TradeTime, pTrade->TradeType,  pTrade->PriceSource, 
+            pTrade->TraderID, pTrade->OrderLocalID, pTrade->ClearingPartID, pTrade->BusinessUnit, pTrade->SequenceNo,
+            pTrade->SettlementID, pTrade->BrokerOrderSeq, pTrade->TradeSource, pTrade->InvestUnitID, pTrade->ExchangeInstID);
 }
 
 void CTPTradeGateWay::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTradingAccount, CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast)
 {
     if(!IsRspError(pRspInfo) && pTradingAccount != NULL)
     {
-        m_Logger->Log->info("CTPTrader:OnRspQryTradingAccount successed, BrokerID:{} AccountID:{} PreMortgage:{}\n"
-                                  "\t\t\t\t\t\tPreCredit:{} PreDeposit:{} PreBalance:{} PreMargin:{} InterestBase:{}\n"
-                                  "\t\t\t\t\t\tInterest:{} Deposit:{} Withdraw:{} FrozenMargin:{} FrozenCash:{} FrozenCommission:{}\n"
-                                  "\t\t\t\t\t\tCurrMargin:{} CashIn:{} Commission:{} CloseProfit:{} PositionProfit:{}\n"
-                                  "\t\t\t\t\t\tBalance:{} Available:{} WithdrawQuota:{} SettlementID:{} Credit:{} Mortgage:{}\n"
-                                  "\t\t\t\t\t\tExchangeMargin:{} DeliveryMargin:{} ExchangeDeliveryMargin:{} ReserveBalance:{}\n"
-                                  "\t\t\t\t\t\tCurrencyID:{} PreFundMortgageIn:{} PreFundMortgageOut:{} FundMortgageIn:{}\n"
-                                  "\t\t\t\t\t\tFundMortgageOut:{} FundMortgageAvailable:{} MortgageableFund:{} SpecProductMargin:{}\n"
-                                  "\t\t\t\t\t\tSpecProductFrozenMargin:{} SpecProductCommission:{} SpecProductFrozenCommission:{}\n"
-                                  "\t\t\t\t\t\tSpecProductPositionProfit:{} SpecProductCloseProfit:{} SpecProductPositionProfitByAlg:{}\n"
-                                  "\t\t\t\t\t\tSpecProductExchangeMargin:{} BizType:{} FrozenSwap:{} RemainSwap:{} nRequestID:{} bIsLast:{}",
-                                  pTradingAccount->BrokerID, pTradingAccount->AccountID, pTradingAccount->PreMortgage, pTradingAccount->PreCredit,
-                                  pTradingAccount->PreDeposit, pTradingAccount->PreBalance, pTradingAccount->PreMargin, pTradingAccount->InterestBase,
-                                  pTradingAccount->Interest, pTradingAccount->Deposit, pTradingAccount->Withdraw, pTradingAccount->FrozenMargin,
-                                  pTradingAccount->FrozenCash, pTradingAccount->FrozenCommission, pTradingAccount->CurrMargin, pTradingAccount->CashIn,
-                                  pTradingAccount->Commission, pTradingAccount->CloseProfit, pTradingAccount->PositionProfit, pTradingAccount->Balance,
-                                  pTradingAccount->Available, pTradingAccount->WithdrawQuota, pTradingAccount->SettlementID, pTradingAccount->Credit,
-                                  pTradingAccount->Mortgage, pTradingAccount->ExchangeMargin, pTradingAccount->DeliveryMargin, pTradingAccount->ExchangeDeliveryMargin,
-                                  pTradingAccount->ReserveBalance, pTradingAccount->CurrencyID, pTradingAccount->PreFundMortgageIn, pTradingAccount->PreFundMortgageOut,
-                                  pTradingAccount->FundMortgageIn, pTradingAccount->FundMortgageOut, pTradingAccount->FundMortgageAvailable, pTradingAccount->MortgageableFund,
-                                  pTradingAccount->SpecProductMargin, pTradingAccount->SpecProductFrozenMargin, pTradingAccount->SpecProductCommission, pTradingAccount->SpecProductFrozenCommission,
-                                  pTradingAccount->SpecProductPositionProfit, pTradingAccount->SpecProductCloseProfit, pTradingAccount->SpecProductPositionProfitByAlg,
-                                  pTradingAccount->SpecProductExchangeMargin, pTradingAccount->BizType, pTradingAccount->FrozenSwap, pTradingAccount->RemainSwap,
-                                  nRequestID, bIsLast);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryTradingAccount successed, BrokerID:{} AccountID:{} PreMortgage:{} PreCredit:{} PreDeposit:{} "
+                            "PreBalance:{} PreMargin:{} InterestBase:{} Interest:{} Deposit:{} Withdraw:{} FrozenMargin:{} FrozenCash:{} "
+                            "FrozenCommission:{} CurrMargin:{} CashIn:{} Commission:{} CloseProfit:{} PositionProfit:{} Balance:{} Available:{} "
+                            "WithdrawQuota:{} SettlementID:{} Credit:{} Mortgage:{} ExchangeMargin:{} DeliveryMargin:{} ExchangeDeliveryMargin:{} "
+                            "ReserveBalance:{} CurrencyID:{} PreFundMortgageIn:{} PreFundMortgageOut:{} FundMortgageIn:{} FundMortgageOut:{} "
+                            "FundMortgageAvailable:{} MortgageableFund:{} SpecProductMargin:{} SpecProductFrozenMargin:{} SpecProductCommission:{} "
+                            "SpecProductFrozenCommission:{} SpecProductPositionProfit:{} SpecProductCloseProfit:{} SpecProductPositionProfitByAlg:{} "
+                            "SpecProductExchangeMargin:{} BizType:{} FrozenSwap:{} RemainSwap:{} nRequestID:{} bIsLast:{}",
+                pTradingAccount->BrokerID, pTradingAccount->AccountID, pTradingAccount->PreMortgage, pTradingAccount->PreCredit,
+                pTradingAccount->PreDeposit, pTradingAccount->PreBalance, pTradingAccount->PreMargin, pTradingAccount->InterestBase,
+                pTradingAccount->Interest, pTradingAccount->Deposit, pTradingAccount->Withdraw, pTradingAccount->FrozenMargin,
+                pTradingAccount->FrozenCash, pTradingAccount->FrozenCommission, pTradingAccount->CurrMargin, pTradingAccount->CashIn,
+                pTradingAccount->Commission, pTradingAccount->CloseProfit, pTradingAccount->PositionProfit, pTradingAccount->Balance,
+                pTradingAccount->Available, pTradingAccount->WithdrawQuota, pTradingAccount->SettlementID, pTradingAccount->Credit,
+                pTradingAccount->Mortgage, pTradingAccount->ExchangeMargin, pTradingAccount->DeliveryMargin, pTradingAccount->ExchangeDeliveryMargin,
+                pTradingAccount->ReserveBalance, pTradingAccount->CurrencyID, pTradingAccount->PreFundMortgageIn, pTradingAccount->PreFundMortgageOut,
+                pTradingAccount->FundMortgageIn, pTradingAccount->FundMortgageOut, pTradingAccount->FundMortgageAvailable, pTradingAccount->MortgageableFund,
+                pTradingAccount->SpecProductMargin, pTradingAccount->SpecProductFrozenMargin, pTradingAccount->SpecProductCommission, pTradingAccount->SpecProductFrozenCommission,
+                pTradingAccount->SpecProductPositionProfit, pTradingAccount->SpecProductCloseProfit, pTradingAccount->SpecProductPositionProfitByAlg,
+                pTradingAccount->SpecProductExchangeMargin, pTradingAccount->BizType, pTradingAccount->FrozenSwap, pTradingAccount->RemainSwap,
+                nRequestID, bIsLast);
         std::string Account = pTradingAccount->AccountID;
         Message::TAccountFund& AccountFund = m_AccountFundMap[Account];
         AccountFund.BusinessType = m_XTraderConfig.BusinessType;
@@ -1473,9 +1455,8 @@ void CTPTradeGateWay::OnRspQryTradingAccount(CThostFtdcTradingAccountField *pTra
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                        sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->warn("CTPTrader:OnRspQryTradingAccount failed, Broker:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
-                                  m_XTraderConfig.BrokerID.c_str(), m_XTraderConfig.Account.c_str(),
-                                  pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::WRN, "CTPTrader:OnRspQryTradingAccount failed, Broker:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
+                m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
     }
 }
 
@@ -1483,34 +1464,31 @@ void CTPTradeGateWay::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *
 {
     if(!IsRspError(pRspInfo) && pInvestorPosition != NULL)
     {
-        m_Logger->Log->info("CTPTrader:OnRspQryInvestorPosition BrokerID:{} Account:{} PosiDirection:{} HedgeFlag:{}\n"
-                                  "\t\t\t\t\t\tPositionDate:{} YdPosition:{} Position:{} LongFrozen:{} ShortFrozen:{}\n"
-                                  "\t\t\t\t\t\tLongFrozenAmount:{} ShortFrozenAmount:{} OpenVolume:{} CloseVolume:{}\n"
-                                  "\t\t\t\t\t\tOpenAmount:{} CloseAmount:{} PositionCost:{} PreMargin:{} UseMargin:{}\n"
-                                  "\t\t\t\t\t\tFrozenMargin:{} FrozenCash:{} FrozenCommission:{} CashIn:{} Commission:{}\n"
-                                  "\t\t\t\t\t\tCloseProfit:{} PositionProfit:{} PreSettlementPrice:{} SettlementPrice:{}\n"
-                                  "\t\t\t\t\t\tSettlementID:{} OpenCost:{} ExchangeMargin:{} CombPosition:{} CombLongFrozen:{}\n"
-                                  "\t\t\t\t\t\tCombShortFrozen:{} CloseProfitByDate:{} CloseProfitByTrade:{} TodayPosition:{}\n"
-                                  "\t\t\t\t\t\tMarginRateByMoney:{} MarginRateByVolume:{} StrikeFrozen:{} StrikeFrozenAmount:{}\n"
-                                  "\t\t\t\t\t\tAbandonFrozen:{} ExchangeID:{} YdStrikeFrozen:{} InvestUnitID:{}\n"
-                                  "\t\t\t\t\t\tPositionCostOffset:{} TasPosition:{} TasPositionCost:{} InstrumentID:{} nRequestID:{} bIsLast:{}",
-                                  pInvestorPosition->BrokerID, pInvestorPosition->InvestorID, pInvestorPosition->PosiDirection,
-                                  pInvestorPosition->HedgeFlag, pInvestorPosition->PositionDate, pInvestorPosition->YdPosition,
-                                  pInvestorPosition->Position, pInvestorPosition->LongFrozen, pInvestorPosition->ShortFrozen,
-                                  pInvestorPosition->LongFrozenAmount, pInvestorPosition->ShortFrozenAmount, pInvestorPosition->OpenVolume,
-                                  pInvestorPosition->CloseVolume, pInvestorPosition->OpenAmount, pInvestorPosition->CloseAmount,
-                                  pInvestorPosition->PositionCost, pInvestorPosition->PreMargin, pInvestorPosition->UseMargin,
-                                  pInvestorPosition->FrozenMargin, pInvestorPosition->FrozenCash, pInvestorPosition->FrozenCommission,
-                                  pInvestorPosition->CashIn, pInvestorPosition->Commission, pInvestorPosition->CloseProfit,
-                                  pInvestorPosition->PositionProfit, pInvestorPosition->PreSettlementPrice, pInvestorPosition->SettlementPrice,
-                                  pInvestorPosition->SettlementID, pInvestorPosition->OpenCost, pInvestorPosition->ExchangeMargin,
-                                  pInvestorPosition->CombPosition, pInvestorPosition->CombLongFrozen, pInvestorPosition->CombShortFrozen,
-                                  pInvestorPosition->CloseProfitByDate, pInvestorPosition->CloseProfitByTrade, pInvestorPosition->TodayPosition,
-                                  pInvestorPosition->MarginRateByMoney, pInvestorPosition->MarginRateByVolume, pInvestorPosition->StrikeFrozen,
-                                  pInvestorPosition->StrikeFrozenAmount, pInvestorPosition->AbandonFrozen, pInvestorPosition->ExchangeID,
-                                  pInvestorPosition->YdStrikeFrozen, pInvestorPosition->InvestUnitID, pInvestorPosition->PositionCostOffset,
-                                  pInvestorPosition->TasPosition, pInvestorPosition->TasPositionCost, pInvestorPosition->InstrumentID,
-                                  nRequestID, bIsLast);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryInvestorPosition BrokerID:{} Account:{} PosiDirection:{} HedgeFlag:{} PositionDate:{} YdPosition:{} "
+                            "Position:{} LongFrozen:{} ShortFrozen:{} LongFrozenAmount:{} ShortFrozenAmount:{} OpenVolume:{} CloseVolume:{} "
+                            "OpenAmount:{} CloseAmount:{} PositionCost:{} PreMargin:{} UseMargin:{} FrozenMargin:{} FrozenCash:{} FrozenCommission:{} "
+                            "CashIn:{} Commission:{} CloseProfit:{} PositionProfit:{} PreSettlementPrice:{} SettlementPrice:{} SettlementID:{} "
+                            "OpenCost:{} ExchangeMargin:{} CombPosition:{} CombLongFrozen:{} CombShortFrozen:{} CloseProfitByDate:{} "
+                            "CloseProfitByTrade:{} TodayPosition:{} MarginRateByMoney:{} MarginRateByVolume:{} StrikeFrozen:{} "
+                            "StrikeFrozenAmount:{} AbandonFrozen:{} ExchangeID:{} YdStrikeFrozen:{} InvestUnitID:{} PositionCostOffset:{} "
+                            "TasPosition:{} TasPositionCost:{} InstrumentID:{} nRequestID:{} bIsLast:{}",
+                pInvestorPosition->BrokerID, pInvestorPosition->InvestorID, pInvestorPosition->PosiDirection,
+                pInvestorPosition->HedgeFlag, pInvestorPosition->PositionDate, pInvestorPosition->YdPosition,
+                pInvestorPosition->Position, pInvestorPosition->LongFrozen, pInvestorPosition->ShortFrozen,
+                pInvestorPosition->LongFrozenAmount, pInvestorPosition->ShortFrozenAmount, pInvestorPosition->OpenVolume,
+                pInvestorPosition->CloseVolume, pInvestorPosition->OpenAmount, pInvestorPosition->CloseAmount,
+                pInvestorPosition->PositionCost, pInvestorPosition->PreMargin, pInvestorPosition->UseMargin,
+                pInvestorPosition->FrozenMargin, pInvestorPosition->FrozenCash, pInvestorPosition->FrozenCommission,
+                pInvestorPosition->CashIn, pInvestorPosition->Commission, pInvestorPosition->CloseProfit,
+                pInvestorPosition->PositionProfit, pInvestorPosition->PreSettlementPrice, pInvestorPosition->SettlementPrice,
+                pInvestorPosition->SettlementID, pInvestorPosition->OpenCost, pInvestorPosition->ExchangeMargin,
+                pInvestorPosition->CombPosition, pInvestorPosition->CombLongFrozen, pInvestorPosition->CombShortFrozen,
+                pInvestorPosition->CloseProfitByDate, pInvestorPosition->CloseProfitByTrade, pInvestorPosition->TodayPosition,
+                pInvestorPosition->MarginRateByMoney, pInvestorPosition->MarginRateByVolume, pInvestorPosition->StrikeFrozen,
+                pInvestorPosition->StrikeFrozenAmount, pInvestorPosition->AbandonFrozen, pInvestorPosition->ExchangeID,
+                pInvestorPosition->YdStrikeFrozen, pInvestorPosition->InvestUnitID, pInvestorPosition->PositionCostOffset,
+                pInvestorPosition->TasPosition, pInvestorPosition->TasPositionCost, pInvestorPosition->InstrumentID,
+                nRequestID, bIsLast);
         std::string Account = pInvestorPosition->InvestorID;
         std::string Ticker = pInvestorPosition->InstrumentID;
         std::string Key = Account + ":" + Ticker;
@@ -1597,9 +1575,8 @@ void CTPTradeGateWay::OnRspQryInvestorPosition(CThostFtdcInvestorPositionField *
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                        sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->warn("CTPTrader:OnRspQryInvestorPosition BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
-                                  m_XTraderConfig.BrokerID.c_str(), m_XTraderConfig.Account.c_str(),
-                                  pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::WRN, "CTPTrader:OnRspQryInvestorPosition BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
+                m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
     }
     if(bIsLast)
     {
@@ -1674,43 +1651,39 @@ void CTPTradeGateWay::OnRspQryOrder(CThostFtdcOrderField *pOrder, CThostFtdcRspI
             PrintOrderStatus(OrderStatus, "CTPTrader::OnRspQryOrder ");
             PrintAccountPosition(AccountPosition, "CTPTrader::OnRspQryOrder ");
         }
-        m_Logger->Log->info("CTPTrader:OnRspQryOrder, BrokerID:{}, Account:{} InstrumentID:{}\n"
-                                "\t\t\t\t\t\tOrderRef:{} UserID:{} OrderPriceType:{} Direction:{} CombOffsetFlag:{}\n"
-                                "\t\t\t\t\t\tCombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} VolumeCondition:{}\n"
-                                "\t\t\t\t\t\tMinVolume:{} ContingentCondition:{} StopPrice:{} ForceCloseReason:{}\n"
-                                "\t\t\t\t\t\tIsAutoSuspend:{} BusinessUnit:{} RequestID:{} OrderLocalID:{} ExchangeID:{}\n"
-                                "\t\t\t\t\t\tParticipantID:{} ClientID:{} TraderID:{} InstallID:{} OrderSubmitStatus:{}\n"
-                                "\t\t\t\t\t\tNotifySequence:{} SettlementID:{} OrderSysID:{} OrderSource:{} OrderStatus:{}\n"
-                                "\t\t\t\t\t\tOrderType:{} VolumeTraded:{} VolumeTotal:{} InsertDate:{} InsertTime:{} ActiveTime:{}\n"
-                                "\t\t\t\t\t\tSuspendTime:{} UpdateTime:{} CancelTime:{} ActiveTraderID:{} ClearingPartID:{}\n"
-                                "\t\t\t\t\t\tSequenceNo:{} FrontID:{} SessionID:{} UserProductInfo:{} StatusMsg:{} UserForceClose:{}\n"
-                                "\t\t\t\t\t\tActiveUserID:{} BrokerOrderSeq:{} RelativeOrderSysID:{} ZCETotalTradedVolume:{}\n"
-                                "\t\t\t\t\t\tIsSwapOrder:{} BranchID:{} InvestUnitID:{} AccountID:{} MacAddress:{}\n"
-                                "\t\t\t\t\t\tExchangeInstID:{} IPAddress:{} nRequestID:{} bIsLast:{}",
-                                pOrder->BrokerID, pOrder->InvestorID,pOrder->InstrumentID,pOrder->OrderRef, pOrder->UserID,
-                                pOrder->OrderPriceType, pOrder->Direction, pOrder->CombOffsetFlag,
-                                pOrder->CombHedgeFlag, pOrder->LimitPrice, pOrder->VolumeTotalOriginal,
-                                pOrder->TimeCondition, pOrder->VolumeCondition, pOrder->MinVolume,
-                                pOrder->ContingentCondition, pOrder->StopPrice, pOrder->ForceCloseReason,
-                                pOrder->IsAutoSuspend, pOrder->BusinessUnit,  pOrder->RequestID, pOrder->OrderLocalID,
-                                pOrder->ExchangeID, pOrder->ParticipantID, pOrder->ClientID, pOrder->TraderID,
-                                pOrder->InstallID, pOrder->OrderSubmitStatus, pOrder->NotifySequence, pOrder->SettlementID,
-                                pOrder->OrderSysID, pOrder->OrderSource, pOrder->OrderStatus, pOrder->OrderType,
-                                pOrder->VolumeTraded, pOrder->VolumeTotal, pOrder->InsertDate, pOrder->InsertTime,
-                                pOrder->ActiveTime, pOrder->SuspendTime, pOrder->UpdateTime, pOrder->CancelTime,
-                                pOrder->ActiveTraderID, pOrder->ClearingPartID, pOrder->SequenceNo, pOrder->FrontID,
-                                pOrder->SessionID, pOrder->UserProductInfo, errorBuffer, pOrder->UserForceClose,
-                                pOrder->ActiveUserID, pOrder->BrokerOrderSeq, pOrder->RelativeOrderSysID, pOrder->ZCETotalTradedVolume,
-                                pOrder->IsSwapOrder, pOrder->BranchID, pOrder->InvestUnitID, pOrder->AccountID, pOrder->MacAddress,
-                                pOrder->ExchangeInstID, pOrder->IPAddress, nRequestID, bIsLast);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryOrder, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} UserID:{} OrderPriceType:{} Direction:{} "
+                            "CombOffsetFlag:{} CombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} VolumeCondition:{} MinVolume:{} "
+                            "ContingentCondition:{} StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} BusinessUnit:{} RequestID:{} OrderLocalID:{} "
+                            "ExchangeID:{} ParticipantID:{} ClientID:{} TraderID:{} InstallID:{} OrderSubmitStatus:{} NotifySequence:{} SettlementID:{} "
+                            "OrderSysID:{} OrderSource:{} OrderStatus:{} OrderType:{} VolumeTraded:{} VolumeTotal:{} InsertDate:{} InsertTime:{} "
+                            "ActiveTime:{} SuspendTime:{} UpdateTime:{} CancelTime:{} ActiveTraderID:{} ClearingPartID:{} SequenceNo:{} "
+                            "FrontID:{} SessionID:{} UserProductInfo:{} StatusMsg:{} UserForceClose:{} ActiveUserID:{} BrokerOrderSeq:{} "
+                            "RelativeOrderSysID:{} ZCETotalTradedVolume:{} IsSwapOrder:{} BranchID:{} InvestUnitID:{} AccountID:{} "
+                            "MacAddress:{} ExchangeInstID:{} IPAddress:{} nRequestID:{} bIsLast:{}",
+                pOrder->BrokerID, pOrder->InvestorID,pOrder->InstrumentID,pOrder->OrderRef, pOrder->UserID,
+                pOrder->OrderPriceType, pOrder->Direction, pOrder->CombOffsetFlag,
+                pOrder->CombHedgeFlag, pOrder->LimitPrice, pOrder->VolumeTotalOriginal,
+                pOrder->TimeCondition, pOrder->VolumeCondition, pOrder->MinVolume,
+                pOrder->ContingentCondition, pOrder->StopPrice, pOrder->ForceCloseReason,
+                pOrder->IsAutoSuspend, pOrder->BusinessUnit,  pOrder->RequestID, pOrder->OrderLocalID,
+                pOrder->ExchangeID, pOrder->ParticipantID, pOrder->ClientID, pOrder->TraderID,
+                pOrder->InstallID, pOrder->OrderSubmitStatus, pOrder->NotifySequence, pOrder->SettlementID,
+                pOrder->OrderSysID, pOrder->OrderSource, pOrder->OrderStatus, pOrder->OrderType,
+                pOrder->VolumeTraded, pOrder->VolumeTotal, pOrder->InsertDate, pOrder->InsertTime,
+                pOrder->ActiveTime, pOrder->SuspendTime, pOrder->UpdateTime, pOrder->CancelTime,
+                pOrder->ActiveTraderID, pOrder->ClearingPartID, pOrder->SequenceNo, pOrder->FrontID,
+                pOrder->SessionID, pOrder->UserProductInfo, errorBuffer, pOrder->UserForceClose,
+                pOrder->ActiveUserID, pOrder->BrokerOrderSeq, pOrder->RelativeOrderSysID, pOrder->ZCETotalTradedVolume,
+                pOrder->IsSwapOrder, pOrder->BranchID, pOrder->InvestUnitID, pOrder->AccountID, pOrder->MacAddress,
+                pOrder->ExchangeInstID, pOrder->IPAddress, nRequestID, bIsLast);
     }
     else if(pRspInfo != NULL)
     {
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pOrder->StatusMsg, sizeof(pOrder->StatusMsg), errorBuffer,
                         sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->info("CTPTrader:OnRspQryOrder, Account:{}, ErrorID:{}, ErrorMessage:{}",
-                              m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryOrder, Account:{}, ErrorID:{}, ErrorMessage:{}",
+                m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
     }
 
     if(bIsLast)
@@ -1729,30 +1702,28 @@ void CTPTradeGateWay::OnRspQryTrade(CThostFtdcTradeField *pTrade, CThostFtdcRspI
 {
     if(!IsRspError(pRspInfo) && pTrade != NULL)
     {
-        m_Logger->Log->info("CTPTrader:OnRspQryTrade, BrokerID:{}, Account:{} InstrumentID:{}\n"
-                            "\t\t\t\t\t\tOrderRef:{} UserID:{} ExchangeID:{} TradeID:{} Direction:{}\n"
-                            "\t\t\t\t\t\tOrderSysID:{} ParticipantID:{} ClientID:{} TradingRole:{} OffsetFlag:{}\n"
-                            "\t\t\t\t\t\tHedgeFlag:{} Price:{} Volume:{} TradeDate:{}\n"
-                            "\t\t\t\t\t\tTradeTime:{} TradeType:{} PriceSource:{} TraderID:{} OrderLocalID:{}\n"
-                            "\t\t\t\t\t\tClearingPartID:{} BusinessUnit:{} SequenceNo:{} SettlementID:{} BrokerOrderSeq:{}\n"
-                            "\t\t\t\t\t\tTradeSource:{} InvestUnitID:{} ExchangeInstID:{}",
-                            pTrade->BrokerID, pTrade->InvestorID, pTrade->InstrumentID,pTrade->OrderRef, pTrade->UserID,
-                            pTrade->ExchangeID, pTrade->TradeID, pTrade->Direction,
-                            pTrade->OrderSysID, pTrade->ParticipantID, pTrade->ClientID,
-                            pTrade->TradingRole, pTrade->OffsetFlag, pTrade->HedgeFlag,
-                            pTrade->Price, pTrade->Volume, pTrade->TradeDate,
-                            pTrade->TradeTime, pTrade->TradeType,  pTrade->PriceSource, pTrade->TraderID,
-                            pTrade->OrderLocalID, pTrade->ClearingPartID, pTrade->BusinessUnit, pTrade->SequenceNo,
-                            pTrade->SettlementID, pTrade->BrokerOrderSeq, pTrade->TradeSource, pTrade->InvestUnitID,
-                            pTrade->ExchangeInstID);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryTrade, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} UserID:{} ExchangeID:{} "
+                            "TradeID:{} Direction:{} OrderSysID:{} ParticipantID:{} ClientID:{} TradingRole:{} OffsetFlag:{} HedgeFlag:{} "
+                            "Price:{} Volume:{} TradeDate:{} TradeTime:{} TradeType:{} PriceSource:{} TraderID:{} OrderLocalID:{} "
+                            "ClearingPartID:{} BusinessUnit:{} SequenceNo:{} SettlementID:{} BrokerOrderSeq:{} TradeSource:{} InvestUnitID:{} "
+                            "ExchangeInstID:{}",
+                pTrade->BrokerID, pTrade->InvestorID, pTrade->InstrumentID,pTrade->OrderRef, pTrade->UserID,
+                pTrade->ExchangeID, pTrade->TradeID, pTrade->Direction,
+                pTrade->OrderSysID, pTrade->ParticipantID, pTrade->ClientID,
+                pTrade->TradingRole, pTrade->OffsetFlag, pTrade->HedgeFlag,
+                pTrade->Price, pTrade->Volume, pTrade->TradeDate,
+                pTrade->TradeTime, pTrade->TradeType,  pTrade->PriceSource, pTrade->TraderID,
+                pTrade->OrderLocalID, pTrade->ClearingPartID, pTrade->BusinessUnit, pTrade->SequenceNo,
+                pTrade->SettlementID, pTrade->BrokerOrderSeq, pTrade->TradeSource, pTrade->InvestUnitID,
+                pTrade->ExchangeInstID);
     }
     else if(pRspInfo != NULL)
     {
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                         sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->info("CTPTrader:OnRspQryTrade, Account:{}, ErrorID:{}, ErrorMessage:{}",
-                              m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryTrade, Account:{}, ErrorID:{}, ErrorMessage:{}",
+                m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
     }
 }
 
@@ -1760,21 +1731,20 @@ void CTPTradeGateWay::OnRspQryInstrumentMarginRate(CThostFtdcInstrumentMarginRat
 {
     if(!IsRspError(pRspInfo) && pInstrumentMarginRate != NULL)
     {
-        m_Logger->Log->info("CTPTrader:OnRspQryInstrumentMarginRate, BrokerID:{}, Account:{} InstrumentID:{} HedgeFlag:{}\n"
-                            "\t\t\t\t\t\tLongMarginRatioByMoney:{} LongMarginRatioByVolume:{} ShortMarginRatioByMoney:{}\n"
-                            "\t\t\t\t\t\tShortMarginRatioByVolume:{} ExchangeID:{}",
-                            pInstrumentMarginRate->BrokerID, pInstrumentMarginRate->InvestorID, pInstrumentMarginRate->InstrumentID,
-                            pInstrumentMarginRate->HedgeFlag, pInstrumentMarginRate->LongMarginRatioByMoney,
-                            pInstrumentMarginRate->LongMarginRatioByVolume, pInstrumentMarginRate->ShortMarginRatioByMoney,
-                            pInstrumentMarginRate->ShortMarginRatioByVolume, pInstrumentMarginRate->ExchangeID);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryInstrumentMarginRate, BrokerID:{}, Account:{} InstrumentID:{} HedgeFlag:{} "
+                            "LongMarginRatioByMoney:{} LongMarginRatioByVolume:{} ShortMarginRatioByMoney:{} ShortMarginRatioByVolume:{} ExchangeID:{}",
+                pInstrumentMarginRate->BrokerID, pInstrumentMarginRate->InvestorID, pInstrumentMarginRate->InstrumentID,
+                pInstrumentMarginRate->HedgeFlag, pInstrumentMarginRate->LongMarginRatioByMoney,
+                pInstrumentMarginRate->LongMarginRatioByVolume, pInstrumentMarginRate->ShortMarginRatioByMoney,
+                pInstrumentMarginRate->ShortMarginRatioByVolume, pInstrumentMarginRate->ExchangeID);
     }
     else if(pRspInfo != NULL)
     {
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                         sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->info("CTPTrader:OnRspQryInstrumentMarginRate, Account:{}, ErrorID:{}, ErrorMessage:{}",
-                              m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryInstrumentMarginRate, Account:{}, ErrorID:{}, ErrorMessage:{}",
+                m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
     }
 }
 
@@ -1782,17 +1752,17 @@ void CTPTradeGateWay::OnRspQryBrokerTradingParams(CThostFtdcBrokerTradingParamsF
 {
     if(!IsRspError(pRspInfo) && pBrokerTradingParams != NULL)
     {
-        m_Logger->Log->info("CTPTrader:OnRspQryBrokerTradingParams, BrokerID:{}, Account:{} MarginPriceType:{} Algorithm:{} AvailIncludeCloseProfit:{}",
-                            pBrokerTradingParams->BrokerID, pBrokerTradingParams->InvestorID, pBrokerTradingParams->MarginPriceType,
-                            pBrokerTradingParams->Algorithm, pBrokerTradingParams->AvailIncludeCloseProfit);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryBrokerTradingParams, BrokerID:{}, Account:{} MarginPriceType:{} Algorithm:{} AvailIncludeCloseProfit:{}",
+                pBrokerTradingParams->BrokerID, pBrokerTradingParams->InvestorID, pBrokerTradingParams->MarginPriceType,
+                pBrokerTradingParams->Algorithm, pBrokerTradingParams->AvailIncludeCloseProfit);
     }
     else if(pRspInfo != NULL)
     {
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                         sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->info("CTPTrader:OnRspQryBrokerTradingParams, Account:{}, ErrorID:{}, ErrorMessage:{}",
-                              m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryBrokerTradingParams, Account:{}, ErrorID:{}, ErrorMessage:{}",
+                m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
     }
 }
 
@@ -1800,19 +1770,18 @@ void CTPTradeGateWay::OnRspQryInstrument(CThostFtdcInstrumentField *pInstrument,
 {
     if(!IsRspError(pRspInfo) && pInstrument != NULL)
     {
-        m_Logger->Log->info("CTPTrader:OnRspQryInstrument, ExchangeID:{} InstrumentID:{} VolumeMultiple:{}\n"
-                            "\t\t\t\t\t\tLongMarginRatio:{} ShortMarginRatio:{} MaxMarginSideAlgorithm:{} ProductID:{}",
-                            pInstrument->ExchangeID, pInstrument->InstrumentID, pInstrument->VolumeMultiple, 
-                            pInstrument->LongMarginRatio, pInstrument->ShortMarginRatio, pInstrument->MaxMarginSideAlgorithm,
-                            pInstrument->ProductID);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryInstrument, ExchangeID:{} InstrumentID:{} VolumeMultiple:{} LongMarginRatio:{} "
+                            "ShortMarginRatio:{} MaxMarginSideAlgorithm:{} ProductID:{}",
+                pInstrument->ExchangeID, pInstrument->InstrumentID, pInstrument->VolumeMultiple, pInstrument->LongMarginRatio, 
+                pInstrument->ShortMarginRatio, pInstrument->MaxMarginSideAlgorithm, pInstrument->ProductID);
     }
     else if(pRspInfo != NULL)
     {
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                         sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->info("CTPTrader:OnRspQryInstrument, Account:{}, ErrorID:{}, ErrorMessage:{}",
-                              m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryInstrument, Account:{}, ErrorID:{}, ErrorMessage:{}",
+                m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
     }
 }
 
@@ -1820,21 +1789,21 @@ void CTPTradeGateWay::OnRspQryInstrumentCommissionRate(CThostFtdcInstrumentCommi
 {
     if(!IsRspError(pRspInfo) && pInstrumentCommissionRate != NULL)
     {
-        m_Logger->Log->info("CTPTrader:OnRspQryInstrumentCommissionRate, ExchangeID:{} BrokerID:{}, Account:{} InstrumentID:{}\n"
-                            "\t\t\t\t\t\tOpenRatioByMoney:{} OpenRatioByVolume:{} CloseRatioByMoney:{} CloseRatioByVolume:{}\n"
-                            "\t\t\t\t\t\tCloseTodayRatioByMoney:{} CloseTodayRatioByVolume:{}",
-                            pInstrumentCommissionRate->ExchangeID, pInstrumentCommissionRate->BrokerID, pInstrumentCommissionRate->InvestorID, 
-                            pInstrumentCommissionRate->InstrumentID, pInstrumentCommissionRate->OpenRatioByMoney, pInstrumentCommissionRate->OpenRatioByVolume,
-                            pInstrumentCommissionRate->CloseRatioByMoney, pInstrumentCommissionRate->CloseRatioByVolume, 
-                            pInstrumentCommissionRate->CloseTodayRatioByMoney, pInstrumentCommissionRate->CloseTodayRatioByVolume);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryInstrumentCommissionRate, ExchangeID:{} BrokerID:{}, Account:{} InstrumentID:{} "
+                            "OpenRatioByMoney:{} OpenRatioByVolume:{} CloseRatioByMoney:{} CloseRatioByVolume:{} CloseTodayRatioByMoney:{} "
+                            "CloseTodayRatioByVolume:{}",
+                pInstrumentCommissionRate->ExchangeID, pInstrumentCommissionRate->BrokerID, pInstrumentCommissionRate->InvestorID, 
+                pInstrumentCommissionRate->InstrumentID, pInstrumentCommissionRate->OpenRatioByMoney, pInstrumentCommissionRate->OpenRatioByVolume,
+                pInstrumentCommissionRate->CloseRatioByMoney, pInstrumentCommissionRate->CloseRatioByVolume, 
+                pInstrumentCommissionRate->CloseTodayRatioByMoney, pInstrumentCommissionRate->CloseTodayRatioByVolume);
     }
     else if(pRspInfo != NULL)
     {
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                         sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->info("CTPTrader:OnRspQryInstrumentCommissionRate, Account:{}, ErrorID:{}, ErrorMessage:{}",
-                              m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryInstrumentCommissionRate, Account:{}, ErrorID:{}, ErrorMessage:{}",
+                m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
     }
 }
 
@@ -1842,18 +1811,18 @@ void CTPTradeGateWay::OnRspQryInstrumentOrderCommRate(CThostFtdcInstrumentOrderC
 {
     if(!IsRspError(pRspInfo) && pInstrumentOrderCommRate != NULL)
     {
-        m_Logger->Log->info("CTPTrader:OnRspQryInstrumentOrderCommRate, ExchangeID:{} BrokerID:{}, Account:{} InstrumentID:{}\n"
-                            "\t\t\t\t\t\tHedgeFlag:{} OrderCommByVolume:{} OrderActionCommByVolume:{}",
-                            pInstrumentOrderCommRate->ExchangeID, pInstrumentOrderCommRate->BrokerID, pInstrumentOrderCommRate->InvestorID, 
-                            pInstrumentOrderCommRate->InstrumentID, pInstrumentOrderCommRate->HedgeFlag, pInstrumentOrderCommRate->OrderCommByVolume,
-                            pInstrumentOrderCommRate->OrderActionCommByVolume);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryInstrumentOrderCommRate, ExchangeID:{} BrokerID:{}, Account:{} InstrumentID:{} HedgeFlag:{} "
+                            "OrderCommByVolume:{} OrderActionCommByVolume:{}",
+                pInstrumentOrderCommRate->ExchangeID, pInstrumentOrderCommRate->BrokerID, pInstrumentOrderCommRate->InvestorID, 
+                pInstrumentOrderCommRate->InstrumentID, pInstrumentOrderCommRate->HedgeFlag, pInstrumentOrderCommRate->OrderCommByVolume,
+                pInstrumentOrderCommRate->OrderActionCommByVolume);
     }
     else if(pRspInfo != NULL)
     {
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                         sizeof(errorBuffer), "gb2312", "utf-8");
-        m_Logger->Log->info("CTPTrader:OnRspQryInstrumentOrderCommRate, Account:{}, ErrorID:{}, ErrorMessage:{}",
-                              m_XTraderConfig.Account.c_str(), pRspInfo->ErrorID, errorBuffer);
+        FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryInstrumentOrderCommRate, Account:{}, ErrorID:{}, ErrorMessage:{}",
+                m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
     }
 }

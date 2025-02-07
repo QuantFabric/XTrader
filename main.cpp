@@ -60,10 +60,8 @@ int main(int argc, char *argv[])
     {
         cmd += (std::string(argv[i]) + " ");
     }
-    Utils::gLogger = Utils::Singleton<Utils::Logger>::GetInstance();
-    Utils::gLogger->setLogPath(app_log_path, "XTrader_" + Account);
-    Utils::gLogger->Init();
-    Utils::gLogger->setDebugLevel(debug);
+    FMTLog::Logger::Init(app_log_path, "XTrader_" + Account);
+    FMTLog::Logger::SetDebugLevel(debug);
     TraderEngine engine;
     engine.LoadConfig(configPath.c_str());
     engine.SetCommand(cmd);

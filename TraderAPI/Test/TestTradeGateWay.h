@@ -2,6 +2,7 @@
 #define TESTTRADEGATEWAY_H
 
 #include "TradeGateWay.hpp"
+#include "FMTLogger.hpp"
 
 class TestTradeGateWay : public TradeGateWay
 {

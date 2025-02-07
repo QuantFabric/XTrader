@@ -10,7 +10,7 @@
 #include "FutureTradeGateWay.hpp"
 #include "Util.hpp"
 #include "YMLConfig.hpp"
-#include "Logger.h"
+#include "FMTLogger.hpp"
 #include "PackMessage.hpp"
 
 #define APP_NAME "REMTrader"

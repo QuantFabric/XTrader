@@ -4,7 +4,7 @@ PROJECT(YDTrader)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.2.0)
+SET(AppVersion 0.3.0)
 SET(APIVersion YD1.108.36)
 SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 
@@ -13,6 +13,10 @@ SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 #SET(CMAKE_BUILD_TYPE "debug")
 SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
 set(CMAKE_CXX_STANDARD 17)
+
+add_definitions(-DFMT_HEADER_ONLY)
+add_definitions(-DFMTLOG_HEADER_ONLY)
+add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 
 macro(Get_CommitID SO_COMMITID)
     find_package(Git QUIET)     # 查找Git，QUIET静默方式不报错
@@ -56,9 +60,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../Utils/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../TraderAPI/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
-# SPDLog
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/SPDLog/1.8.5/include/)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/SPDLog/1.8.5/lib)
+# FMTLogger
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/lib)
 # YAML-CPP
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/YAML-CPP/0.6.3/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/YAML-CPP/0.6.3/lib)
@@ -69,8 +73,7 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/YD/1.108.36/linux64/)
 # Parallel HashMap
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/parallel_hashmap/)
 
-set(SOURCES YDTradeGateWay.cpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../../Utils/Logger.cpp)
+set(SOURCES YDTradeGateWay.cpp)
 add_library(${TradeGateWay_Version} SHARED ${SOURCES})
 
-target_link_libraries(${TradeGateWay_Version} spdlog yaml-cpp yd_1.108.36)   
+target_link_libraries(${TradeGateWay_Version} yaml-cpp yd_1.108.36)   

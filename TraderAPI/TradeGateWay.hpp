@@ -4,7 +4,7 @@
 #include <string>
 #include "LockFreeQueue.hpp"
 #include "PackMessage.hpp"
-#include "Logger.h"
+#include "FMTLogger.hpp"
 #include "YMLConfig.hpp"
 #include "phmap.h"
 #include <shared_mutex>
@@ -35,15 +35,6 @@ public:
     virtual void UpdatePosition(const Message::TOrderStatus& OrderStatus, Message::TAccountPosition& Position) = 0;
     virtual void UpdateFund(const Message::TOrderStatus& OrderStatus, Message::TAccountFund& Fund) = 0;
 public:
-    void SetLogger(Utils::Logger* logger)
-    {
-        if(NULL == logger)
-        {
-            printf("Logger is NULL\n");
-            exit(-1);
-        }
-        m_Logger = logger;
-    }
     void SetTraderConfig(const Utils::XTraderConfig& config)
     {
         m_XTraderConfig = config;
@@ -52,7 +43,7 @@ public:
         bool ok = Utils::LoadTickerList(m_XTraderConfig.TickerListPath.c_str(), m_TickerPropertyList, errorString);
         if(ok)
         {
-            m_Logger->Log->info("TradeGateWay Account:{} LoadTickerList {} successed", m_XTraderConfig.Account, m_XTraderConfig.TickerListPath);
+            FMTLOG(fmtlog::INF, "TradeGateWay Account:{} LoadTickerList {} successed", m_XTraderConfig.Account, m_XTraderConfig.TickerListPath);
             for (auto it = m_TickerPropertyList.begin(); it != m_TickerPropertyList.end(); it++)
             {
                 m_TickerExchangeMap[it->Ticker] = it->ExchangeID;
@@ -60,7 +51,7 @@ public:
         }
         else
         {
-            m_Logger->Log->warn("TradeGateWay Account:{} LoadTickerList {} failed, {}", m_XTraderConfig.Account, m_XTraderConfig.TickerListPath, errorString);
+            FMTLOG(fmtlog::WRN, "TradeGateWay Account:{} LoadTickerList {} failed, {}", m_XTraderConfig.Account, m_XTraderConfig.TickerListPath, errorString);
         }
     }
 
@@ -129,7 +120,7 @@ public:
                         message.OrderRequest.ErrorID = -1;
                         strncpy(message.OrderRequest.ErrorMsg, "API Connect failed", sizeof(message.OrderRequest.ErrorMsg));
                     }
-                    m_Logger->Log->info("TradeGateWay::SendRequest Account:{} Ticker:{} Init Risk Check", message.OrderRequest.Account, message.OrderRequest.Ticker);
+                    FMTLOG(fmtlog::INF, "TradeGateWay::SendRequest Account:{} Ticker:{} Init Risk Check", message.OrderRequest.Account, message.OrderRequest.Ticker);
                     ReqInsertOrderRejected(message.OrderRequest);
                 }
                 break;
@@ -153,9 +144,7 @@ public:
             }
             default:
             {
-                char buffer[256] = {0};
-                sprintf(buffer, "Unkown Message Type:0X%X", request.MessageType);
-                Utils::gLogger->Log->warn("TradeGateWay::SendRequest {}", buffer);
+                FMTLOG(fmtlog::WRN, "TradeGateWay::SendRequest Unkown Message Type:{:#X}", request.MessageType);
                 break;
             }
         }
@@ -229,26 +218,24 @@ protected:
         long insert = Utils::getTimeStampUs(OrderStatus.InsertTime + 11);
         long broker = Utils::getTimeStampUs(OrderStatus.BrokerACKTime + 11);
         long end = Utils::getTimeStampUs(OrderStatus.ExchangeACKTime + 11);
-        m_Logger->Log->info("TraderGateWay::OnExchangeACK OrderRef:{}, OrderLocalID:{}, TraderLatency:{}, BrokerLatency:{}, ExchangeLatency:{}",
-                              OrderStatus.OrderRef, OrderStatus.OrderLocalID, insert - send, broker - insert, end - insert);
+        FMTLOG(fmtlog::INF, "TraderGateWay::OnExchangeACK OrderRef:{}, OrderLocalID:{}, TraderLatency:{}, BrokerLatency:{}, ExchangeLatency:{}",
+                OrderStatus.OrderRef, OrderStatus.OrderLocalID, insert - send, broker - insert, end - insert);
     }
 
     void PrintOrderStatus(const Message::TOrderStatus& OrderStatus, const std::string& op)
     {
-         m_Logger->Log->debug("{}, PrintOrderStatus Product:{} Broker:{} Account:{} ExchangeID:{}\n"
-                               "\t\t\t\t\t\tTicker:{} OrderRef:{} OrderSysID:{} OrderLocalID:{} OrderToken:{} OrderSide:{} SendPrice:{}\n"
-                               "\t\t\t\t\t\tSendVolume:{} OrderType:{} TotalTradedVolume:{} TradedAvgPrice:{} TradedVolume:{}\n"
-                               "\t\t\t\t\t\tTradedPrice:{} OrderStatus:{} CanceledVolume:{} RecvMarketTime:{} SendTime:{}\n"
-                               "\t\t\t\t\t\tInsertTime:{} BrokerACKTime:{} ExchangeACKTime:{}\n"
-                               "\t\t\t\t\t\tUpdateTime:{} ErrorID:{} ErrorMsg:{} RiskID:{}",
-                               op.c_str(), OrderStatus.Product, OrderStatus.Broker, OrderStatus.Account,
-                               OrderStatus.ExchangeID, OrderStatus.Ticker, OrderStatus.OrderRef,
-                               OrderStatus.OrderSysID, OrderStatus.OrderLocalID, OrderStatus.OrderToken, OrderStatus.OrderSide, OrderStatus.SendPrice,
-                               OrderStatus.SendVolume, OrderStatus.OrderType, OrderStatus.TotalTradedVolume,
-                               OrderStatus.TradedAvgPrice, OrderStatus.TradedVolume, OrderStatus.TradedPrice,
-                               OrderStatus.OrderStatus, OrderStatus.CanceledVolume, OrderStatus.RecvMarketTime, OrderStatus.SendTime, OrderStatus.InsertTime,
-                               OrderStatus.BrokerACKTime, OrderStatus.ExchangeACKTime, OrderStatus.UpdateTime,
-                               OrderStatus.ErrorID, OrderStatus.ErrorMsg, OrderStatus.RiskID);
+        FMTLOG(fmtlog::DBG, "{}, PrintOrderStatus Product:{} Broker:{} Account:{} ExchangeID:{} Ticker:{} OrderRef:{} OrderSysID:{} "
+                            "OrderLocalID:{} OrderToken:{} OrderSide:{} SendPrice:{} SendVolume:{} OrderType:{} TotalTradedVolume:{} "
+                            "TradedAvgPrice:{} TradedVolume:{} TradedPrice:{} OrderStatus:{} CanceledVolume:{} RecvMarketTime:{} SendTime:{} "
+                            "InsertTime:{} BrokerACKTime:{} ExchangeACKTime:{} UpdateTime:{} ErrorID:{} ErrorMsg:{} RiskID:{}",
+                op, OrderStatus.Product, OrderStatus.Broker, OrderStatus.Account,
+                OrderStatus.ExchangeID, OrderStatus.Ticker, OrderStatus.OrderRef,
+                OrderStatus.OrderSysID, OrderStatus.OrderLocalID, OrderStatus.OrderToken, OrderStatus.OrderSide, OrderStatus.SendPrice,
+                OrderStatus.SendVolume, OrderStatus.OrderType, OrderStatus.TotalTradedVolume,
+                OrderStatus.TradedAvgPrice, OrderStatus.TradedVolume, OrderStatus.TradedPrice,
+                OrderStatus.OrderStatus, OrderStatus.CanceledVolume, OrderStatus.RecvMarketTime, OrderStatus.SendTime, OrderStatus.InsertTime,
+                OrderStatus.BrokerACKTime, OrderStatus.ExchangeACKTime, OrderStatus.UpdateTime,
+                OrderStatus.ErrorID, OrderStatus.ErrorMsg, OrderStatus.RiskID);
     }
 public:
     Utils::LockFreeQueue<Message::PackMessage> m_ReportMessageQueue;
@@ -256,7 +243,6 @@ protected:
     Message::ELoginStatus m_ConnectedStatus;
     std::vector<Utils::TickerProperty> m_TickerPropertyList;
     Utils::XTraderConfig m_XTraderConfig;
-    Utils::Logger* m_Logger;
     std::unordered_map<std::string, std::string> m_TickerExchangeMap;
 
     typedef phmap::parallel_node_hash_map<std::string, Message::TAccountPosition, phmap::priv::hash_default_hash<std::string>,

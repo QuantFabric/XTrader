@@ -19,11 +19,11 @@ void OESTradeGateWay::LoadAPIConfig()
     bool ok = Utils::LoadOESError(m_XTraderConfig.ErrorPath.c_str(), m_CodeErrorMap, errorString);
     if(ok)
     {
-        m_Logger->Log->info("OESTrader::LoadAPIConfig Account:{} LoadOESError {} successed", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath);
+        FMTLOG(fmtlog::INF, "OESTrader::LoadAPIConfig Account:{} LoadOESError {} successed", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath);
     }
     else
     {
-        m_Logger->Log->warn("OESTrader::LoadAPIConfig Account:{} LoadOESError {} failed, {}", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath, errorString);
+        FMTLOG(fmtlog::WRN, "OESTrader::LoadAPIConfig Account:{} LoadOESError {} failed, {}", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath, errorString);
     }
 }
 
@@ -41,7 +41,7 @@ void OESTradeGateWay::GetAPIVersion(std::string& APIVersion)
 void OESTradeGateWay::CreateTraderAPI()
 {
     m_OESTraderAPI = new OESTraderAPI();
-    m_Logger->Log->info("OESTrader::CreateTraderAPI Account:{} API Version:{}", m_XTraderConfig.Account, m_OESTraderAPI->GetVersion());
+    FMTLOG(fmtlog::INF, "OESTrader::CreateTraderAPI Account:{} API Version:{}", m_XTraderConfig.Account, m_OESTraderAPI->GetVersion());
 }
 
 void OESTradeGateWay::DestroyTraderAPI()
@@ -76,7 +76,7 @@ void OESTradeGateWay::LoadTrader()
         strncpy(message.EventLog.Event, ErrorBuffer, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
 
-        m_Logger->Log->error(ErrorBuffer);
+        FMTLOG(fmtlog::ERR, ErrorBuffer);
     }
     else
     {
@@ -87,7 +87,7 @@ void OESTradeGateWay::LoadTrader()
         strncpy(message.EventLog.Event, ErrorBuffer, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
 
-        m_Logger->Log->info(ErrorBuffer);
+        FMTLOG(fmtlog::INF, ErrorBuffer);
         // 查询账户信息
         QueryClientOverview();
         // 查询新股新债发行
@@ -118,7 +118,7 @@ void OESTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
 
-        m_Logger->Log->warn(buffer);
+        FMTLOG(fmtlog::WRN, buffer);
     }
 }
 
@@ -314,7 +314,7 @@ void OESTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
     auto it = m_OrderStatusMap.find(request.OrderRef);
     if(it == m_OrderStatusMap.end())
     {
-        m_Logger->Log->warn("OESTrader::ReqCancelOrder Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
+        FMTLOG(fmtlog::WRN, "OESTrader::ReqCancelOrder Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
         return ;
     }
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[request.OrderRef];
@@ -351,7 +351,7 @@ void OESTradeGateWay::ReqCancelOrderRejected(const Message::TActionRequest& requ
     auto it = m_OrderStatusMap.find(request.OrderRef);
     if(it == m_OrderStatusMap.end())
     {
-        m_Logger->Log->warn("OESTrader::ReqCancelOrderRejected Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
+        FMTLOG(fmtlog::WRN, "OESTrader::ReqCancelOrderRejected Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
         return ;
     }
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[request.OrderRef];
@@ -446,7 +446,7 @@ void OESTradeGateWay::HandleRetCode(int code, const std::string& op)
     if(code >= 0)
     {
         errorString = op + " successed";
-        m_Logger->Log->info(errorString.c_str());
+        FMTLOG(fmtlog::INF, errorString);
     }
     else if(code < 0)
     {
@@ -460,7 +460,7 @@ void OESTradeGateWay::HandleRetCode(int code, const std::string& op)
         {
             errorString = op + " failed, unkown Error.";
         }
-        m_Logger->Log->info("{} ret={}", errorString, code);
+        FMTLOG(fmtlog::INF, "{} ret={}", errorString, code);
     }
     // 错误发送监控EventLog
     if(code >= 0)
@@ -697,41 +697,45 @@ void OESTradeGateWay::QueryClientOverview()
     HandleRetCode(ret, stringBuffer);
     if(ret >= 0) 
     {
-        m_Logger->Log->info("OESTrader::QueryClientOverview Account:{} ClientId:{} ClientType:{} ClientStatus:{} ClientName:{} BusinessScope:{} SSEStkPbuId:{} SZSEStkPbuId:{} OrdTrafficLimit:{} QryTrafficLimit:{} IsSupportInternalAllot:{} AssociatedCustCnt:{}", 
-                            m_XTraderConfig.Account, clientOverview.clientId, clientOverview.clientType,
-                            clientOverview.clientStatus, clientOverview.clientName, clientOverview.businessScope, 
-                            clientOverview.sseStkPbuId, clientOverview.szseStkPbuId, clientOverview.ordTrafficLimit,
-                            clientOverview.qryTrafficLimit, clientOverview.isSupportInternalAllot, clientOverview.associatedCustCnt);
+        FMTLOG(fmtlog::INF, "OESTrader::QueryClientOverview Account:{} ClientId:{} ClientType:{} ClientStatus:{} ClientName:{} "
+                            "BusinessScope:{} SSEStkPbuId:{} SZSEStkPbuId:{} OrdTrafficLimit:{} QryTrafficLimit:{} IsSupportInternalAllot:{} "
+                            "AssociatedCustCnt:{}", 
+                m_XTraderConfig.Account, clientOverview.clientId, clientOverview.clientType,
+                clientOverview.clientStatus, clientOverview.clientName, clientOverview.businessScope, 
+                clientOverview.sseStkPbuId, clientOverview.szseStkPbuId, clientOverview.ordTrafficLimit,
+                clientOverview.qryTrafficLimit, clientOverview.isSupportInternalAllot, clientOverview.associatedCustCnt);
         for (int i = 0; i < clientOverview.associatedCustCnt; i++) 
         {
-            m_Logger->Log->info("OESTrader::QueryClientOverview Account:{} CustId:{} Status:{} RiskLevel:{} BranchId:{} CustName:{}", 
-                            m_XTraderConfig.Account, clientOverview.custItems[i].custId, clientOverview.custItems[i].status,
-                            clientOverview.custItems[i].riskLevel, clientOverview.custItems[i].branchId, clientOverview.custItems[i].custName);
+            FMTLOG(fmtlog::INF, "OESTrader::QueryClientOverview Account:{} CustId:{} Status:{} RiskLevel:{} BranchId:{} CustName:{}", 
+                    m_XTraderConfig.Account, clientOverview.custItems[i].custId, clientOverview.custItems[i].status,
+                    clientOverview.custItems[i].riskLevel, clientOverview.custItems[i].branchId, clientOverview.custItems[i].custName);
             if(clientOverview.custItems[i].spotCashAcct.isValid) 
             {
-                m_Logger->Log->info("OESTrader::QueryClientOverview Account:{} CashAcctId:{} CashType:{} CashAcctStatus:{} IsFundTrsfDisabled:{}", 
-                            m_XTraderConfig.Account, clientOverview.custItems[i].spotCashAcct.cashAcctId, clientOverview.custItems[i].spotCashAcct.cashType,
-                            clientOverview.custItems[i].spotCashAcct.cashAcctStatus, clientOverview.custItems[i].spotCashAcct.isFundTrsfDisabled);
+                FMTLOG(fmtlog::INF, "OESTrader::QueryClientOverview Account:{} CashAcctId:{} CashType:{} CashAcctStatus:{} IsFundTrsfDisabled:{}", 
+                        m_XTraderConfig.Account, clientOverview.custItems[i].spotCashAcct.cashAcctId, clientOverview.custItems[i].spotCashAcct.cashType,
+                        clientOverview.custItems[i].spotCashAcct.cashAcctStatus, clientOverview.custItems[i].spotCashAcct.isFundTrsfDisabled);
             }
             if(clientOverview.custItems[i].shSpotInvAcct.isValid) 
             {
-                m_Logger->Log->info("OESTrader::QueryClientOverview Account:{} InvAcctId:{} SHSE MktId:{} Status:{} IsTradeDisabled:{} PBUId:{} TrdOrdCnt:{} NonTrdOrdCnt:{} CancelOrdCnt:{} OESRejectOrdCnt:{} TrdCnt:{}", 
-                            m_XTraderConfig.Account, clientOverview.custItems[i].shSpotInvAcct.invAcctId, clientOverview.custItems[i].shSpotInvAcct.mktId, 
-                            clientOverview.custItems[i].shSpotInvAcct.status, clientOverview.custItems[i].shSpotInvAcct.isTradeDisabled,
-                            clientOverview.custItems[i].shSpotInvAcct.pbuId, clientOverview.custItems[i].shSpotInvAcct.trdOrdCnt,
-                            clientOverview.custItems[i].shSpotInvAcct.nonTrdOrdCnt, clientOverview.custItems[i].shSpotInvAcct.cancelOrdCnt,
-                            clientOverview.custItems[i].shSpotInvAcct.oesRejectOrdCnt, clientOverview.custItems[i].shSpotInvAcct.exchRejectOrdCnt,
-                            clientOverview.custItems[i].shSpotInvAcct.trdCnt);
+                FMTLOG(fmtlog::INF, "OESTrader::QueryClientOverview Account:{} InvAcctId:{} SHSE MktId:{} Status:{} IsTradeDisabled:{} "
+                                    "PBUId:{} TrdOrdCnt:{} NonTrdOrdCnt:{} CancelOrdCnt:{} OESRejectOrdCnt:{} TrdCnt:{}", 
+                        m_XTraderConfig.Account, clientOverview.custItems[i].shSpotInvAcct.invAcctId, clientOverview.custItems[i].shSpotInvAcct.mktId, 
+                        clientOverview.custItems[i].shSpotInvAcct.status, clientOverview.custItems[i].shSpotInvAcct.isTradeDisabled,
+                        clientOverview.custItems[i].shSpotInvAcct.pbuId, clientOverview.custItems[i].shSpotInvAcct.trdOrdCnt,
+                        clientOverview.custItems[i].shSpotInvAcct.nonTrdOrdCnt, clientOverview.custItems[i].shSpotInvAcct.cancelOrdCnt,
+                        clientOverview.custItems[i].shSpotInvAcct.oesRejectOrdCnt, clientOverview.custItems[i].shSpotInvAcct.exchRejectOrdCnt,
+                        clientOverview.custItems[i].shSpotInvAcct.trdCnt);
             }
             if(clientOverview.custItems[i].szSpotInvAcct.isValid) 
             {
-                m_Logger->Log->info("OESTrader::QueryClientOverview Account:{} InvAcctId:{} SZSE MktId:{} Status:{} IsTradeDisabled:{} PBUId:{} TrdOrdCnt:{} NonTrdOrdCnt:{} CancelOrdCnt:{} OESRejectOrdCnt:{} TrdCnt:{}", 
-                            m_XTraderConfig.Account, clientOverview.custItems[i].szSpotInvAcct.invAcctId, clientOverview.custItems[i].szSpotInvAcct.mktId, 
-                            clientOverview.custItems[i].szSpotInvAcct.status, clientOverview.custItems[i].szSpotInvAcct.isTradeDisabled,
-                            clientOverview.custItems[i].szSpotInvAcct.pbuId, clientOverview.custItems[i].szSpotInvAcct.trdOrdCnt,
-                            clientOverview.custItems[i].szSpotInvAcct.nonTrdOrdCnt, clientOverview.custItems[i].szSpotInvAcct.cancelOrdCnt,
-                            clientOverview.custItems[i].szSpotInvAcct.oesRejectOrdCnt, clientOverview.custItems[i].szSpotInvAcct.exchRejectOrdCnt,
-                            clientOverview.custItems[i].szSpotInvAcct.trdCnt);
+                FMTLOG(fmtlog::INF, "OESTrader::QueryClientOverview Account:{} InvAcctId:{} SZSE MktId:{} Status:{} IsTradeDisabled:{} "
+                                    "PBUId:{} TrdOrdCnt:{} NonTrdOrdCnt:{} CancelOrdCnt:{} OESRejectOrdCnt:{} TrdCnt:{}", 
+                        m_XTraderConfig.Account, clientOverview.custItems[i].szSpotInvAcct.invAcctId, clientOverview.custItems[i].szSpotInvAcct.mktId, 
+                        clientOverview.custItems[i].szSpotInvAcct.status, clientOverview.custItems[i].szSpotInvAcct.isTradeDisabled,
+                        clientOverview.custItems[i].szSpotInvAcct.pbuId, clientOverview.custItems[i].szSpotInvAcct.trdOrdCnt,
+                        clientOverview.custItems[i].szSpotInvAcct.nonTrdOrdCnt, clientOverview.custItems[i].szSpotInvAcct.cancelOrdCnt,
+                        clientOverview.custItems[i].szSpotInvAcct.oesRejectOrdCnt, clientOverview.custItems[i].szSpotInvAcct.exchRejectOrdCnt,
+                        clientOverview.custItems[i].szSpotInvAcct.trdCnt);
             }
         }
     }
@@ -785,16 +789,18 @@ void OESTradeGateWay::QueryCrdSecurityPosition()
 int32 OESTradeGateWay::OnConnected(eOesApiChannelTypeT channelType, OesApiSessionInfoT *pSessionInfo, OesApiSubscribeInfoT *pSubscribeInfo)
 {
     OesAsyncApiChannelT *pAsyncChannel = (OesAsyncApiChannelT*)pSessionInfo->__contextPtr;
+    auto channel = pAsyncChannel->pChannelCfg->channelTag;
+    auto lastInMsgSeq = pAsyncChannel->lastInMsgSeq;
     if (pAsyncChannel->pChannelCfg->channelType == OESAPI_CHANNEL_TYPE_REPORT) 
     {
-        m_Logger->Log->info("OESTrader::OnConnected Account:{} Channel:{} lastInMsgSeq:{}", m_XTraderConfig.Account, 
-                        pAsyncChannel->pChannelCfg->channelTag, pAsyncChannel->lastInMsgSeq);
+        FMTLOG(fmtlog::INF, "OESTrader::OnConnected Account:{} Channel:{} lastInMsgSeq:{}", 
+                m_XTraderConfig.Account, channel, lastInMsgSeq);
         pSessionInfo->lastInMsgSeq = -1;
     }
     else if(pAsyncChannel->pChannelCfg->channelType == OESAPI_CHANNEL_TYPE_ORDER)
     {
-        m_Logger->Log->info("OESTrader::OnConnected Account:{} Channel:{} lastInMsgSeq:{}", m_XTraderConfig.Account, 
-                        pAsyncChannel->pChannelCfg->channelTag, pAsyncChannel->lastInMsgSeq);
+        FMTLOG(fmtlog::INF, "OESTrader::OnConnected Account:{} Channel:{} lastInMsgSeq:{}", 
+                m_XTraderConfig.Account, channel, lastInMsgSeq);
         pSessionInfo->lastInMsgSeq = -1;
     }
     return EAGAIN;
@@ -814,7 +820,7 @@ int32 OESTradeGateWay::OnDisconnected(eOesApiChannelTypeT channelType, OesApiSes
         sprintf(stringBuffer, "OESTrader::OnDisconnected Account:%s Channel:%s lastInMsgSeq:%d",
             m_XTraderConfig.Account.c_str(), pAsyncChannel->pChannelCfg->channelTag, pAsyncChannel->lastInMsgSeq);
     }
-    m_Logger->Log->info(stringBuffer);
+    FMTLOG(fmtlog::INF, stringBuffer);
 
     Message::PackMessage message;
     memset(&message, 0, sizeof(message));
@@ -832,7 +838,7 @@ int32 OESTradeGateWay::OnDisconnected(eOesApiChannelTypeT channelType, OesApiSes
 
 void OESTradeGateWay::OnBusinessReject(const OesRptMsgHeadT *pRptMsgHead, const OesOrdRejectT *pOrderReject) 
 {
-    m_Logger->Log->warn("OESTrader::OnBusinessReject Account:{} invAcctId:{} securityId:{} mktId:{} rptMsgType:{} ordRejReason:{} clSeqNo:{} "
+    FMTLOG(fmtlog::WRN, "OESTrader::OnBusinessReject Account:{} invAcctId:{} securityId:{} mktId:{} rptMsgType:{} ordRejReason:{} clSeqNo:{} "
                         "origClSeqNo:{} origClOrdId:{} ordType:{} bsType:{} ordQty:{} ordPrice:{}", 
                         m_XTraderConfig.Account, pOrderReject->invAcctId, pOrderReject->securityId, pOrderReject->mktId, pRptMsgHead->rptMsgType, 
                         pRptMsgHead->ordRejReason, pOrderReject->clSeqNo, pOrderReject->origClSeqNo, pOrderReject->origClOrdId,
@@ -918,11 +924,11 @@ void OESTradeGateWay::OnBusinessReject(const OesRptMsgHeadT *pRptMsgHead, const 
 
 void OESTradeGateWay::OnOrderInsert(const OesRptMsgHeadT *pRptMsgHead, const OesOrdCnfmT *pOrderInsert) 
 {
-    m_Logger->Log->debug("OESTrader::OnOrderInsert Account:{} invAcctId:{} securityId:{} mktId:{} clSeqNo:{} origClSeqNo:{} clOrdId:{} "
-                         "origClOrdId:{} ordStatus:{} ordType:{} bsType:{} ordQty:{} ordPrice:{} rptMsgType:{} ordRejReason:{}", 
-                        m_XTraderConfig.Account, pOrderInsert->invAcctId, pOrderInsert->securityId, pOrderInsert->mktId, pOrderInsert->clSeqNo, 
-                        pOrderInsert->origClSeqNo, pOrderInsert->clOrdId, pOrderInsert->origClOrdId, pOrderInsert->ordStatus, pOrderInsert->ordType, 
-                        pOrderInsert->bsType, pOrderInsert->ordQty, pOrderInsert->ordPrice, pRptMsgHead->rptMsgType, pRptMsgHead->ordRejReason);
+    FMTLOG(fmtlog::DBG, "OESTrader::OnOrderInsert Account:{} invAcctId:{} securityId:{} mktId:{} clSeqNo:{} origClSeqNo:{} clOrdId:{} "
+                        "origClOrdId:{} ordStatus:{} ordType:{} bsType:{} ordQty:{} ordPrice:{} rptMsgType:{} ordRejReason:{}", 
+            m_XTraderConfig.Account, pOrderInsert->invAcctId, pOrderInsert->securityId, pOrderInsert->mktId, pOrderInsert->clSeqNo, 
+            pOrderInsert->origClSeqNo, pOrderInsert->clOrdId, pOrderInsert->origClOrdId, pOrderInsert->ordStatus, pOrderInsert->ordType, 
+            pOrderInsert->bsType, pOrderInsert->ordQty, pOrderInsert->ordPrice, pRptMsgHead->rptMsgType, pRptMsgHead->ordRejReason);
     // 柜台ACK
     char OrderRefBuffer[32] = {0};
     sprintf(OrderRefBuffer, "%012d", pOrderInsert->clSeqNo);
@@ -943,13 +949,13 @@ void OESTradeGateWay::OnOrderInsert(const OesRptMsgHeadT *pRptMsgHead, const Oes
 
 void OESTradeGateWay::OnOrderReport(const OesRptMsgHeadT *pRptMsgHead, const OesOrdCnfmT *pOrderReport) 
 {
-    m_Logger->Log->info("OESTrader::OnOrderReport Account:{} invAcctId:{} securityId:{} clSeqNo:{} origClSeqNo:{} clOrdId:{} origClOrdId:{} "
+    FMTLOG(fmtlog::INF, "OESTrader::OnOrderReport Account:{} invAcctId:{} securityId:{} clSeqNo:{} origClSeqNo:{} clOrdId:{} origClOrdId:{} "
                         "exchOrdId:{} mktId:{} ordType:{} bsType:{} ordQty:{} cumQty:{} canceledQty:{} ordPrice:{} ordStatus:{} rptMsgType:{} "
                         "ordRejReason:{} ordRejReason:{} exchErrCode:{}", 
-                        m_XTraderConfig.Account, pOrderReport->invAcctId, pOrderReport->securityId, pOrderReport->clSeqNo, pOrderReport->origClSeqNo, 
-                        pOrderReport->clOrdId, pOrderReport->origClOrdId, pOrderReport->exchOrdId, pOrderReport->mktId, pOrderReport->ordType, 
-                        pOrderReport->bsType, pOrderReport->ordQty,  pOrderReport->cumQty,  pOrderReport->canceledQty, pOrderReport->ordPrice, 
-                        pOrderReport->ordStatus, pRptMsgHead->rptMsgType, pRptMsgHead->ordRejReason, pOrderReport->ordRejReason, pOrderReport->exchErrCode);
+            m_XTraderConfig.Account, pOrderReport->invAcctId, pOrderReport->securityId, pOrderReport->clSeqNo, pOrderReport->origClSeqNo, 
+            pOrderReport->clOrdId, pOrderReport->origClOrdId, pOrderReport->exchOrdId, pOrderReport->mktId, pOrderReport->ordType, 
+            pOrderReport->bsType, pOrderReport->ordQty,  pOrderReport->cumQty,  pOrderReport->canceledQty, pOrderReport->ordPrice, 
+            pOrderReport->ordStatus, pRptMsgHead->rptMsgType, pRptMsgHead->ordRejReason, pOrderReport->ordRejReason, pOrderReport->exchErrCode);
     // 交易所ACK、交易所拒单、
     char OrderRefBuffer[32] = {0};
     if(pOrderReport->origClSeqNo > 0)
@@ -1045,11 +1051,11 @@ void OESTradeGateWay::OnOrderReport(const OesRptMsgHeadT *pRptMsgHead, const Oes
 
 void OESTradeGateWay::OnTradeReport(const OesRptMsgHeadT *pRptMsgHead, const OesTrdCnfmT *pTradeReport) 
 {
-    m_Logger->Log->info("OESTrader::OnTradeReport Account:{} invAcctId:{} securityId:{} mktId:{} clSeqNo:{} exchTrdNum:{} trdSide:{} "
+    FMTLOG(fmtlog::INF, "OESTrader::OnTradeReport Account:{} invAcctId:{} securityId:{} mktId:{} clSeqNo:{} exchTrdNum:{} trdSide:{} "
                         "ordStatus:{} ordType:{} ordBuySellType:{} trdQty:{} trdPrice:{} trdAmt:{} trdFee:{}", 
-                    m_XTraderConfig.Account, pTradeReport->invAcctId, pTradeReport->securityId, pTradeReport->mktId, pTradeReport->clSeqNo, 
-                    pTradeReport->exchTrdNum, pTradeReport->trdSide, pTradeReport->ordStatus, pTradeReport->ordType, pTradeReport->ordBuySellType, 
-                    pTradeReport->trdQty, pTradeReport->trdPrice, pTradeReport->trdAmt, pTradeReport->trdFee);
+            m_XTraderConfig.Account, pTradeReport->invAcctId, pTradeReport->securityId, pTradeReport->mktId, pTradeReport->clSeqNo, 
+            pTradeReport->exchTrdNum, pTradeReport->trdSide, pTradeReport->ordStatus, pTradeReport->ordType, pTradeReport->ordBuySellType, 
+            pTradeReport->trdQty, pTradeReport->trdPrice, pTradeReport->trdAmt, pTradeReport->trdFee);
     // 成交回报
     char OrderRefBuffer[32] = {0};
     sprintf(OrderRefBuffer, "%012d", pTradeReport->clSeqNo);
@@ -1154,12 +1160,13 @@ void OESTradeGateWay::OnCashAssetVariation(const OesCashAssetItemT *pCashAssetIt
     memcpy(&message.AccountFund, &AccountFund, sizeof(AccountFund));
     while(!m_ReportMessageQueue.Push(message));
 
-    m_Logger->Log->debug("OESTrader::OnCashAssetVariation custId:{} cashAcctId:{} beginningBal:{} currentTotalBal:{} currentAvailableBal:{} "
-                         "currentDrawableBal:{} totalDepositAmt:{} totalWithdrawAmt:{} cashAcctId:{} totalAssetValue:{} marginAvailableBal:{} availableBal:{} drawableBal:{}", 
-                        pCashAssetItem->custId, pCashAssetItem->cashAcctId, pCashAssetItem->beginningBal, pCashAssetItem->currentTotalBal,
-                        pCashAssetItem->currentAvailableBal, pCashAssetItem->currentDrawableBal, pCashAssetItem->totalDepositAmt, pCashAssetItem->totalWithdrawAmt,
-                        pCashAssetItem->creditExt.cashAcctId, pCashAssetItem->creditExt.totalAssetValue, pCashAssetItem->creditExt.marginAvailableBal, 
-                        pCashAssetItem->creditExt.availableBal, pCashAssetItem->creditExt.drawableBal);
+    FMTLOG(fmtlog::DBG, "OESTrader::OnCashAssetVariation custId:{} cashAcctId:{} beginningBal:{} currentTotalBal:{} currentAvailableBal:{} "
+                        "currentDrawableBal:{} totalDepositAmt:{} totalWithdrawAmt:{} cashAcctId:{} totalAssetValue:{} marginAvailableBal:{} "
+                        "availableBal:{} drawableBal:{}", 
+            pCashAssetItem->custId, pCashAssetItem->cashAcctId, pCashAssetItem->beginningBal, pCashAssetItem->currentTotalBal,
+            pCashAssetItem->currentAvailableBal, pCashAssetItem->currentDrawableBal, pCashAssetItem->totalDepositAmt, pCashAssetItem->totalWithdrawAmt,
+            pCashAssetItem->creditExt.cashAcctId, pCashAssetItem->creditExt.totalAssetValue, pCashAssetItem->creditExt.marginAvailableBal, 
+            pCashAssetItem->creditExt.availableBal, pCashAssetItem->creditExt.drawableBal);
 }
 
 void OESTradeGateWay::OnStockHoldingVariation(const OesStkHoldingItemT *pStkHoldingItem) 
@@ -1214,26 +1221,27 @@ void OESTradeGateWay::OnStockHoldingVariation(const OesStkHoldingItemT *pStkHold
     memcpy(&message.AccountPosition, &AccountPosition, sizeof(message.AccountPosition));
     while(!m_ReportMessageQueue.Push(message));
 
-    m_Logger->Log->debug("OESTrader::OnStockHoldingVariation invAcctId:{} securityId:{} mktId:{} securityType:{} subSecurityType:{} productType:{} "
-                         "isCreditHolding:{} originalHld:{} totalBuyHld:{} totalSellHld:{} totalTrsfInHld:{} totalTrsfOutHld:{} originalAvlHld:{} "
-                         "sellAvlHld:{} specialSecurityPositionAvailableQty:{} collateralHoldingQty:{} marginBuyOriginDebtQty:{} marginBuyDebtQty:{} "
-                         "marginBuyRepaidQty:{} shortSellOriginDebtQty:{} shortSellDebtQty:{} shortSellRepaidQty:{} repayStockDirectAvlHld:{} "
-                         "collateralTotalRepayDirectQty:{}", 
-                        pStkHoldingItem->invAcctId, pStkHoldingItem->securityId, pStkHoldingItem->mktId, pStkHoldingItem->securityType,
-                        pStkHoldingItem->subSecurityType, pStkHoldingItem->productType, pStkHoldingItem->isCreditHolding, pStkHoldingItem->originalHld, 
-                        pStkHoldingItem->totalBuyHld, pStkHoldingItem->totalSellHld, pStkHoldingItem->totalTrsfInHld, pStkHoldingItem->totalTrsfOutHld,
-                        pStkHoldingItem->originalAvlHld, pStkHoldingItem->creditExt.sellAvlHld, pStkHoldingItem->creditExt.specialSecurityPositionAvailableQty,
-                        pStkHoldingItem->creditExt.collateralHoldingQty, pStkHoldingItem->creditExt.marginBuyOriginDebtQty,  pStkHoldingItem->creditExt.marginBuyDebtQty, 
-                        pStkHoldingItem->creditExt.marginBuyRepaidQty, pStkHoldingItem->creditExt.shortSellOriginDebtQty, 
-                        pStkHoldingItem->creditExt.shortSellDebtQty, pStkHoldingItem->creditExt.shortSellRepaidQty,
-                        pStkHoldingItem->creditExt.repayStockDirectAvlHld, pStkHoldingItem->creditExt.collateralTotalRepayDirectQty);
+    FMTLOG(fmtlog::DBG, "OESTrader::OnStockHoldingVariation invAcctId:{} securityId:{} mktId:{} securityType:{} subSecurityType:{} productType:{} "
+                        "isCreditHolding:{} originalHld:{} totalBuyHld:{} totalSellHld:{} totalTrsfInHld:{} totalTrsfOutHld:{} originalAvlHld:{} "
+                        "sellAvlHld:{} specialSecurityPositionAvailableQty:{} collateralHoldingQty:{} marginBuyOriginDebtQty:{} marginBuyDebtQty:{} "
+                        "marginBuyRepaidQty:{} shortSellOriginDebtQty:{} shortSellDebtQty:{} shortSellRepaidQty:{} repayStockDirectAvlHld:{} "
+                        "collateralTotalRepayDirectQty:{}", 
+            pStkHoldingItem->invAcctId, pStkHoldingItem->securityId, pStkHoldingItem->mktId, pStkHoldingItem->securityType,
+            pStkHoldingItem->subSecurityType, pStkHoldingItem->productType, pStkHoldingItem->isCreditHolding, pStkHoldingItem->originalHld, 
+            pStkHoldingItem->totalBuyHld, pStkHoldingItem->totalSellHld, pStkHoldingItem->totalTrsfInHld, pStkHoldingItem->totalTrsfOutHld,
+            pStkHoldingItem->originalAvlHld, pStkHoldingItem->creditExt.sellAvlHld, pStkHoldingItem->creditExt.specialSecurityPositionAvailableQty,
+            pStkHoldingItem->creditExt.collateralHoldingQty, pStkHoldingItem->creditExt.marginBuyOriginDebtQty,  pStkHoldingItem->creditExt.marginBuyDebtQty, 
+            pStkHoldingItem->creditExt.marginBuyRepaidQty, pStkHoldingItem->creditExt.shortSellOriginDebtQty, 
+            pStkHoldingItem->creditExt.shortSellDebtQty, pStkHoldingItem->creditExt.shortSellRepaidQty,
+            pStkHoldingItem->creditExt.repayStockDirectAvlHld, pStkHoldingItem->creditExt.collateralTotalRepayDirectQty);
 }
 
 void OESTradeGateWay::OnFundTrsfReject(const OesRptMsgHeadT *pRptMsgHead, const OesFundTrsfRejectT *pFundTrsfReject) 
 {
-    m_Logger->Log->warn("OESTrader::OnFundTrsfReject cashAcctId:{} rptMsgType:{} ordRejReason:{} clSeqNo:{} direct:{} occurAmt:{} rejReason:{} errorInfo:{} fundTrsfType:{}", 
-                    pFundTrsfReject->cashAcctId, pRptMsgHead->rptMsgType, pRptMsgHead->ordRejReason, pFundTrsfReject->clSeqNo, pFundTrsfReject->direct, 
-                    pFundTrsfReject->occurAmt, pFundTrsfReject->rejReason, pFundTrsfReject->errorInfo, pFundTrsfReject->fundTrsfType);
+    FMTLOG(fmtlog::WRN, "OESTrader::OnFundTrsfReject cashAcctId:{} rptMsgType:{} ordRejReason:{} clSeqNo:{} direct:{} "
+                        "occurAmt:{} rejReason:{} errorInfo:{} fundTrsfType:{}", 
+            pFundTrsfReject->cashAcctId, pRptMsgHead->rptMsgType, pRptMsgHead->ordRejReason, pFundTrsfReject->clSeqNo, pFundTrsfReject->direct, 
+            pFundTrsfReject->occurAmt, pFundTrsfReject->rejReason, pFundTrsfReject->errorInfo, pFundTrsfReject->fundTrsfType);
     if(eOesFundTrsfTypeT::OES_FUND_TRSF_TYPE_OES_COUNTER == pFundTrsfReject->fundTrsfType)
     {
         char stringBuffer[512] = {0};
@@ -1263,9 +1271,10 @@ void OESTradeGateWay::OnFundTrsfReject(const OesRptMsgHeadT *pRptMsgHead, const 
 
 void OESTradeGateWay::OnFundTrsfReport(const OesRptMsgHeadT *pRptMsgHead, const OesFundTrsfReportT *pFundTrsfReport) 
 {
-    m_Logger->Log->debug("OESTrader::OnFundTrsfReport cashAcctId:{} rptMsgType:{} ordRejReason:{} clSeqNo:{} direct:{} occurAmt:{} rejReason:{} errorInfo:{} fundTrsfType:{}", 
-                    pFundTrsfReport->cashAcctId, pRptMsgHead->rptMsgType, pRptMsgHead->ordRejReason, pFundTrsfReport->clSeqNo, pFundTrsfReport->direct, 
-                    pFundTrsfReport->occurAmt, pFundTrsfReport->rejReason, pFundTrsfReport->errorInfo, pFundTrsfReport->fundTrsfType);
+    FMTLOG(fmtlog::DBG, "OESTrader::OnFundTrsfReport cashAcctId:{} rptMsgType:{} ordRejReason:{} clSeqNo:{} direct:{} occurAmt:{} "
+                        "rejReason:{} errorInfo:{} fundTrsfType:{}", 
+            pFundTrsfReport->cashAcctId, pRptMsgHead->rptMsgType, pRptMsgHead->ordRejReason, pFundTrsfReport->clSeqNo, pFundTrsfReport->direct, 
+            pFundTrsfReport->occurAmt, pFundTrsfReport->rejReason, pFundTrsfReport->errorInfo, pFundTrsfReport->fundTrsfType);
     if(eOesFundTrsfTypeT::OES_FUND_TRSF_TYPE_OES_COUNTER == pFundTrsfReport->fundTrsfType)
     {
         char stringBuffer[512] = {0};
@@ -1295,17 +1304,17 @@ void OESTradeGateWay::OnFundTrsfReport(const OesRptMsgHeadT *pRptMsgHead, const 
 
 void OESTradeGateWay::OnNotifyReport(const OesNotifyInfoReportT *pNotifyInfoRpt) 
 {
-    m_Logger->Log->debug("OESTrader::OnReportSynchronizationRsp Account:{} notifySeqNo:{} notifySource:{} notifyType:{} notifyLevel:{} "
-                         "notifyScope:{} tranTime:{} businessType:{} custId:{} securityId:{} mktId:{} content:{}", 
-                        m_XTraderConfig.Account, pNotifyInfoRpt->notifySeqNo, pNotifyInfoRpt->notifySource, pNotifyInfoRpt->notifyType, 
-                        pNotifyInfoRpt->notifyLevel, pNotifyInfoRpt->notifyScope, pNotifyInfoRpt->tranTime,
-                        pNotifyInfoRpt->businessType, pNotifyInfoRpt->custId, pNotifyInfoRpt->securityId,
-                        pNotifyInfoRpt->mktId, pNotifyInfoRpt->content);
+    FMTLOG(fmtlog::INF, "OESTrader::OnReportSynchronizationRsp Account:{} notifySeqNo:{} notifySource:{} notifyType:{} notifyLevel:{} "
+                        "notifyScope:{} tranTime:{} businessType:{} custId:{} securityId:{} mktId:{} content:{}", 
+            m_XTraderConfig.Account, pNotifyInfoRpt->notifySeqNo, pNotifyInfoRpt->notifySource, pNotifyInfoRpt->notifyType, 
+            pNotifyInfoRpt->notifyLevel, pNotifyInfoRpt->notifyScope, pNotifyInfoRpt->tranTime,
+            pNotifyInfoRpt->businessType, pNotifyInfoRpt->custId, pNotifyInfoRpt->securityId,
+            pNotifyInfoRpt->mktId, pNotifyInfoRpt->content);
 }
 
 void OESTradeGateWay::OnReportSynchronizationRsp(const OesReportSynchronizationRspT *pReportSynchronization) 
 {
-    m_Logger->Log->debug("OESTrader::OnReportSynchronizationRsp Account:{} lastRptSeqNum:{}", m_XTraderConfig.Account, pReportSynchronization->lastRptSeqNum);
+    FMTLOG(fmtlog::DBG, "OESTrader::OnReportSynchronizationRsp Account:{} lastRptSeqNum:{}", m_XTraderConfig.Account, pReportSynchronization->lastRptSeqNum);
 }
 
 void OESTradeGateWay::OnQueryCashAsset(const OesCashAssetItemT *pCashAsset, const OesQryCursorT *pCursor, int32 requestId) 
@@ -1350,13 +1359,13 @@ void OESTradeGateWay::OnQueryCashAsset(const OesCashAssetItemT *pCashAsset, cons
     message.MessageType = Message::EMessageType::EAccountFund;
     memcpy(&message.AccountFund, &AccountFund, sizeof(AccountFund));
     while(!m_ReportMessageQueue.Push(message));
-    m_Logger->Log->info("OESTrader::OnQueryCashAsset Account:{} FundAccount:{} beginningBal:{} beginningAvailableBal:{} beginningDrawableBal:{} "
+    FMTLOG(fmtlog::INF, "OESTrader::OnQueryCashAsset Account:{} FundAccount:{} beginningBal:{} beginningAvailableBal:{} beginningDrawableBal:{} "
                         "totalDepositAmt:{} totalWithdrawAmt:{} totalFeeAmt:{} currentTotalBal:{} currentAvailableBal:{} cashAcctId:{} totalAssetValue:{} "
                         "marginAvailableBal:{} availableBal:{} drawableBal:{} ", 
-                        pCashAsset->custId, pCashAsset->cashAcctId, pCashAsset->beginningBal, pCashAsset->beginningAvailableBal, pCashAsset->beginningDrawableBal,
-                        pCashAsset->totalDepositAmt, pCashAsset->totalWithdrawAmt, pCashAsset->totalFeeAmt, pCashAsset->currentTotalBal, pCashAsset->currentAvailableBal,
-                        pCashAsset->creditExt.cashAcctId, pCashAsset->creditExt.totalAssetValue, pCashAsset->creditExt.marginAvailableBal, 
-                        pCashAsset->creditExt.availableBal, pCashAsset->creditExt.drawableBal);
+            pCashAsset->custId, pCashAsset->cashAcctId, pCashAsset->beginningBal, pCashAsset->beginningAvailableBal, pCashAsset->beginningDrawableBal,
+            pCashAsset->totalDepositAmt, pCashAsset->totalWithdrawAmt, pCashAsset->totalFeeAmt, pCashAsset->currentTotalBal, pCashAsset->currentAvailableBal,
+            pCashAsset->creditExt.cashAcctId, pCashAsset->creditExt.totalAssetValue, pCashAsset->creditExt.marginAvailableBal, 
+            pCashAsset->creditExt.availableBal, pCashAsset->creditExt.drawableBal);
 
 }
 
@@ -1411,17 +1420,17 @@ void OESTradeGateWay::OnQueryStkHolding(const OesStkHoldingItemT *pStkHolding, c
     message.MessageType = Message::EMessageType::EAccountPosition;
     memcpy(&message.AccountPosition, &AccountPosition, sizeof(message.AccountPosition));
     while(!m_ReportMessageQueue.Push(message));
-    m_Logger->Log->info("OESTrader::OnQueryStkHolding Account:{} invAcctId:{} securityId:{} mktId:{} securityType:{} subSecurityType:{} isCreditHolding:{} "
+    FMTLOG(fmtlog::INF, "OESTrader::OnQueryStkHolding Account:{} invAcctId:{} securityId:{} mktId:{} securityType:{} subSecurityType:{} isCreditHolding:{} "
                         "originalHld:{} originalAvlHld:{} sumHld:{} totalBuyHld:{} totalSellHld:{} sellAvlHld:{} sellAvlHld:{} specialSecurityPositionAvailableQty:{} "
                         "collateralHoldingQty:{} marginBuyOriginDebtQty:{} marginBuyDebtQty:{} marginBuyRepaidQty:{} shortSellOriginDebtQty:{} shortSellDebtQty:{} "
                         "shortSellRepaidQty:{} repayStockDirectAvlHld:{} collateralTotalRepayDirectQty:{}", 
-                        m_XTraderConfig.Account, pStkHolding->invAcctId, pStkHolding->securityId, pStkHolding->mktId, pStkHolding->securityType, 
-                        pStkHolding->subSecurityType, pStkHolding->isCreditHolding, pStkHolding->originalHld, pStkHolding->originalAvlHld, 
-                        pStkHolding->sumHld, pStkHolding->totalBuyHld, pStkHolding->totalSellHld, pStkHolding->sellAvlHld, pStkHolding->creditExt.sellAvlHld, 
-                        pStkHolding->creditExt.specialSecurityPositionAvailableQty, pStkHolding->creditExt.collateralHoldingQty, 
-                        pStkHolding->creditExt.marginBuyOriginDebtQty, pStkHolding->creditExt.marginBuyDebtQty, pStkHolding->creditExt.marginBuyRepaidQty, 
-                        pStkHolding->creditExt.shortSellOriginDebtQty, pStkHolding->creditExt.shortSellDebtQty, pStkHolding->creditExt.shortSellRepaidQty, 
-                        pStkHolding->creditExt.repayStockDirectAvlHld, pStkHolding->creditExt.collateralTotalRepayDirectQty);
+            m_XTraderConfig.Account, pStkHolding->invAcctId, pStkHolding->securityId, pStkHolding->mktId, pStkHolding->securityType, 
+            pStkHolding->subSecurityType, pStkHolding->isCreditHolding, pStkHolding->originalHld, pStkHolding->originalAvlHld, 
+            pStkHolding->sumHld, pStkHolding->totalBuyHld, pStkHolding->totalSellHld, pStkHolding->sellAvlHld, pStkHolding->creditExt.sellAvlHld, 
+            pStkHolding->creditExt.specialSecurityPositionAvailableQty, pStkHolding->creditExt.collateralHoldingQty, 
+            pStkHolding->creditExt.marginBuyOriginDebtQty, pStkHolding->creditExt.marginBuyDebtQty, pStkHolding->creditExt.marginBuyRepaidQty, 
+            pStkHolding->creditExt.shortSellOriginDebtQty, pStkHolding->creditExt.shortSellDebtQty, pStkHolding->creditExt.shortSellRepaidQty, 
+            pStkHolding->creditExt.repayStockDirectAvlHld, pStkHolding->creditExt.collateralTotalRepayDirectQty);
 }
 
 void OESTradeGateWay::OnQueryOrder(const OesOrdItemT *pOrder, const OesQryCursorT *pCursor, int32 requestId) 
@@ -1478,11 +1487,12 @@ void OESTradeGateWay::OnQueryOrder(const OesOrdItemT *pOrder, const OesQryCursor
             PrintOrderStatus(OrderStatus, "OESTrader::OnQueryOrder ");
         }
     }
-    m_Logger->Log->info("OESTrader::OnQueryOrder Account:{} invAcctId:{} securityId:{} clSeqNo:{} clOrdId:{} exchOrdId:{} mktId:{} ordType:{} bsType:{} "
-                        "ordQty:{} cumQty:{} canceledQty:{} ordPrice:{} ordStatus:{} origClOrdId:{} ordRejReason:{} exchErrCode:{} securityType:{} subSecurityType:{}", 
-                        m_XTraderConfig.Account, pOrder->invAcctId, pOrder->securityId, pOrder->clSeqNo, pOrder->clOrdId, pOrder->exchOrdId, pOrder->mktId, pOrder->ordType, 
-                        pOrder->bsType, pOrder->ordQty,  pOrder->cumQty,  pOrder->canceledQty, pOrder->ordPrice, pOrder->ordStatus, 
-                        pOrder->origClOrdId, pOrder->ordRejReason, pOrder->exchErrCode, pOrder->securityType, pOrder->subSecurityType);
+    FMTLOG(fmtlog::INF, "OESTrader::OnQueryOrder Account:{} invAcctId:{} securityId:{} clSeqNo:{} clOrdId:{} exchOrdId:{} mktId:{} ordType:{} bsType:{} "
+                        "ordQty:{} cumQty:{} canceledQty:{} ordPrice:{} ordStatus:{} origClOrdId:{} ordRejReason:{} exchErrCode:{} securityType:{} "
+                        "subSecurityType:{}", 
+            m_XTraderConfig.Account, pOrder->invAcctId, pOrder->securityId, pOrder->clSeqNo, pOrder->clOrdId, pOrder->exchOrdId, pOrder->mktId, pOrder->ordType, 
+            pOrder->bsType, pOrder->ordQty,  pOrder->cumQty,  pOrder->canceledQty, pOrder->ordPrice, pOrder->ordStatus, 
+            pOrder->origClOrdId, pOrder->ordRejReason, pOrder->exchErrCode, pOrder->securityType, pOrder->subSecurityType);
     // 查询结果推送完成时撤销挂单
     if(pCursor->isEnd)
     {
@@ -1499,10 +1509,10 @@ void OESTradeGateWay::OnQueryOrder(const OesOrdItemT *pOrder, const OesQryCursor
 
 void OESTradeGateWay::OnQueryTrade(const OesTrdItemT *pTrade, const OesQryCursorT *pCursor, int32 requestId) 
 {
-   m_Logger->Log->info("OESTrader::OnQueryTrade Account:{} invAcctId:{} securityId:{} mktId:{} trdSide:{} ordStatus:{} ordType:{} ordBuySellType:{} "
+   FMTLOG(fmtlog::INF, "OESTrader::OnQueryTrade Account:{} invAcctId:{} securityId:{} mktId:{} trdSide:{} ordStatus:{} ordType:{} ordBuySellType:{} "
                        "trdQty:{} trdPrice:{} trdAmt:{} trdFee:{}", 
-                        m_XTraderConfig.Account, pTrade->invAcctId, pTrade->securityId, pTrade->mktId, pTrade->trdSide, pTrade->ordStatus, 
-                        pTrade->ordType, pTrade->ordBuySellType, pTrade->trdQty, pTrade->trdPrice, pTrade->trdAmt, pTrade->trdFee);
+            m_XTraderConfig.Account, pTrade->invAcctId, pTrade->securityId, pTrade->mktId, pTrade->trdSide, pTrade->ordStatus, 
+            pTrade->ordType, pTrade->ordBuySellType, pTrade->trdQty, pTrade->trdPrice, pTrade->trdAmt, pTrade->trdFee);
 }
 
 void OESTradeGateWay::OnQueryIssue(const OesIssueItemT *pIssue, const OesQryCursorT *pCursor, int32 requestId)
@@ -1522,11 +1532,11 @@ void OESTradeGateWay::OnQueryIssue(const OesIssueItemT *pIssue, const OesQryCurs
     strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
     while(!m_ReportMessageQueue.Push(message));
-    m_Logger->Log->info("OESTrader::OnQueryIssue Account:{} securityId:{} mktId:{} issueType:{} isCancelAble:{} issuePrice:{} issueQty:{} "
+    FMTLOG(fmtlog::INF, "OESTrader::OnQueryIssue Account:{} securityId:{} mktId:{} issueType:{} isCancelAble:{} issuePrice:{} issueQty:{} "
                         "underlyingSecurityId:{} securityName:{} securityType:{} subSecurityType:{}", 
-                        m_XTraderConfig.Account.c_str(), pIssue->securityId, pIssue->mktId, pIssue->issueType, pIssue->isCancelAble, 
-                        pIssue->issuePrice / 10000.0, pIssue->issueQty, pIssue->underlyingSecurityId, pIssue->securityName,
-                        pIssue->securityType, pIssue->subSecurityType);
+            m_XTraderConfig.Account.c_str(), pIssue->securityId, pIssue->mktId, pIssue->issueType, pIssue->isCancelAble, 
+            pIssue->issuePrice / 10000.0, pIssue->issueQty, pIssue->underlyingSecurityId, pIssue->securityName,
+            pIssue->securityType, pIssue->subSecurityType);
 }
 
 void OESTradeGateWay::OnQueryLotWinning(const OesLotWinningItemT *pLotWinning, const OesQryCursorT *pCursor, int32 requestId) 
@@ -1546,45 +1556,48 @@ void OESTradeGateWay::OnQueryLotWinning(const OesLotWinningItemT *pLotWinning, c
     strncpy(message.EventLog.Event, buffer, sizeof(message.EventLog.Event));
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
     while(!m_ReportMessageQueue.Push(message));
-    m_Logger->Log->info("OESTrader::OnQueryLotWinning invAcctId:{} securityId:{} mktId:{} lotType:{} rejReason:{} lotDate:{} assignNum:{} lotQty:{} lotPrice:{} lotAmt:{}", 
-                            pLotWinning->invAcctId, pLotWinning->securityId, pLotWinning->mktId, pLotWinning->lotType, pLotWinning->rejReason, 
-                            pLotWinning->lotDate, pLotWinning->assignNum, pLotWinning->lotQty, pLotWinning->lotPrice, pLotWinning->lotAmt);
+    FMTLOG(fmtlog::INF, "OESTrader::OnQueryLotWinning invAcctId:{} securityId:{} mktId:{} lotType:{} rejReason:{} lotDate:{} assignNum:{} "
+                        "lotQty:{} lotPrice:{} lotAmt:{}", 
+            pLotWinning->invAcctId, pLotWinning->securityId, pLotWinning->mktId, pLotWinning->lotType, pLotWinning->rejReason, 
+            pLotWinning->lotDate, pLotWinning->assignNum, pLotWinning->lotQty, pLotWinning->lotPrice, pLotWinning->lotAmt);
 }
 
 void OESTradeGateWay::OnQueryInvAcct(const OesInvAcctItemT *pInvAcct, const OesQryCursorT *pCursor, int32 requestId) 
 {
-    m_Logger->Log->info("OESTrader::OnQueryInvAcct Account:{} invAcctId:{} mktId:{} acctType:{} custId:{} status:{} pbuId:{} subscriptionQuota:{} kcSubscriptionQuota:{}", 
-                        m_XTraderConfig.Account, pInvAcct->custId, pInvAcct->invAcctId, pInvAcct->mktId, pInvAcct->acctType, pInvAcct->custId, pInvAcct->status,
-                        pInvAcct->pbuId, pInvAcct->subscriptionQuota, pInvAcct->kcSubscriptionQuota);
+    FMTLOG(fmtlog::INF, "OESTrader::OnQueryInvAcct Account:{} invAcctId:{} mktId:{} acctType:{} custId:{} status:{} pbuId:{} "
+                        "subscriptionQuota:{} kcSubscriptionQuota:{}", 
+            m_XTraderConfig.Account, pInvAcct->custId, pInvAcct->invAcctId, pInvAcct->mktId, pInvAcct->acctType, pInvAcct->custId, pInvAcct->status,
+            pInvAcct->pbuId, pInvAcct->subscriptionQuota, pInvAcct->kcSubscriptionQuota);
 }
 
 void OESTradeGateWay::OnQueryCrdCreditAsset(const OesCrdCreditAssetItemT *pCreditAsset, const OesQryCursorT *pCursor, int32 requestId)
 {
-    m_Logger->Log->info("OESTrader::OnQueryCrdCreditAsset Account:{} cashAcctId:{} custId:{} totalAssetValue:{} totalDebtValue:{} maintenaceRatio:{} "
+    FMTLOG(fmtlog::INF, "OESTrader::OnQueryCrdCreditAsset Account:{} cashAcctId:{} custId:{} totalAssetValue:{} totalDebtValue:{} maintenaceRatio:{} "
                         "marginAvailableBal:{} cashBalance:{} availableBal:{} drawableBal:{} marginBuyMaxQuota:{} shortSellMaxQuota:{} "
                         "specialCashPositionAmt:{} specialCashPositionAvailableBal:{} publicCashPositionAmt:{} publicCashPositionAvailableBal:{}", 
-                        m_XTraderConfig.Account, pCreditAsset->cashAcctId, pCreditAsset->custId, pCreditAsset->totalAssetValue, 
-                        pCreditAsset->totalDebtValue, pCreditAsset->maintenaceRatio, pCreditAsset->marginAvailableBal,
-                        pCreditAsset->cashBalance, pCreditAsset->availableBal, pCreditAsset->drawableBal, 
-                        pCreditAsset->marginBuyMaxQuota, pCreditAsset->shortSellMaxQuota, pCreditAsset->specialCashPositionAmt,
-                        pCreditAsset->specialCashPositionAvailableBal, pCreditAsset->publicCashPositionAmt, pCreditAsset->publicCashPositionAvailableBal);
+            m_XTraderConfig.Account, pCreditAsset->cashAcctId, pCreditAsset->custId, pCreditAsset->totalAssetValue, 
+            pCreditAsset->totalDebtValue, pCreditAsset->maintenaceRatio, pCreditAsset->marginAvailableBal,
+            pCreditAsset->cashBalance, pCreditAsset->availableBal, pCreditAsset->drawableBal, 
+            pCreditAsset->marginBuyMaxQuota, pCreditAsset->shortSellMaxQuota, pCreditAsset->specialCashPositionAmt,
+            pCreditAsset->specialCashPositionAvailableBal, pCreditAsset->publicCashPositionAmt, pCreditAsset->publicCashPositionAvailableBal);
 }
 
 void OESTradeGateWay::OnQueryCrdCashPosition(const OesCrdCashPositionItemT *pCashPosition, const OesQryCursorT *pCursor, int32 requestId)
 {
-    m_Logger->Log->info("OESTrader::OnQueryCrdCashPosition Account:{} custId:{} cashAcctId:{} cashGroupNo:{} cashGroupProperty:{} positionAmt:{} "
+    FMTLOG(fmtlog::INF, "OESTrader::OnQueryCrdCashPosition Account:{} custId:{} cashAcctId:{} cashGroupNo:{} cashGroupProperty:{} positionAmt:{} "
                         "repaidPositionAmt:{} usedPositionAmt:{} originalBalance:{} originalAvailable:{} originalUsed:{}", 
-                        m_XTraderConfig.Account, pCashPosition->custId, pCashPosition->cashAcctId, pCashPosition->cashGroupNo, pCashPosition->cashGroupProperty, pCashPosition->positionAmt, pCashPosition->repaidPositionAmt,
-                        pCashPosition->usedPositionAmt, pCashPosition->originalBalance, pCashPosition->originalAvailable, pCashPosition->originalUsed);
+            m_XTraderConfig.Account, pCashPosition->custId, pCashPosition->cashAcctId, pCashPosition->cashGroupNo, pCashPosition->cashGroupProperty, 
+            pCashPosition->positionAmt, pCashPosition->repaidPositionAmt, pCashPosition->usedPositionAmt, pCashPosition->originalBalance, 
+            pCashPosition->originalAvailable, pCashPosition->originalUsed);
 }
 
 void OESTradeGateWay::OnQueryCrdSecurityPosition(const OesCrdSecurityPositionItemT *pSecurityPosition, const OesQryCursorT *pCursor, int32 requestId)
 {
-    m_Logger->Log->info("OESTrader::OnQueryCrdSecurityPosition Account:{} custId:{} invAcctId:{} securityId:{} mktId:{} cashGroupProperty:{} "
+    FMTLOG(fmtlog::INF, "OESTrader::OnQueryCrdSecurityPosition Account:{} custId:{} invAcctId:{} securityId:{} mktId:{} cashGroupProperty:{} "
                         "cashGroupNo:{} positionQty:{} repaidPositionQty:{} usedPositionQty:{} originalBalanceQty:{} originalAvailableQty:{} "
                         "originalUsedQty:{} availablePositionQty:{}", 
-                        m_XTraderConfig.Account, pSecurityPosition->custId, pSecurityPosition->invAcctId, pSecurityPosition->securityId, 
-                        pSecurityPosition->mktId, pSecurityPosition->cashGroupProperty, pSecurityPosition->cashGroupNo, pSecurityPosition->positionQty,
-                        pSecurityPosition->repaidPositionQty, pSecurityPosition->usedPositionQty, pSecurityPosition->originalBalanceQty,
-                        pSecurityPosition->originalAvailableQty, pSecurityPosition->originalUsedQty, pSecurityPosition->availablePositionQty);
+            m_XTraderConfig.Account, pSecurityPosition->custId, pSecurityPosition->invAcctId, pSecurityPosition->securityId, 
+            pSecurityPosition->mktId, pSecurityPosition->cashGroupProperty, pSecurityPosition->cashGroupNo, pSecurityPosition->positionQty,
+            pSecurityPosition->repaidPositionQty, pSecurityPosition->usedPositionQty, pSecurityPosition->originalBalanceQty,
+            pSecurityPosition->originalAvailableQty, pSecurityPosition->originalUsedQty, pSecurityPosition->availablePositionQty);
 }

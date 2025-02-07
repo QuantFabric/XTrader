@@ -1,6 +1,5 @@
 #include "TraderEngine.h"
 
-extern Utils::Logger *gLogger;
 
 TraderEngine::TraderEngine() : m_RequestMessageQueue(1 << 12), m_ReportMessageQueue(1 << 12)
 {
@@ -15,18 +14,18 @@ void TraderEngine::LoadConfig(const std::string& path)
     std::string errorString;
     if(!Utils::LoadXTraderConfig(path.c_str(), m_XTraderConfig, errorString))
     {
-        Utils::gLogger->Log->error("TraderEngine::LoadXTraderConfig {} failed, {}", path, errorString);
+        FMTLOG(fmtlog::WRN, "TraderEngine::LoadXTraderConfig {} failed, {}",  path, errorString);
     }
     else
     {
-        Utils::gLogger->Log->info("TraderEngine::LoadXTraderConfig {} successed", path);
-        Utils::gLogger->Log->info("LoadXTraderConfig Product:{} BrokerID:{} Account:{} AppID:{} AuthCode:{}", 
-                                m_XTraderConfig.Product, m_XTraderConfig.BrokerID, m_XTraderConfig.Account, m_XTraderConfig.AppID, m_XTraderConfig.AuthCode);
-        Utils::gLogger->Log->info("LoadXTraderConfig ServerIP:{} Port:{} OpenTime:{} CloseTime:{}", 
-                                    m_XTraderConfig.ServerIP, m_XTraderConfig.Port, m_XTraderConfig.OpenTime, m_XTraderConfig.CloseTime);
-        Utils::gLogger->Log->info("LoadXTraderConfig TickerListPath:{} ErrorPath:{}",  m_XTraderConfig.TickerListPath, m_XTraderConfig.ErrorPath);
-        Utils::gLogger->Log->info("LoadXTraderConfig RiskServerName:{} QuantServerName:{} TraderAPI:{}", 
-                                    m_XTraderConfig.RiskServerName, m_XTraderConfig.QuantServerName, m_XTraderConfig.TraderAPI);
+        FMTLOG(fmtlog::INF, "TraderEngine::LoadXTraderConfig {} successed", path);
+        FMTLOG(fmtlog::INF, "LoadXTraderConfig Product:{} BrokerID:{} Account:{} AppID:{} AuthCode:{}", 
+                m_XTraderConfig.Product, m_XTraderConfig.BrokerID, m_XTraderConfig.Account, m_XTraderConfig.AppID, m_XTraderConfig.AuthCode);
+        FMTLOG(fmtlog::INF, "LoadXTraderConfig ServerIP:{} Port:{} OpenTime:{} CloseTime:{}", 
+                m_XTraderConfig.ServerIP, m_XTraderConfig.Port, m_XTraderConfig.OpenTime, m_XTraderConfig.CloseTime);
+        FMTLOG(fmtlog::INF, "LoadXTraderConfig TickerListPath:{} ErrorPath:{}",  m_XTraderConfig.TickerListPath, m_XTraderConfig.ErrorPath);    
+        FMTLOG(fmtlog::INF, "LoadXTraderConfig RiskServerName:{} QuantServerName:{} TraderAPI:{}",
+                m_XTraderConfig.RiskServerName, m_XTraderConfig.QuantServerName, m_XTraderConfig.TraderAPI);
     }
     m_OpenTime = Utils::getTimeStampMs(m_XTraderConfig.OpenTime.c_str());
     m_CloseTime = Utils::getTimeStampMs(m_XTraderConfig.CloseTime.c_str());
@@ -35,7 +34,7 @@ void TraderEngine::LoadConfig(const std::string& path)
 void TraderEngine::SetCommand(const std::string& cmd)
 {
     m_Command = cmd;
-    Utils::gLogger->Log->info("TraderEngine::SetCommand cmd:{}", m_Command);
+    FMTLOG(fmtlog::INF, "TraderEngine::SetCommand cmd:{}", m_Command);
 }
 
 void TraderEngine::LoadTradeGateWay(const std::string& soPath)
@@ -44,29 +43,28 @@ void TraderEngine::LoadTradeGateWay(const std::string& soPath)
     m_TradeGateWay = XPluginEngine<TradeGateWay>::LoadPlugin(soPath, errorString);
     if(NULL == m_TradeGateWay)
     {
-        Utils::gLogger->Log->error("TraderEngine::LoadTradeGateWay {} failed, {}", soPath, errorString);
+        FMTLOG(fmtlog::ERR, "TraderEngine::LoadTradeGateWay {} failed, {}", soPath, errorString);
         sleep(1);
         exit(-1);
     }
     else
     {
-        Utils::gLogger->Log->info("TraderEngine::LoadTradeGateWay {} successed", soPath);
-        m_TradeGateWay->SetLogger(Utils::Singleton<Utils::Logger>::GetInstance());
+        FMTLOG(fmtlog::INF, "TraderEngine::LoadTradeGateWay {} successed", soPath);
         m_TradeGateWay->SetTraderConfig(m_XTraderConfig);
     }
 }
 
 void TraderEngine::Run()
 {
-    Utils::gLogger->Log->info("TraderEngine::Run RiskServer:{} QuantServer:{}", m_XTraderConfig.RiskServerName, m_XTraderConfig.QuantServerName);
+    FMTLOG(fmtlog::INF, "TraderEngine::Run RiskServer:{} QuantServer:{}", m_XTraderConfig.RiskServerName, m_XTraderConfig.QuantServerName);
     // Connect to XWatcher
     RegisterClient(m_XTraderConfig.ServerIP.c_str(), m_XTraderConfig.Port);
     // Connect to RiskServer
-    Utils::gLogger->Log->info("TraderEngine::Run connect to RiskServer:{}", m_XTraderConfig.RiskServerName);
+    FMTLOG(fmtlog::INF, "TraderEngine::Run connect to RiskServer:{}", m_XTraderConfig.RiskServerName);
     m_RiskClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.Account);
     m_RiskClient->Start(m_XTraderConfig.RiskServerName);
     // Connect to QuantServer
-    Utils::gLogger->Log->info("TraderEngine::Run connect to QuantServer:{}", m_XTraderConfig.QuantServerName);
+    FMTLOG(fmtlog::INF, "TraderEngine::Run connect to QuantServer:{}", m_XTraderConfig.QuantServerName);
     m_QuantClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.Account);
     m_QuantClient->Start(m_XTraderConfig.QuantServerName);
     sleep(1);
@@ -89,7 +87,7 @@ void TraderEngine::Run()
 
 void TraderEngine::WorkFunc()
 {
-    Utils::gLogger->Log->info("TraderEngine::WorkFunc WorkThread start");
+    FMTLOG(fmtlog::INF, "TraderEngine::WorkFunc WorkThread start");
     // 风控初始化检查
     InitRiskCheck();
     while(true)
@@ -146,11 +144,11 @@ void TraderEngine::ReadRequestFromQuant()
     bool ok = m_QuantClient->Pop(message);
     if(ok)
     {
-        Utils::gLogger->Log->info("TraderEngine::ReadRequestFromQuant recv msg from ChannelID:{}", message.ChannelID);
-        Utils::gLogger->Log->debug("Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
-                                    message.OrderRequest.Account, message.OrderRequest.Ticker, message.OrderRequest.RiskStatus, 
-                                    message.OrderRequest.OrderToken, message.OrderRequest.RiskID, message.OrderRequest.Price, 
-                                    message.OrderRequest.Volume, message.OrderRequest.ErrorMsg, message.MessageType);
+        FMTLOG(fmtlog::INF, "TraderEngine::ReadRequestFromQuant recv msg from ChannelID:{}", message.ChannelID);
+        FMTLOG(fmtlog::DBG, "Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
+                message.OrderRequest.Account, message.OrderRequest.Ticker, message.OrderRequest.RiskStatus, 
+                message.OrderRequest.OrderToken, message.OrderRequest.RiskID, message.OrderRequest.Price, 
+                message.OrderRequest.Volume, message.OrderRequest.ErrorMsg, message.MessageType);
         while(!m_RequestMessageQueue.Push(message));
     }
 }
@@ -180,9 +178,7 @@ void TraderEngine::ReadRequestFromClient()
                     break;
                 default:
                 {
-                    char buffer[256] = {0};
-                    sprintf(buffer, "Unkown Message Type:0X%X", message.MessageType);
-                    Utils::gLogger->Log->warn("TraderEngine::ReadRequestFromClient {}", buffer);
+                    FMTLOG(fmtlog::WRN, "TraderEngine::ReadRequestFromClient Unkown Message Type:{:#X}", message.MessageType);
                     break;
                 }
             }
@@ -239,9 +235,7 @@ void TraderEngine::HandleRequestMessage()
                 }
                 default:
                 {
-                    char buffer[256] = {0};
-                    sprintf(buffer, "Unkown Message Type:0X%X", request.MessageType);
-                    Utils::gLogger->Log->warn("TraderEngine::HandleRequestMessage {}", buffer);
+                    FMTLOG(fmtlog::WRN, "TraderEngine::HandleRequestMessage Unkown Message Type:{:#X}", request.MessageType);
                     break;
                 }
             }
@@ -263,7 +257,7 @@ void TraderEngine::HandleRiskResponse()
         bool ok = m_RiskClient->Pop(message);
         if(ok)
         {
-            Utils::gLogger->Log->info("TraderEngine::HandleRiskResponse recv msg from ChannelID:{}", message.ChannelID);
+            FMTLOG(fmtlog::INF, "TraderEngine::HandleRiskResponse recv msg from ChannelID:{}", message.ChannelID);
             switch(message.MessageType)
             {
                 case Message::EMessageType::EOrderRequest:
@@ -283,9 +277,7 @@ void TraderEngine::HandleRiskResponse()
                 }
                 default:
                 {
-                    char buffer[256] = {0};
-                    sprintf(buffer, "Unkown Message Type:0X%X", message.MessageType);
-                    Utils::gLogger->Log->warn("TraderEngine::HandleRiskResponse {}", buffer);
+                    FMTLOG(fmtlog::WRN, "TraderEngine::HandleRiskResponse Unkown Message Type:{:#X}", message.MessageType);
                     break;
                 }
             }
@@ -324,9 +316,7 @@ void TraderEngine::HandleExecuteReport()
                 }
                 default:
                 {
-                    char buffer[256] = {0};
-                    sprintf(buffer, "Unkown Message Type:0X%X", report.MessageType);
-                    Utils::gLogger->Log->warn("TraderEngine::HandleExcuteReport {}", buffer);
+                    FMTLOG(fmtlog::WRN, "TraderEngine::HandleExcuteReport Unkown Message Type:{:#X}", report.MessageType);
                     break;
                 }
             }
@@ -354,7 +344,7 @@ void TraderEngine::HandleCommand(const Message::PackMessage& msg)
             }
             else
             {
-                Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid TransferFundIn Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+                FMTLOG(fmtlog::WRN, "TraderEngine::HandleCommand Account:{} invalid TransferFundIn Command:{}", m_XTraderConfig.Account, msg.Command.Command);
             }
         }
         else if(Message::ECommandType::ETRANSFER_FUND_OUT == msg.Command.CmdType)
@@ -369,12 +359,12 @@ void TraderEngine::HandleCommand(const Message::PackMessage& msg)
             }
             else
             {
-                Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid TransferFundOut Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+                FMTLOG(fmtlog::WRN, "TraderEngine::HandleCommand Account:{} invalid TransferFundOut Command:{}", m_XTraderConfig.Account, msg.Command.Command);
             }
         }
         else 
         {
-            Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+            FMTLOG(fmtlog::WRN, "TraderEngine::HandleCommand Account:{} invalid Command:{}", m_XTraderConfig.Account, msg.Command.Command);
         }
     }
     else if(Message::EBusinessType::ECREDIT ==  m_XTraderConfig.BusinessType)
@@ -391,7 +381,7 @@ void TraderEngine::HandleCommand(const Message::PackMessage& msg)
             }
             else
             {
-                Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid TransferFundIn Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+                FMTLOG(fmtlog::WRN, "TraderEngine::HandleCommand Account:{} invalid TransferFundIn Command:{}", m_XTraderConfig.Account, msg.Command.Command);
             }
         }
         else if(Message::ECommandType::ETRANSFER_FUND_OUT == msg.Command.CmdType)
@@ -406,7 +396,7 @@ void TraderEngine::HandleCommand(const Message::PackMessage& msg)
             }
             else
             {
-                Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid TransferFundOut Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+                FMTLOG(fmtlog::WRN, "TraderEngine::HandleCommand Account:{} invalid TransferFundOut Command:{}", m_XTraderConfig.Account, msg.Command.Command);
             }
         }
         else if(Message::ECommandType::EREPAY_MARGIN_DIRECT == msg.Command.CmdType)
@@ -421,17 +411,17 @@ void TraderEngine::HandleCommand(const Message::PackMessage& msg)
             }
             else
             {
-                Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid RepayMarginDirect Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+                FMTLOG(fmtlog::WRN, "TraderEngine::HandleCommand Account:{} invalid RepayMarginDirect Command:{}", m_XTraderConfig.Account, msg.Command.Command);
             }
         }
         else 
         {
-            Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+            FMTLOG(fmtlog::WRN, "TraderEngine::HandleCommand Account:{} invalid Command:{}", m_XTraderConfig.Account, msg.Command.Command);
         }
     }
     else 
     {
-        Utils::gLogger->Log->warn("TraderEngine::HandleCommand Account:{} invalid Command:{}", m_XTraderConfig.Account, msg.Command.Command);
+        FMTLOG(fmtlog::WRN, "TraderEngine::HandleCommand Account:{} invalid Command:{}", m_XTraderConfig.Account, msg.Command.Command);
     }
 }
 
@@ -497,9 +487,7 @@ void TraderEngine::SendMonitorMessage(const Message::PackMessage& message)
         }
         default:
         {
-            char buffer[256] = {0};
-            sprintf(buffer, "Unkown Message Type:0X%X", message.MessageType);
-            Utils::gLogger->Log->warn("TraderEngine::SendMonitorMessage {}", buffer);
+            FMTLOG(fmtlog::WRN, "TraderEngine::SendMonitorMessage Unkown Message Type:{:#X}", message.MessageType);
             break;
         }
     }
@@ -542,7 +530,7 @@ void TraderEngine::InitAppStatus()
 
 void TraderEngine::UpdateAppStatus(const std::string& cmd, Message::TAppStatus& AppStatus)
 {
-    Utils::gLogger->Log->info("TraderEngine::UpdateAppStatus cmd:{}", cmd);
+    FMTLOG(fmtlog::INF, "TraderEngine::UpdateAppStatus cmd:{}", cmd);
     std::vector<std::string> ItemVec;
     Utils::Split(cmd, " ", ItemVec);
     std::string Account;
@@ -558,7 +546,7 @@ void TraderEngine::UpdateAppStatus(const std::string& cmd, Message::TAppStatus& 
 
     std::vector<std::string> Vec;
     Utils::Split(ItemVec.at(0), "/", Vec);
-    Utils::gLogger->Log->info("TraderEngine::UpdateAppStatus {}", Vec.size());
+    FMTLOG(fmtlog::INF, "TraderEngine::UpdateAppStatus {}", Vec.size());
     std::string AppName = Vec.at(Vec.size() - 1);
     strncpy(AppStatus.AppName, AppName.c_str(), sizeof(AppStatus.AppName));
     AppStatus.PID = getpid();
@@ -591,7 +579,6 @@ void TraderEngine::UpdateAppStatus(const std::string& cmd, Message::TAppStatus& 
     strncpy(AppStatus.StartTime, Utils::getCurrentTimeUs(), sizeof(AppStatus.StartTime));
     strncpy(AppStatus.LastStartTime, Utils::getCurrentTimeUs(), sizeof(AppStatus.LastStartTime));
     strncpy(AppStatus.UpdateTime, Utils::getCurrentTimeUs(), sizeof(AppStatus.UpdateTime));
-
-    Utils::gLogger->Log->info("TraderEngine::UpdateAppStatus AppCommitID:{} AppUtilsCommitID:{} SoCommitID:{} SoUtilsCommitID:{} CMD:{}",
-                                APP_COMMITID, UTILS_COMMITID, SoCommitID, SoUtilsCommitID, command);
+    FMTLOG(fmtlog::INF, "TraderEngine::UpdateAppStatus AppCommitID:{} AppUtilsCommitID:{} SoCommitID:{} SoUtilsCommitID:{} CMD:{}",
+            APP_COMMITID, UTILS_COMMITID, SoCommitID, SoUtilsCommitID, command);
 }

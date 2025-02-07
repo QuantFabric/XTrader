@@ -29,27 +29,27 @@ void REMTradeGateWay::LoadAPIConfig()
     if(ok)
     {
         m_APISoPath = m_REMConfig.EESTraderLibPath + "/" + EES_TRADER_DLL_NAME;
-        m_Logger->Log->info("REMTrader::LoadAPIConfig InvestorID:{} LoadREMConfig successed", m_XTraderConfig.Account);
-        m_Logger->Log->info("LoadREMConfig TradeServerIP:{} TradeServerPort:{} TradeServerUDPPort:{}", 
+        FMTLOG(fmtlog::INF, "REMTrader::LoadAPIConfig InvestorID:{} LoadREMConfig successed", m_XTraderConfig.Account);
+        FMTLOG(fmtlog::INF, "LoadREMConfig TradeServerIP:{} TradeServerPort:{} TradeServerUDPPort:{}", 
                             m_REMConfig.TradeServerIP, m_REMConfig.TradeServerPort, m_REMConfig.TradeServerUDPPort);
-        m_Logger->Log->info("LoadREMConfig QueryServerIP:{} QueryServerPort:{} QuoteServerIP:{} QuoteServerPort:{}", 
+        FMTLOG(fmtlog::INF, "LoadREMConfig QueryServerIP:{} QueryServerPort:{} QuoteServerIP:{} QuoteServerPort:{}", 
                             m_REMConfig.QueryServerIP, m_REMConfig.QueryServerPort, m_REMConfig.QuoteServerIP, m_REMConfig.QuoteServerPort);
-        m_Logger->Log->info("LoadREMConfig LocalTradeIP:{} LocalTradeUDPPort:{} EESTraderLibPath:{}", 
+        FMTLOG(fmtlog::INF, "LoadREMConfig LocalTradeIP:{} LocalTradeUDPPort:{} EESTraderLibPath:{}", 
                             m_REMConfig.LocalTradeIP, m_REMConfig.LocalTradeUDPPort, m_APISoPath);
         LoadEESTrader();
     }
     else
     {
-        m_Logger->Log->error("REMTrader::LoadAPIConfig InvestorID:{} LoadREMConfig failed, {}", m_XTraderConfig.Account, errorString);
+        FMTLOG(fmtlog::ERR, "REMTrader::LoadAPIConfig InvestorID:{} LoadREMConfig failed, {}", m_XTraderConfig.Account, errorString);
     }
     ok = Utils::LoadREMError(m_XTraderConfig.ErrorPath.c_str(), m_CodeErrorMap, errorString);
     if(ok)
     {
-        m_Logger->Log->info("REMTrader::LoadAPIConfig InvestorID:{} LoadREMError {} successed", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath);
+        FMTLOG(fmtlog::INF, "REMTrader::LoadAPIConfig InvestorID:{} LoadREMError {} successed", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath);
     }
     else
     {
-        m_Logger->Log->error("REMTrader::LoadAPIConfig InvestorID:{} LoadREMError {} failed, {}", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath, errorString);
+        FMTLOG(fmtlog::ERR, "REMTrader::LoadAPIConfig InvestorID:{} LoadREMError {} failed, {}", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath, errorString);
     }
 }
 
@@ -84,7 +84,7 @@ void REMTradeGateWay::CreateTraderAPI()
                 m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str());
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         sleep(1);
         exit(-1);
     }
@@ -94,7 +94,7 @@ void REMTradeGateWay::CreateTraderAPI()
     strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
     while(!m_ReportMessageQueue.Push(message));
 
-    m_Logger->Log->info(errorString);
+    FMTLOG(fmtlog::INF, errorString);
 }
 
 void REMTradeGateWay::DestroyTraderAPI()
@@ -110,7 +110,7 @@ void REMTradeGateWay::DestroyTraderAPI()
 void REMTradeGateWay::LoadTrader()
 {
     ConnectServer();
-    m_Logger->Log->info("REMTrader::LoadTrader InvestorID:{}", m_XTraderConfig.Account.c_str());
+    FMTLOG(fmtlog::INF, "REMTrader::LoadTrader InvestorID:{}", m_XTraderConfig.Account);
 }
 
 void REMTradeGateWay::ReLoadTrader()
@@ -134,7 +134,7 @@ void REMTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
 
-        m_Logger->Log->warn(buffer);
+        FMTLOG(fmtlog::WRN, buffer);
     }
 }
 
@@ -144,7 +144,7 @@ void REMTradeGateWay::ReqUserLogin()
                                      m_XTraderConfig.AppID.c_str(), m_XTraderConfig.AuthCode.c_str());
     std::string errorString;
     HandleLoginResult(ret, errorString);
-    m_Logger->Log->info(errorString);
+    FMTLOG(fmtlog::INF, errorString);
 
     Message::PackMessage message;
     memset(&message, 0, sizeof(message));
@@ -298,14 +298,13 @@ void REMTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
         Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
         UpdatePosition(OrderStatus, AccountPosition);
         UpdateOrderStatus(OrderStatus);
-        m_Logger->Log->info("REMTrader:ReqInsertOrder, m_Account:{} m_Side:{} m_Exchange:{} m_Symbol:{} m_SecType:{} m_Price:{} \n\
-                              \t\t\t\t\t\tm_Qty:{} m_OptExecFlag:{} m_ClientOrderToken:{} m_Tif:{} m_MinQty:{} m_MarketSessionId:{} m_HedgeFlag:{} \n\
-                              \t\t\t\t\t\tm_ForceMarketSessionId:{} m_DoNotAdjustCoverSide:{} MaxToken:{}",
-                                  reqOrderField.m_Account, reqOrderField.m_Side, reqOrderField.m_Exchange,
-                                  reqOrderField.m_Symbol, reqOrderField.m_SecType, reqOrderField.m_Price, reqOrderField.m_Qty,
-                                  reqOrderField.m_OptExecFlag, reqOrderField.m_ClientOrderToken, reqOrderField.m_Tif,
-                                  reqOrderField.m_MinQty, reqOrderField.m_MarketSessionId, reqOrderField.m_HedgeFlag, reqOrderField.m_ForceMarketSessionId,
-                                  reqOrderField.m_DoNotAdjustCoverSide, order_token);
+        FMTLOG(fmtlog::INF, "REMTrader:ReqInsertOrder, m_Account:{} m_Side:{} m_Exchange:{} m_Symbol:{} m_SecType:{} m_Price:{} "
+                            "m_Qty:{} m_OptExecFlag:{} m_ClientOrderToken:{} m_Tif:{} m_MinQty:{} m_MarketSessionId:{} m_HedgeFlag:{} "
+                            "m_ForceMarketSessionId:{} m_DoNotAdjustCoverSide:{} MaxToken:{}",
+                reqOrderField.m_Account, reqOrderField.m_Side, reqOrderField.m_Exchange, reqOrderField.m_Symbol, 
+                reqOrderField.m_SecType, reqOrderField.m_Price, reqOrderField.m_Qty, reqOrderField.m_OptExecFlag, 
+                reqOrderField.m_ClientOrderToken, reqOrderField.m_Tif, reqOrderField.m_MinQty, reqOrderField.m_MarketSessionId, 
+                reqOrderField.m_HedgeFlag, reqOrderField.m_ForceMarketSessionId, reqOrderField.m_DoNotAdjustCoverSide, order_token);
     }
     else
     {
@@ -357,7 +356,7 @@ void REMTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
     auto it = m_OrderStatusMap.find(request.OrderRef);
     if(it == m_OrderStatusMap.end())
     {
-        m_Logger->Log->warn("REMTrader::ReqCancelOrder Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
+        FMTLOG(fmtlog::WRN, "REMTrader::ReqCancelOrder Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
         return ;
     }
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[request.OrderRef];
@@ -381,7 +380,7 @@ void REMTradeGateWay::ReqCancelOrderRejected(const Message::TActionRequest& requ
     auto it = m_OrderStatusMap.find(request.OrderRef);
     if(it == m_OrderStatusMap.end())
     {
-        m_Logger->Log->warn("REMTrader::ReqCancelOrderRejected Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
+        FMTLOG(fmtlog::WRN, "REMTrader::ReqCancelOrderRejected Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
         return ;
     }
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[request.OrderRef];
@@ -407,7 +406,7 @@ void REMTradeGateWay::InitPosition()
             strncpy(AccountPosition.Ticker, it2->Ticker.c_str(), sizeof(AccountPosition.Ticker));
             strncpy(AccountPosition.ExchangeID, it2->ExchangeID.c_str(), sizeof(AccountPosition.ExchangeID));
         }
-        m_Logger->Log->info("REMTrader::InitPosition Account:{} Tickers:{}", *it1, m_TickerPropertyList.size());
+        FMTLOG(fmtlog::INF, "REMTrader::InitPosition Account:{} Tickers:{}", *it1, m_TickerPropertyList.size());
     }
     for(auto it2 = m_TickerPropertyList.begin(); it2 != m_TickerPropertyList.end(); it2++)
     {
@@ -419,8 +418,8 @@ void REMTradeGateWay::ConnectServer()
 {
     if(NULL == m_TraderAPI)
     {
-        m_Logger->Log->warn("REMTrader::ConnectServer Broker:{} InvestorID:{} Trader API object invalid.",
-                                  m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str());
+        FMTLOG(fmtlog::WRN, "REMTrader::ConnectServer Broker:{} InvestorID:{} Trader API object invalid.",
+                m_XTraderConfig.Broker, m_XTraderConfig.Account);
         return;
     }
     memset(&m_EES_TradeSvrInfo, 0, sizeof(m_EES_TradeSvrInfo));
@@ -463,7 +462,7 @@ void REMTradeGateWay::ConnectServer()
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
 
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         return;
     }
     sprintf(errorString, "REMTrader::ConnectServer Broker:%s InvestorID:%s Connected to TradeServer:%s:%d QueryServer:%s:%d succssed",
@@ -483,7 +482,7 @@ void REMTradeGateWay::ConnectServer()
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
     while(!m_ReportMessageQueue.Push(message));
 
-    m_Logger->Log->info(errorString);
+    FMTLOG(fmtlog::INF, errorString);
 }
 
 bool REMTradeGateWay::LoadEESTrader()
@@ -509,7 +508,7 @@ bool REMTradeGateWay::LoadEESTrader()
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
 
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         return false;
     }
 
@@ -522,7 +521,7 @@ bool REMTradeGateWay::LoadEESTrader()
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
 
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         return false;
     }
 
@@ -535,10 +534,10 @@ bool REMTradeGateWay::LoadEESTrader()
         strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
         while(!m_ReportMessageQueue.Push(message));
 
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         return false;
     }
-    m_Logger->Log->info("REMTrader::LoadEESTrader {} successed", m_APISoPath);
+    FMTLOG(fmtlog::INF, "REMTrader::LoadEESTrader {} successed", m_APISoPath);
     return true;
 }
 
@@ -817,7 +816,7 @@ void REMTradeGateWay::OnConnection(ERR_NO errNo, const char* pErrStr)
         message.EventLog.Level = Message::EEventLogLevel::EERROR;
         while(!m_ReportMessageQueue.Push(message));
 
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         return;
     }
     m_ConnectedStatus = Message::ELoginStatus::ELOGIN_CONNECTED;
@@ -828,7 +827,7 @@ void REMTradeGateWay::OnConnection(ERR_NO errNo, const char* pErrStr)
     message.EventLog.Level = Message::EEventLogLevel::EINFO;
     while(!m_ReportMessageQueue.Push(message));
 
-    m_Logger->Log->info(errorString);
+    FMTLOG(fmtlog::INF, errorString);
 
     ReqUserLogin();
 }
@@ -853,7 +852,7 @@ void REMTradeGateWay::OnDisConnection(ERR_NO errNo, const char* pErrStr )
     while(!m_ReportMessageQueue.Push(message));
 
     m_ConnectedStatus = Message::ELoginStatus::ELOGIN_FAILED;
-    m_Logger->Log->warn(errorString);
+    FMTLOG(fmtlog::WRN, errorString);
 }
 
 void REMTradeGateWay::OnUserLogon(EES_LogonResponse* pLogon)
@@ -865,14 +864,14 @@ void REMTradeGateWay::OnUserLogon(EES_LogonResponse* pLogon)
     {
         sprintf(errorString, "REMTrader::OnUserLogon Broker:%s InvestorID:%s logon successed, TradingDay:%u, Max Token:%u",
                 m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(), pLogon->m_TradingDate, pLogon->m_MaxToken);
-        m_Logger->Log->info(errorString);
+        FMTLOG(fmtlog::INF, errorString);
     }
     else if(Message::ELoginStatus::ELOGIN_FAILED == m_ConnectedStatus)
     {
         sprintf(errorString, "REMTrader::OnUserLogon Broker:%s InvestorID:%s UserId:%d logon failed, code:%d errMsg:%s",
                 m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(), pLogon->m_UserId,
                 pLogon->m_Result, errorBuffer.c_str());
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
     }
     Message::PackMessage message;
     memset(&message, 0, sizeof(message));
@@ -944,7 +943,7 @@ void REMTradeGateWay::OnOrderAccept(EES_OrderAcceptField* pAccept )
         char errorString[512] = {0};
         sprintf(errorString, "REMTrader:OnOrderMarketAccept, UserID:%d Account:%s not found Order, Ticker:%s OrderRef:%d  OrderLocalID:%ld",
                 pAccept->m_UserID, pAccept->m_Account, pAccept->m_Symbol, pAccept->m_ClientOrderToken, pAccept->m_MarketOrderToken);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -959,17 +958,16 @@ void REMTradeGateWay::OnOrderAccept(EES_OrderAcceptField* pAccept )
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
-    m_Logger->Log->info("REMTrader:OnOrderAccept, Broker:{}, InvestorID:{} m_Symbol:{}\n"
-                              "\t\t\t\t\t\tm_ClientOrderToken:{} m_MarketOrderToken:{} m_OrderState:{} m_UserID:{} m_AcceptTime:{}\n"
-                              "\t\t\t\t\t\tm_Account:{} m_Side:{} m_Exchange:{} m_SecType:{} m_Price:{} m_Qty:{}\n"
-                              "\t\t\t\t\t\tm_OptExecFlag:{} m_Tif:{} m_MinQty:{} m_CustomField:{} m_MarketSessionId:{}\n"
-                              "\t\t\t\t\t\tm_HedgeFlag:{}",
-                              m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(),pAccept->m_Symbol,
-                              pAccept->m_ClientOrderToken, pAccept->m_MarketOrderToken, pAccept->m_OrderState,
-                              pAccept->m_UserID, pAccept->m_AcceptTime, pAccept->m_Account, pAccept->m_Side,
-                              pAccept->m_Exchange, pAccept->m_SecType, pAccept->m_Price, pAccept->m_Qty,
-                              pAccept->m_OptExecFlag, pAccept->m_Tif, pAccept->m_MinQty, pAccept->m_CustomField,
-                              pAccept->m_MarketSessionId, pAccept->m_HedgeFlag);
+    FMTLOG(fmtlog::INF, "REMTrader:OnOrderAccept, Broker:{}, InvestorID:{} m_Symbol:{} "
+                        "m_ClientOrderToken:{} m_MarketOrderToken:{} m_OrderState:{} m_UserID:{} m_AcceptTime:{} "
+                        "m_Account:{} m_Side:{} m_Exchange:{} m_SecType:{} m_Price:{} m_Qty:{} "
+                        "m_OptExecFlag:{} m_Tif:{} m_MinQty:{} m_CustomField:{} m_MarketSessionId:{} m_HedgeFlag:{}",
+            m_XTraderConfig.Broker, m_XTraderConfig.Account,pAccept->m_Symbol,
+            pAccept->m_ClientOrderToken, pAccept->m_MarketOrderToken, pAccept->m_OrderState,
+            pAccept->m_UserID, pAccept->m_AcceptTime, pAccept->m_Account, pAccept->m_Side,
+            pAccept->m_Exchange, pAccept->m_SecType, pAccept->m_Price, pAccept->m_Qty,
+            pAccept->m_OptExecFlag, pAccept->m_Tif, pAccept->m_MinQty, pAccept->m_CustomField,
+            pAccept->m_MarketSessionId, pAccept->m_HedgeFlag);
 }
 
 void REMTradeGateWay::OnOrderReject(EES_OrderRejectField* pReject )
@@ -1019,7 +1017,7 @@ void REMTradeGateWay::OnOrderReject(EES_OrderRejectField* pReject )
         char errorString[512] = {0};
         sprintf(errorString, "REMTrader:OnOrderReject, UserID:%d not found Order, OrderRef:%d",
                 pReject->m_Userid, pReject->m_ClientOrderToken);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -1032,13 +1030,13 @@ void REMTradeGateWay::OnOrderReject(EES_OrderRejectField* pReject )
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
-    m_Logger->Log->info("REMTrader:OnOrderReject, Broker:{}, InvestorID:{} m_Userid:{}\n"
-                              "\t\t\t\t\t\tm_Timestamp:{} m_ClientOrderToken:{} m_RejectedMan:{} m_ReasonCode:{} m_GrammerResult:{}\n"
-                              "\t\t\t\t\t\tm_RiskResult:{} m_GrammerText:{} m_RiskText:{} errorString:{}",
-                              m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(),pReject->m_Userid,
-                              pReject->m_Timestamp, pReject->m_ClientOrderToken, pReject->m_RejectedMan,
-                              pReject->m_ReasonCode, pReject->m_GrammerResult, pReject->m_RiskResult,
-                              pReject->m_GrammerText, pReject->m_RiskText, errorString.c_str());
+    FMTLOG(fmtlog::INF, "REMTrader:OnOrderReject, Broker:{}, InvestorID:{} m_Userid:{} "
+                        "m_Timestamp:{} m_ClientOrderToken:{} m_RejectedMan:{} m_ReasonCode:{} m_GrammerResult:{} "
+                        "m_RiskResult:{} m_GrammerText:{} m_RiskText:{} errorString:{}",
+            m_XTraderConfig.Broker, m_XTraderConfig.Account,pReject->m_Userid,
+            pReject->m_Timestamp, pReject->m_ClientOrderToken, pReject->m_RejectedMan,
+            pReject->m_ReasonCode, pReject->m_GrammerResult, pReject->m_RiskResult,
+            pReject->m_GrammerText, pReject->m_RiskText, errorString);
 }
 
 void REMTradeGateWay::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
@@ -1064,7 +1062,7 @@ void REMTradeGateWay::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
         char errorString[512] = {0};
         sprintf(errorString, "REMTrader:OnOrderMarketAccept, UserID:%d Account:%s not found Order, OrderRef:%d OrderSysID:%s OrderLocalID:%ld",
                 pAccept->m_UserID, pAccept->m_Account, pAccept->m_ClientOrderToken, pAccept->m_MarketOrderId, pAccept->m_MarketOrderToken);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -1077,11 +1075,10 @@ void REMTradeGateWay::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
-    m_Logger->Log->info("REMTrader:OnOrderMarketAccept, Broker:{}, InvestorID:{} m_Account:{}\n"
-                              "\t\t\t\t\t\tm_MarketOrderToken:{} m_MarketOrderId:{} m_MarketTime:{} m_UserID:{} m_ClientOrderToken:{}",
-                              m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(),pAccept->m_Account,
-                              pAccept->m_MarketOrderToken, pAccept->m_MarketOrderId, pAccept->m_MarketTime,
-                              pAccept->m_UserID, pAccept->m_ClientOrderToken);
+    FMTLOG(fmtlog::INF, "REMTrader:OnOrderMarketAccept, Broker:{}, InvestorID:{} m_Account:{} "
+                        "m_MarketOrderToken:{} m_MarketOrderId:{} m_MarketTime:{} m_UserID:{} m_ClientOrderToken:{}",
+            m_XTraderConfig.Broker, m_XTraderConfig.Account,pAccept->m_Account, pAccept->m_MarketOrderToken, 
+            pAccept->m_MarketOrderId, pAccept->m_MarketTime, pAccept->m_UserID, pAccept->m_ClientOrderToken);
 }
 
 void REMTradeGateWay::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
@@ -1121,7 +1118,7 @@ void REMTradeGateWay::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
         char errorString[512] = {0};
         sprintf(errorString, "REMTrader:OnOrderMarketReject, UserID:%d not found Order, OrderRef:%d OrderLocalID:%ld",
                 pReject->m_UserID, pReject->m_ClientOrderToken, pReject->m_MarketOrderToken);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -1134,11 +1131,10 @@ void REMTradeGateWay::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
-    m_Logger->Log->info("REMTrader:OnOrderMarketReject, Broker:{}, InvestorID:{} m_Account:{}\n"
-                              "\t\t\t\t\t\tm_MarketOrderToken:{} m_MarketTimestamp:{} m_ReasonText:{} m_UserID:{} m_ClientOrderToken:{}",
-                              m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(), pReject->m_Account,
-                              pReject->m_MarketOrderToken, pReject->m_MarketTimestamp, errorString,
-                              pReject->m_UserID, pReject->m_ClientOrderToken);
+    FMTLOG(fmtlog::INF, "REMTrader:OnOrderMarketReject, Broker:{}, InvestorID:{} m_Account:{} "
+                        "m_MarketOrderToken:{} m_MarketTimestamp:{} m_ReasonText:{} m_UserID:{} m_ClientOrderToken:{}",
+            m_XTraderConfig.Broker, m_XTraderConfig.Account, pReject->m_Account, pReject->m_MarketOrderToken, 
+            pReject->m_MarketTimestamp, errorString, pReject->m_UserID, pReject->m_ClientOrderToken);
 }
 
 void REMTradeGateWay::OnOrderExecution(EES_OrderExecutionField* pExec )
@@ -1185,7 +1181,7 @@ void REMTradeGateWay::OnOrderExecution(EES_OrderExecutionField* pExec )
         char errorString[512] = {0};
         sprintf(errorString, "REMTrader:OnOrderExecution, UserID:%d not found Order, OrderRef:%d OrderLocalID:%ld",
                 pExec->m_Userid, pExec->m_ClientOrderToken, pExec->m_MarketOrderToken);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -1198,12 +1194,11 @@ void REMTradeGateWay::OnOrderExecution(EES_OrderExecutionField* pExec )
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
-    m_Logger->Log->info("REMTrader:OnOrderExecution, Broker:{}, InvestorID:{} m_Userid:{}\n"
-                              "\t\t\t\t\t\tm_Timestamp:{} m_ClientOrderToken:{} m_MarketOrderToken:{} m_Quantity:{} m_Price:{}\n"
-                              "\t\t\t\t\t\tm_ExecutionID:{} m_MarketExecID:{}",
-                              m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(), pExec->m_Userid,
-                              pExec->m_Timestamp, pExec->m_ClientOrderToken, pExec->m_MarketOrderToken,
-                              pExec->m_Quantity, pExec->m_Price, pExec->m_ExecutionID, pExec->m_MarketExecID);
+    FMTLOG(fmtlog::INF, "REMTrader:OnOrderExecution, Broker:{}, InvestorID:{} m_Userid:{} "
+                        "m_Timestamp:{} m_ClientOrderToken:{} m_MarketOrderToken:{} m_Quantity:{} m_Price:{} "
+                        "m_ExecutionID:{} m_MarketExecID:{}",
+            m_XTraderConfig.Broker, m_XTraderConfig.Account, pExec->m_Userid, pExec->m_Timestamp, pExec->m_ClientOrderToken, 
+            pExec->m_MarketOrderToken, pExec->m_Quantity, pExec->m_Price, pExec->m_ExecutionID, pExec->m_MarketExecID);
 }
 
 void REMTradeGateWay::OnOrderCxled(EES_OrderCxled* pCxled )
@@ -1245,7 +1240,7 @@ void REMTradeGateWay::OnOrderCxled(EES_OrderCxled* pCxled )
         char errorString[512] = {0};
         sprintf(errorString, "REMTrader:OnOrderCxled, UserID:%d not found Order, OrderRef:%d OrderLocalID:%ld",
                 pCxled->m_Userid, pCxled->m_ClientOrderToken, pCxled->m_MarketOrderToken);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -1257,11 +1252,10 @@ void REMTradeGateWay::OnOrderCxled(EES_OrderCxled* pCxled )
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
-    m_Logger->Log->info("REMTrader:OnOrderCxled, Broker:{}, InvestorID:{} m_Userid:{}\n"
-                              "\t\t\t\t\t\tm_Timestamp:{} m_ClientOrderToken:{} m_MarketOrderToken:{} m_Decrement:{} m_Reason:{}",
-                              m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(), pCxled->m_Userid,
-                              pCxled->m_Timestamp, pCxled->m_ClientOrderToken, pCxled->m_MarketOrderToken,
-                              pCxled->m_Decrement, pCxled->m_Reason);
+    FMTLOG(fmtlog::INF, "REMTrader:OnOrderCxled, Broker:{}, InvestorID:{} m_Userid:{} " 
+                        "m_Timestamp:{} m_ClientOrderToken:{} m_MarketOrderToken:{} m_Decrement:{} m_Reason:{}",
+            m_XTraderConfig.Broker, m_XTraderConfig.Account, pCxled->m_Userid, pCxled->m_Timestamp, 
+            pCxled->m_ClientOrderToken, pCxled->m_MarketOrderToken, pCxled->m_Decrement, pCxled->m_Reason);
 }
 
 void REMTradeGateWay::OnCxlOrderReject(EES_CxlOrderRej* pReject )
@@ -1299,7 +1293,7 @@ void REMTradeGateWay::OnCxlOrderReject(EES_CxlOrderRej* pReject )
             strncpy(message.EventLog.Event, errorString, sizeof(message.EventLog.Event));
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
             while(!m_ReportMessageQueue.Push(message));
-            m_Logger->Log->warn(errorString);
+            FMTLOG(fmtlog::WRN, errorString);
         }
         PrintOrderStatus(OrderStatus, "REMTrader::OnCxlOrderReject ");
     }
@@ -1308,7 +1302,7 @@ void REMTradeGateWay::OnCxlOrderReject(EES_CxlOrderRej* pReject )
         char errorString[512] = {0};
         sprintf(errorString, "REMTrader:OnCxlOrderReject, Account:%s not found Order, OrderRef:%d OrderLocalID:%ld",
                 pReject->m_account, pReject->m_ClientOrderToken, pReject->m_MarketOrderToken);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -1322,17 +1316,15 @@ void REMTradeGateWay::OnCxlOrderReject(EES_CxlOrderRej* pReject )
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
-    m_Logger->Log->info("REMTrader:OnCxlOrderReject, Broker:{}, InvestorID:{} m_account:{} m_MarketOrderToken:{}\n"
-                              "\t\t\t\t\t\tm_ReasonCode:{} m_ReasonText:{} m_UserID:{} m_ClientOrderToken:{} m_ExchangeID:{}",
-                              m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(),
-                              pReject->m_account, pReject->m_MarketOrderToken, pReject->m_ReasonCode,
-                              pReject->m_ReasonText, pReject->m_UserID, pReject->m_ClientOrderToken, pReject->m_ExchangeID);
+    FMTLOG(fmtlog::INF, "REMTrader:OnCxlOrderReject, Broker:{}, InvestorID:{} m_account:{} m_MarketOrderToken:{} "
+                        "m_ReasonCode:{} m_ReasonText:{} m_UserID:{} m_ClientOrderToken:{} m_ExchangeID:{}",
+            m_XTraderConfig.Broker, m_XTraderConfig.Account, pReject->m_account, pReject->m_MarketOrderToken, 
+            pReject->m_ReasonCode, pReject->m_ReasonText, pReject->m_UserID, pReject->m_ClientOrderToken, pReject->m_ExchangeID);
 }
 
 void REMTradeGateWay::OnQueryUserAccount(EES_AccountInfo * pAccoutnInfo, bool bFinish)
 {
-    m_Logger->Log->info("REMTrader::OnQueryUserAccount, UserID:{}, Account:{} Finished:{}",
-                              m_XTraderConfig.Account.c_str(), pAccoutnInfo->m_Account, bFinish);
+    FMTLOG(fmtlog::INF, "REMTrader::OnQueryUserAccount, UserID:{}, Account:{} Finished:{}", m_XTraderConfig.Account, pAccoutnInfo->m_Account, bFinish);
     std::string Account = pAccoutnInfo->m_Account;
     if(!Account.empty())
     {
@@ -1349,8 +1341,8 @@ void REMTradeGateWay::OnQuerySymbol(EES_SymbolField* pSymbol, bool bFinish)
     auto it = m_TickerSet.find(pSymbol->m_symbol);
     if(it != m_TickerSet.end())
     {
-        m_Logger->Log->info("REMTrader:OnQuerySymbol m_SecType:{} m_symbol:{} m_ProdID:{} m_VolumeMultiple:{} m_PriceTick:{}",
-                        pSymbol->m_SecType, pSymbol->m_symbol, pSymbol->m_ProdID, pSymbol->m_VolumeMultiple, pSymbol->m_PriceTick);
+        FMTLOG(fmtlog::INF, "REMTrader:OnQuerySymbol m_SecType:{} m_symbol:{} m_ProdID:{} m_VolumeMultiple:{} m_PriceTick:{}",
+                pSymbol->m_SecType, pSymbol->m_symbol, pSymbol->m_ProdID, pSymbol->m_VolumeMultiple, pSymbol->m_PriceTick);
     }
 }
 
@@ -1380,13 +1372,12 @@ void REMTradeGateWay::OnQueryAccountBP(const char* pAccount, EES_AccountBP* pAcc
         strncpy(AccountFund.UpdateTime, Utils::getCurrentTimeUs(), sizeof(AccountFund.UpdateTime));
         memcpy(&message.AccountFund, &AccountFund, sizeof(message.AccountFund));
         while(!m_ReportMessageQueue.Push(message));
-        m_Logger->Log->info("REMTrader::OnQueryAccountBP, m_account:{} m_InitialBp:{} m_AvailableBp:{} m_OvnMargin:{}\n"
-                                  "\t\t\t\t\t\tm_FrozenMargin:{} m_CommissionFee:{} m_FrozenCommission:{} m_OvnInitMargin:{}\n"
-                                  "\t\t\t\t\t\tm_TotalLiquidPL:{} m_TotalMarketPL:{}",
-                                  pAccountBP->m_account, pAccountBP->m_InitialBp, pAccountBP->m_AvailableBp,
-                                  pAccountBP->m_Margin, pAccountBP->m_FrozenMargin, pAccountBP->m_CommissionFee,
-                                  pAccountBP->m_FrozenCommission, pAccountBP->m_OvnInitMargin, pAccountBP->m_TotalLiquidPL,
-                                  pAccountBP->m_TotalMarketPL);
+        FMTLOG(fmtlog::INF, "REMTrader::OnQueryAccountBP, m_account:{} m_InitialBp:{} m_AvailableBp:{} m_OvnMargin:{} "
+                            "m_FrozenMargin:{} m_CommissionFee:{} m_FrozenCommission:{} m_OvnInitMargin:{} "
+                            "m_TotalLiquidPL:{} m_TotalMarketPL:{}",
+                pAccountBP->m_account, pAccountBP->m_InitialBp, pAccountBP->m_AvailableBp, pAccountBP->m_Margin, pAccountBP->m_FrozenMargin, 
+                pAccountBP->m_CommissionFee, pAccountBP->m_FrozenCommission, pAccountBP->m_OvnInitMargin, 
+                pAccountBP->m_TotalLiquidPL, pAccountBP->m_TotalMarketPL);
     }
 }
 
@@ -1431,13 +1422,13 @@ void REMTradeGateWay::OnQueryAccountPosition(const char* pAccount, EES_AccountPo
                 strncpy(AccountPosition.UpdateTime, Utils::getCurrentTimeUs(), sizeof(AccountPosition.UpdateTime));
             }
         }
-        m_Logger->Log->info("REMTrader::OnQueryAccountPosition, m_actId:{} m_Symbol:{} m_PosiDirection:{}\n"
-                                  "\t\t\t\t\t\tm_InitOvnQty:{} m_OvnQty:{} m_FrozenOvnQty:{} m_TodayQty:{} m_FrozenTodayQty:{}\n"
-                                  "\t\t\t\t\t\tm_OvnMargin:{} m_TodayMargin:{} m_PositionCost:{} m_HedgeFlag:{} Finished:{}",
-                                  pAccoutnPosition->m_actId, pAccoutnPosition->m_Symbol, pAccoutnPosition->m_PosiDirection,
-                                  pAccoutnPosition->m_InitOvnQty, pAccoutnPosition->m_OvnQty, pAccoutnPosition->m_FrozenOvnQty,
-                                  pAccoutnPosition->m_TodayQty, pAccoutnPosition->m_FrozenTodayQty, pAccoutnPosition->m_OvnMargin,
-                                  pAccoutnPosition->m_TodayMargin, pAccoutnPosition->m_PositionCost, pAccoutnPosition->m_HedgeFlag, bFinish);
+        FMTLOG(fmtlog::INF, "REMTrader::OnQueryAccountPosition, m_actId:{} m_Symbol:{} m_PosiDirection:{} "
+                            "m_InitOvnQty:{} m_OvnQty:{} m_FrozenOvnQty:{} m_TodayQty:{} m_FrozenTodayQty:{} "
+                            "m_OvnMargin:{} m_TodayMargin:{} m_PositionCost:{} m_HedgeFlag:{} Finished:{}",
+                pAccoutnPosition->m_actId, pAccoutnPosition->m_Symbol, pAccoutnPosition->m_PosiDirection,
+                pAccoutnPosition->m_InitOvnQty, pAccoutnPosition->m_OvnQty, pAccoutnPosition->m_FrozenOvnQty,
+                pAccoutnPosition->m_TodayQty, pAccoutnPosition->m_FrozenTodayQty, pAccoutnPosition->m_OvnMargin,
+                pAccoutnPosition->m_TodayMargin, pAccoutnPosition->m_PositionCost, pAccoutnPosition->m_HedgeFlag, bFinish);
     }
 
     if(bFinish)
@@ -1543,31 +1534,30 @@ void REMTradeGateWay::OnQueryTradeOrder(const char* pAccount, EES_QueryAccountOr
             }
         }
     }
-    m_Logger->Log->info("REMTrader:OnQueryTradeOrder, Broker:{}, InvestorID:{} Account:{} InstrumentID:{}\n"
-                              "\t\t\t\t\t\tm_Userid:{} m_Timestamp:{} m_ClientOrderToken:{} m_SideType:{} m_Quantity:{}\n"
-                              "\t\t\t\t\t\tm_InstrumentType:{} m_Price:{} m_ExchengeID:{} m_OptExecFlag:{} m_MarketOrderToken:{}\n"
-                              "\t\t\t\t\t\tm_OrderStatus:{} m_CloseTime:{} m_FilledQty:{} m_Tif:{} m_MinQty:{}\n"
-                              "\t\t\t\t\t\tm_CustomField:{} m_MarketOrderId:{} m_HedgeFlag:{} bFinish:{}",
-                              m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(),
-                              pQueryOrder->m_symbol, pQueryOrder->m_account, pQueryOrder->m_Userid, pQueryOrder->m_Timestamp,
-                              pQueryOrder->m_ClientOrderToken, pQueryOrder->m_SideType, pQueryOrder->m_Quantity,
-                              pQueryOrder->m_InstrumentType, pQueryOrder->m_Price, pQueryOrder->m_ExchengeID,
-                              pQueryOrder->m_OptExecFlag, pQueryOrder->m_MarketOrderToken, pQueryOrder->m_OrderStatus,
-                              pQueryOrder->m_CloseTime,  pQueryOrder->m_FilledQty,  pQueryOrder->m_Tif,  pQueryOrder->m_MinQty,
-                              pQueryOrder->m_CustomField, pQueryOrder->m_MarketOrderId, pQueryOrder->m_HedgeFlag, bFinish);
+    FMTLOG(fmtlog::INF, "REMTrader:OnQueryTradeOrder, Broker:{}, InvestorID:{} Account:{} InstrumentID:{} "
+                        "m_Userid:{} m_Timestamp:{} m_ClientOrderToken:{} m_SideType:{} m_Quantity:{} "
+                        "m_InstrumentType:{} m_Price:{} m_ExchengeID:{} m_OptExecFlag:{} m_MarketOrderToken:{} "
+                        "m_OrderStatus:{} m_CloseTime:{} m_FilledQty:{} m_Tif:{} m_MinQty:{} "
+                        "m_CustomField:{} m_MarketOrderId:{} m_HedgeFlag:{} bFinish:{}",
+                m_XTraderConfig.Broker, m_XTraderConfig.Account,
+                pQueryOrder->m_symbol, pQueryOrder->m_account, pQueryOrder->m_Userid, pQueryOrder->m_Timestamp,
+                pQueryOrder->m_ClientOrderToken, pQueryOrder->m_SideType, pQueryOrder->m_Quantity,
+                pQueryOrder->m_InstrumentType, pQueryOrder->m_Price, pQueryOrder->m_ExchengeID,
+                pQueryOrder->m_OptExecFlag, pQueryOrder->m_MarketOrderToken, pQueryOrder->m_OrderStatus,
+                pQueryOrder->m_CloseTime,  pQueryOrder->m_FilledQty,  pQueryOrder->m_Tif,  pQueryOrder->m_MinQty,
+                pQueryOrder->m_CustomField, pQueryOrder->m_MarketOrderId, pQueryOrder->m_HedgeFlag, bFinish);
 }
 
 void REMTradeGateWay::OnQueryTradeOrderExec(const char* pAccount, EES_QueryOrderExecution* pQueryOrderExec, bool bFinish)
 {
     if(NULL == pQueryOrderExec)
         return;
-    m_Logger->Log->info("REMTrader:OnQueryTradeOrderExec, Broker:{}, InvestorID:{} Account:{}\n"
-                              "\t\t\t\t\t\tm_Userid:{} m_Timestamp:{} m_ClientOrderToken:{} m_MarketOrderToken:{} m_ExecutedQuantity:{}\n"
-                              "\t\t\t\t\t\tm_ExecutionPrice:{} m_ExecutionID:{} m_MarketExecID:{} bFinish:{}",
-                              m_XTraderConfig.Broker.c_str(), m_XTraderConfig.Account.c_str(),
-                              pAccount, pQueryOrderExec->m_Userid, pQueryOrderExec->m_Timestamp,
-                              pQueryOrderExec->m_ClientOrderToken, pQueryOrderExec->m_MarketOrderToken, pQueryOrderExec->m_ExecutedQuantity,
-                              pQueryOrderExec->m_ExecutionPrice, pQueryOrderExec->m_ExecutionID, pQueryOrderExec->m_MarketExecID, bFinish);
+    FMTLOG(fmtlog::INF, "REMTrader:OnQueryTradeOrderExec, Broker:{}, InvestorID:{} Account:{} "
+                        "m_Userid:{} m_Timestamp:{} m_ClientOrderToken:{} m_MarketOrderToken:{} m_ExecutedQuantity:{} "
+                        "m_ExecutionPrice:{} m_ExecutionID:{} m_MarketExecID:{} bFinish:{}",
+            m_XTraderConfig.Broker, m_XTraderConfig.Account, pAccount, pQueryOrderExec->m_Userid, pQueryOrderExec->m_Timestamp,
+            pQueryOrderExec->m_ClientOrderToken, pQueryOrderExec->m_MarketOrderToken, pQueryOrderExec->m_ExecutedQuantity,
+            pQueryOrderExec->m_ExecutionPrice, pQueryOrderExec->m_ExecutionID, pQueryOrderExec->m_MarketExecID, bFinish);
 }
 
 void REMTradeGateWay::OnQueryAccountTradeMargin(const char* pAccount, EES_AccountMargin* pSymbolMargin, bool bFinish)
@@ -1575,10 +1565,10 @@ void REMTradeGateWay::OnQueryAccountTradeMargin(const char* pAccount, EES_Accoun
     auto it = m_TickerSet.find(pSymbolMargin->m_symbol);
     if(it != m_TickerSet.end())
     {
-        m_Logger->Log->info("REMTrader:OnQueryAccountTradeMargin, Account:{} m_SecType:{} m_symbol:{}\n"
-                              "\t\t\t\t\t\tm_ExchangeID:{} m_ProdID:{} m_LongMarginRatio:{} m_ShortMarginRatio:{} bFinish:{}",
-                              pAccount, pSymbolMargin->m_SecType, pSymbolMargin->m_symbol, pSymbolMargin->m_ExchangeID, 
-                              pSymbolMargin->m_ProdID, pSymbolMargin->m_LongMarginRatio, pSymbolMargin->m_ShortMarginRatio, bFinish);
+        FMTLOG(fmtlog::INF, "REMTrader:OnQueryAccountTradeMargin, Account:{} m_SecType:{} m_symbol:{} "
+                            "m_ExchangeID:{} m_ProdID:{} m_LongMarginRatio:{} m_ShortMarginRatio:{} bFinish:{}",
+                pAccount, pSymbolMargin->m_SecType, pSymbolMargin->m_symbol, pSymbolMargin->m_ExchangeID, 
+                pSymbolMargin->m_ProdID, pSymbolMargin->m_LongMarginRatio, pSymbolMargin->m_ShortMarginRatio, bFinish);
     }
 }
 
@@ -1587,11 +1577,12 @@ void REMTradeGateWay::OnQueryAccountTradeFee(const char* pAccount, EES_AccountFe
     auto it = m_TickerSet.find(pSymbolFee->m_symbol);
     if(it != m_TickerSet.end())
     {
-        m_Logger->Log->info("REMTrader:OnQueryAccountTradeFee, Account:{}, m_SecType:{} m_ExchangeID:{} m_ProdID:{} m_symbol:{}\n"
-                        "\t\t\t\t\t\tm_OpenRatioByMoney:{} m_OpenRatioByVolume:{} m_CloseYesterdayRatioByMoney:{}\n"
-                        "\t\t\t\t\t\tm_CloseYesterdayRatioByVolume:{} m_CloseTodayRatioByMoney:{} m_CloseTodayRatioByVolume:{} m_PositionDir:{}",
-                        pAccount, pSymbolFee->m_SecType, pSymbolFee->m_ExchangeID, pSymbolFee->m_ProdID,
-                        pSymbolFee->m_symbol, pSymbolFee->m_OpenRatioByMoney, pSymbolFee->m_OpenRatioByVolume, pSymbolFee->m_CloseYesterdayRatioByMoney,
-                        pSymbolFee->m_CloseYesterdayRatioByVolume, pSymbolFee->m_CloseTodayRatioByMoney, pSymbolFee->m_CloseTodayRatioByVolume, pSymbolFee->m_PositionDir);
+        FMTLOG(fmtlog::INF, "REMTrader:OnQueryAccountTradeFee, Account:{}, m_SecType:{} m_ExchangeID:{} m_ProdID:{} m_symbol:{} "
+                            "m_OpenRatioByMoney:{} m_OpenRatioByVolume:{} m_CloseYesterdayRatioByMoney:{} "
+                            "m_CloseYesterdayRatioByVolume:{} m_CloseTodayRatioByMoney:{} m_CloseTodayRatioByVolume:{} m_PositionDir:{}",
+                pAccount, pSymbolFee->m_SecType, pSymbolFee->m_ExchangeID, pSymbolFee->m_ProdID, pSymbolFee->m_symbol, 
+                pSymbolFee->m_OpenRatioByMoney, pSymbolFee->m_OpenRatioByVolume, pSymbolFee->m_CloseYesterdayRatioByMoney, 
+                pSymbolFee->m_CloseYesterdayRatioByVolume, pSymbolFee->m_CloseTodayRatioByMoney, pSymbolFee->m_CloseTodayRatioByVolume, 
+                pSymbolFee->m_PositionDir);
     }
 }

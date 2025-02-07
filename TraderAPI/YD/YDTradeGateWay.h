@@ -5,7 +5,7 @@
 
 #include "Util.hpp"
 #include "YMLConfig.hpp"
-#include "Logger.h"
+#include "FMTLogger.hpp"
 #include "PackMessage.hpp"
 #include "FutureTradeGateWay.hpp"
 

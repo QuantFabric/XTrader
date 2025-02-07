@@ -27,15 +27,15 @@ public:
 
     void PrintAccountPosition(const Message::TAccountPosition& Position, const std::string& op)
     {
-        m_Logger->Log->debug("{}, PrintAccountPosition Product:{} Account:{} Ticker:{} ExchangeID:{} LongYdPosition:{} LongPosition:{} "
-                    "LongTdBuy:{} LongTdSell:{} MarginYdPosition:{} MarginPosition:{} MarginTdBuy:{} MarginTdSell:{} ShortYdPosition:{} "
-                    "ShortPosition:{} ShortTdSell:{} ShortTdBuy:{} ShortDirectRepaid:{} SpecialPositionAvl:{}",
-                    op, Position.Product, Position.Account, Position.Ticker, Position.ExchangeID, 
-                    Position.StockPosition.LongYdPosition, Position.StockPosition.LongPosition, Position.StockPosition.LongTdBuy,
-                    Position.StockPosition.LongTdSell, Position.StockPosition.MarginYdPosition, Position.StockPosition.MarginPosition,
-                    Position.StockPosition.MarginTdBuy, Position.StockPosition.ShortYdPosition, Position.StockPosition.ShortPosition, 
-                    Position.StockPosition.ShortTdSell, Position.StockPosition.ShortTdBuy, Position.StockPosition.ShortDirectRepaid, 
-                    Position.StockPosition.SpecialPositionAvl);
+        FMTLOG(fmtlog::DBG, "{}, PrintAccountPosition Product:{} Account:{} Ticker:{} ExchangeID:{} LongYdPosition:{} LongPosition:{} "
+                            "LongTdBuy:{} LongTdSell:{} MarginYdPosition:{} MarginPosition:{} MarginTdBuy:{} MarginTdSell:{} "
+                            "ShortYdPosition:{} ShortPosition:{} ShortTdSell:{} ShortTdBuy:{} ShortDirectRepaid:{} SpecialPositionAvl:{}",
+                op, Position.Product, Position.Account, Position.Ticker, Position.ExchangeID, 
+                Position.StockPosition.LongYdPosition, Position.StockPosition.LongPosition, Position.StockPosition.LongTdBuy,
+                Position.StockPosition.LongTdSell, Position.StockPosition.MarginYdPosition, Position.StockPosition.MarginPosition,
+                Position.StockPosition.MarginTdBuy, Position.StockPosition.ShortYdPosition, Position.StockPosition.ShortPosition, 
+                Position.StockPosition.ShortTdSell, Position.StockPosition.ShortTdBuy, Position.StockPosition.ShortDirectRepaid, 
+                Position.StockPosition.SpecialPositionAvl);
     }
 };
 

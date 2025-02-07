@@ -27,7 +27,7 @@ public:
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
-        m_Logger->Log->error(stringBuffer);
+        FMTLOG(fmtlog::ERR, stringBuffer);
     }
 
     virtual void TransferFundIn(double value)
@@ -45,7 +45,7 @@ public:
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
-        m_Logger->Log->error(stringBuffer);
+        FMTLOG(fmtlog::ERR, stringBuffer);
     }
 
     virtual void TransferFundOut(double value)
@@ -63,7 +63,7 @@ public:
         strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
-        m_Logger->Log->error(stringBuffer);
+        FMTLOG(fmtlog::ERR, stringBuffer);
     }
 
     virtual void UpdatePosition(const Message::TOrderStatus& OrderStatus, Message::TAccountPosition& position)
@@ -297,7 +297,7 @@ public:
             strncpy(AccountPosition.Ticker, it->Ticker.c_str(), sizeof(AccountPosition.Ticker));
             strncpy(AccountPosition.ExchangeID, it->ExchangeID.c_str(), sizeof(AccountPosition.ExchangeID));
         }
-        m_Logger->Log->info("FutureTradeGateWay::InitPosition Account:{} Tickers:{}", m_XTraderConfig.Account, m_TickerPropertyList.size());
+        FMTLOG(fmtlog::INF, "FutureTradeGateWay::InitPosition Account:{} Tickers:{}", m_XTraderConfig.Account, m_TickerPropertyList.size());
     }
         
     virtual void UpdateFund(const Message::TOrderStatus& OrderStatus, Message::TAccountFund& fund)
@@ -307,17 +307,15 @@ public:
 
     void PrintAccountPosition(const Message::TAccountPosition& Position, const std::string& op)
     {
-        m_Logger->Log->debug("{}, PrintAccountPosition Product:{} Account:{}\n"
-                            "\t\t\t\t\t\tTicker:{} ExchangeID:{} LongTdVolume:{} LongYdVolume:{}\n"
-                            "\t\t\t\t\t\tLongOpenVolume:{} LongOpeningVolume:{} LongClosingTdVolume:{} LongClosingYdVolume:{}\n"
-                            "\t\t\t\t\t\tShortTdVolume:{} ShortYdVolume:{} ShortOpenVolume:{} ShortOpeningVolume:{}\n"
-                            "\t\t\t\t\t\t ShortClosingTdVolume:{} ShortClosingYdVolume:{} UpdateTime:{}",
-                            op, Position.Product, Position.Account, Position.Ticker, Position.ExchangeID, 
-                            Position.FuturePosition.LongTdVolume, Position.FuturePosition.LongYdVolume, Position.FuturePosition.LongOpenVolume,
-                            Position.FuturePosition.LongOpeningVolume, Position.FuturePosition.LongClosingTdVolume, Position.FuturePosition.LongClosingYdVolume,
-                            Position.FuturePosition.ShortTdVolume, Position.FuturePosition.ShortYdVolume, Position.FuturePosition.ShortOpenVolume,
-                            Position.FuturePosition.ShortOpeningVolume, Position.FuturePosition.ShortClosingTdVolume, Position.FuturePosition.ShortClosingYdVolume,
-                            Position.UpdateTime);
+        FMTLOG(fmtlog::DBG, "{}, PrintAccountPosition Product:{} Account:{} Ticker:{} ExchangeID:{} LongTdVolume:{} LongYdVolume:{} "
+                            "LongOpenVolume:{} LongOpeningVolume:{} LongClosingTdVolume:{} LongClosingYdVolume:{} ShortTdVolume:{} "
+                            "ShortYdVolume:{} ShortOpenVolume:{} ShortOpeningVolume:{} ShortClosingTdVolume:{} ShortClosingYdVolume:{} UpdateTime:{}",
+                op, Position.Product, Position.Account, Position.Ticker, Position.ExchangeID, 
+                Position.FuturePosition.LongTdVolume, Position.FuturePosition.LongYdVolume, Position.FuturePosition.LongOpenVolume,
+                Position.FuturePosition.LongOpeningVolume, Position.FuturePosition.LongClosingTdVolume, Position.FuturePosition.LongClosingYdVolume,
+                Position.FuturePosition.ShortTdVolume, Position.FuturePosition.ShortYdVolume, Position.FuturePosition.ShortOpenVolume,
+                Position.FuturePosition.ShortOpeningVolume, Position.FuturePosition.ShortClosingTdVolume, Position.FuturePosition.ShortClosingYdVolume,
+                Position.UpdateTime);
     }
 };
 

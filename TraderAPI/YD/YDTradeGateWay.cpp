@@ -22,20 +22,20 @@ void YDTradeGateWay::LoadAPIConfig()
     bool ok = Utils::LoadYDConfig(m_XTraderConfig.TraderAPIConfig.c_str(), m_YDConfig, errorString);
     if(ok)
     {
-        m_Logger->Log->info("YDTrader::LoadAPIConfig Account:{} LoadYDConfig {} successed", m_XTraderConfig.Account, m_YDConfig.APIConfig);
+        FMTLOG(fmtlog::INF, "YDTrader::LoadAPIConfig Account:{} LoadYDConfig {} successed", m_XTraderConfig.Account, m_YDConfig.APIConfig);
     }
     else
     {
-        m_Logger->Log->error("YDTrader::LoadAPIConfig Account:{} LoadYDConfig failed, {}", m_XTraderConfig.Account, errorString);
+        FMTLOG(fmtlog::ERR, "YDTrader::LoadAPIConfig Account:{} LoadYDConfig failed, {}", m_XTraderConfig.Account, errorString);
     }
     ok = Utils::LoadYDError(m_XTraderConfig.ErrorPath.c_str(), m_CodeErrorMap, errorString);
     if(ok)
     {
-        m_Logger->Log->info("YDTrader::LoadAPIConfig Account:{} LoadYDError {} successed", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath);
+        FMTLOG(fmtlog::INF, "YDTrader::LoadAPIConfig Account:{} LoadYDError {} successed", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath);
     }
     else
     {
-        m_Logger->Log->error("YDTrader::LoadAPIConfig Account:{} LoadYDError {} failed, {}", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath, errorString);
+        FMTLOG(fmtlog::ERR, "YDTrader::LoadAPIConfig Account:{} LoadYDError {} failed, {}", m_XTraderConfig.Account, m_XTraderConfig.ErrorPath, errorString);
     }
 }
 
@@ -55,7 +55,7 @@ void YDTradeGateWay::CreateTraderAPI()
     m_YDAPI = makeYDExtendedApi(m_YDConfig.APIConfig.c_str());
     if(NULL == m_YDAPI)
     {
-        m_Logger->Log->error("YDTrader::CreateTraderAPI Account:{} makeYDExtendedApi {} failed, {}", m_XTraderConfig.Account, m_YDConfig.APIConfig.c_str());
+        FMTLOG(fmtlog::ERR, "YDTrader::CreateTraderAPI Account:{} makeYDExtendedApi {} failed, {}", m_XTraderConfig.Account, m_YDConfig.APIConfig);
     }
 }
 
@@ -74,7 +74,7 @@ void YDTradeGateWay::LoadTrader()
     bool ret = m_YDAPI->startExtended(this, this);
     if(!ret)
     {
-        m_Logger->Log->warn("YDTrader::LoadTrader Account:{} startExtended failed", m_XTraderConfig.Account.c_str());
+        FMTLOG(fmtlog::WRN, "YDTrader::LoadTrader Account:{} startExtended failed", m_XTraderConfig.Account);
     }
 }
 
@@ -100,7 +100,7 @@ void YDTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
 
-        m_Logger->Log->warn(buffer);
+        FMTLOG(fmtlog::WRN, buffer);
     }
 }
 
@@ -136,9 +136,9 @@ int YDTradeGateWay::ReqQryFund()
     message.MessageType = Message::EMessageType::EAccountFund;
     memcpy(&message.AccountFund, &AccountFund, sizeof(message.AccountFund));
     while(!m_ReportMessageQueue.Push(message));
-    m_Logger->Log->info("YDTrader::ReqQryFund Account:{} Balance:{} Available:{} Commission:{} CurrMargin:{} Deposit:{} Withdraw:{}", 
-                        AccountFund.Account, AccountFund.Balance, AccountFund.Available, AccountFund.Commission, AccountFund.CurrMargin,
-                        AccountFund.Deposit, AccountFund.Withdraw);
+    FMTLOG(fmtlog::INF, "YDTrader::ReqQryFund Account:{} Balance:{} Available:{} Commission:{} CurrMargin:{} Deposit:{} Withdraw:{}", 
+            AccountFund.Account, AccountFund.Balance, AccountFund.Available, AccountFund.Commission, AccountFund.CurrMargin,
+            AccountFund.Deposit, AccountFund.Withdraw);
     return 0;
 }
 
@@ -164,7 +164,7 @@ int YDTradeGateWay::ReqQryTickerRate()
 
 void YDTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& req)
 {
-    m_Logger->Log->info("YDTrader::ReqInsertOrder start Account:{} Ticker:{}", m_YDAccount->AccountID, req.Ticker);
+    FMTLOG(fmtlog::INF, "YDTrader::ReqInsertOrder start Account:{} Ticker:{}", m_YDAccount->AccountID, req.Ticker);
     YDInputOrder inputOrder;
     memset(&inputOrder, 0, sizeof(inputOrder));
     if(Message::EOrderDirection::EBUY == req.Direction)
@@ -244,20 +244,19 @@ void YDTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& req)
         Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
         UpdatePosition(OrderStatus, AccountPosition);
         PrintAccountPosition(AccountPosition, "YDTrader::insertOrder ");
-        m_Logger->Log->info("YDTrader::ReqInsertOrder successed, Account:{} Ticker:{} OrderRef:{} Direction:{} "
-                                  "OffsetFlag:{} OrderType:{} Price:{} OrderVolume:{}",
-                                  m_YDAccount->AccountID, Instrument->InstrumentID, inputOrder.OrderRef,
-                                  inputOrder.Direction, inputOrder.OffsetFlag, inputOrder.OrderType,
-                                  inputOrder.Price, inputOrder.OrderVolume);
+        FMTLOG(fmtlog::INF, "YDTrader::ReqInsertOrder successed, Account:{} Ticker:{} OrderRef:{} Direction:{} "
+                            "OffsetFlag:{} OrderType:{} Price:{} OrderVolume:{}",
+                m_YDAccount->AccountID, Instrument->InstrumentID, inputOrder.OrderRef, inputOrder.Direction, inputOrder.OffsetFlag, 
+                inputOrder.OrderType, inputOrder.Price, inputOrder.OrderVolume);
     }
     else
     {
         m_OrderStatusMap.erase(OrderRef);
-        m_Logger->Log->warn("YDTrader::ReqInsertOrder failed, Account:{} Ticker:{} OrderRef:{} Direction:{} "
-                                  "OffsetFlag:{} OrderType:{} Price:{} OrderVolume:{}",
-                                  m_YDAccount->AccountID, Instrument->InstrumentID, inputOrder.OrderRef,
-                                  inputOrder.Direction, inputOrder.OffsetFlag, inputOrder.OrderType,
-                                  inputOrder.Price, inputOrder.OrderVolume);
+        FMTLOG(fmtlog::WRN, "YDTrader::ReqInsertOrder failed, Account:{} Ticker:{} OrderRef:{} Direction:{} "
+                            "OffsetFlag:{} OrderType:{} Price:{} OrderVolume:{}",
+                m_YDAccount->AccountID, Instrument->InstrumentID, inputOrder.OrderRef,
+                inputOrder.Direction, inputOrder.OffsetFlag, inputOrder.OrderType,
+                inputOrder.Price, inputOrder.OrderVolume);
     }
 }
 
@@ -340,18 +339,18 @@ void YDTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
         {
             it->second.OrderStatus = Message::EOrderStatusType::ECANCELLING;
             strncpy(it->second.UpdateTime, Utils::getCurrentTimeUs(), sizeof(it->second.UpdateTime));
-            m_Logger->Log->info("YDTrader::ReqCancelOrder successed, Account:{} Ticker:{} OrderRef:{} OrderSysID:{}",
-                                    m_YDAccount->AccountID, it->second.Ticker, it->second.OrderRef, cancelOrder.OrderSysID);
+            FMTLOG(fmtlog::INF, "YDTrader::ReqCancelOrder successed, Account:{} Ticker:{} OrderRef:{} OrderSysID:{}",
+                    m_YDAccount->AccountID, it->second.Ticker, it->second.OrderRef, cancelOrder.OrderSysID);
         }
         else
         {
-            m_Logger->Log->warn("YDTrader::ReqCancelOrder failed, Account:{} Ticker:{} OrderRef:{} OrderSysID:{}",
-                                    m_YDAccount->AccountID, it->second.Ticker, it->second.OrderRef, cancelOrder.OrderSysID);
+            FMTLOG(fmtlog::WRN, "YDTrader::ReqCancelOrder failed, Account:{} Ticker:{} OrderRef:{} OrderSysID:{}",
+                    m_YDAccount->AccountID, it->second.Ticker, it->second.OrderRef, cancelOrder.OrderSysID);
         }
     }
     else
     {
-        m_Logger->Log->warn("YDTrader::ReqCancelOrder Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
+        FMTLOG(fmtlog::WRN, "YDTrader::ReqCancelOrder Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
     }
 }
 
@@ -360,7 +359,7 @@ void YDTradeGateWay::ReqCancelOrderRejected(const Message::TActionRequest& reque
     auto it = m_OrderStatusMap.find(request.OrderRef);
     if(it == m_OrderStatusMap.end())
     {
-        m_Logger->Log->warn("YDTrader::ReqCancelOrderRejected Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
+        FMTLOG(fmtlog::WRN, "YDTrader::ReqCancelOrderRejected Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
         return ;
     }
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[request.OrderRef];
@@ -376,8 +375,8 @@ void YDTradeGateWay::OnExchangeACK(const Message::TOrderStatus& OrderStatus)
     long send = Utils::getTimeStampUs(OrderStatus.SendTime + 11);
     long insert = Utils::getTimeStampUs(OrderStatus.InsertTime + 11);
     long end = Utils::getTimeStampUs(OrderStatus.ExchangeACKTime + 11);
-    m_Logger->Log->info("YDTrader::OnExchangeACK OrderRef:{}, OrderLocalID:{}, TraderLatency:{}, ExchangeLatency:{}",
-                              OrderStatus.OrderRef, OrderStatus.OrderLocalID, insert - send, end - insert);
+    FMTLOG(fmtlog::INF, "YDTrader::OnExchangeACK OrderRef:{}, OrderLocalID:{}, TraderLatency:{}, ExchangeLatency:{}",
+            OrderStatus.OrderRef, OrderStatus.OrderLocalID, insert - send, end - insert);
 }
 
 int YDTradeGateWay::OrderSide(int direction, int offset, const std::string& Key)
@@ -441,9 +440,9 @@ void YDTradeGateWay::QueryPrePosition()
     for (size_t i = 0; i < n; i++)
     {
         const YDPrePosition* PrePosition = m_YDAPI->getPrePosition(i);
-        m_Logger->Log->info("YDTrader::getPrePosition Account:{} Ticker:{} PositionDirection:{} PrePosition:{}",
-                                  PrePosition->m_pAccount->AccountID, PrePosition->m_pInstrument->InstrumentID,
-                                  PrePosition->PositionDirection, PrePosition->PrePosition);
+        FMTLOG(fmtlog::INF, "YDTrader::getPrePosition Account:{} Ticker:{} PositionDirection:{} PrePosition:{}",
+                PrePosition->m_pAccount->AccountID, PrePosition->m_pInstrument->InstrumentID,
+                PrePosition->PositionDirection, PrePosition->PrePosition);
         std::string Account = PrePosition->m_pAccount->AccountID;
         std::string Ticker = PrePosition->m_pInstrument->InstrumentID;
         std::string Key = Account + ":" + Ticker;
@@ -562,20 +561,19 @@ void YDTradeGateWay::notifyEvent(int apiEvent)
         ErrorString = "Unkown API Event";
         break;
     }
-    m_Logger->Log->info("YDTrader::notifyEvent Account:{} apiEvent:{} Event:{}",
-                              m_XTraderConfig.Account, apiEvent, ErrorString.c_str());
+    FMTLOG(fmtlog::INF, "YDTrader::notifyEvent Account:{} apiEvent:{} Event:{}", m_XTraderConfig.Account, apiEvent, ErrorString);
 }
 
 void YDTradeGateWay::notifyResponse(int errorNo,int requestType)
 {
-    m_Logger->Log->info("YDTrader::notifyResponse errorNo:{} requestType:{}", errorNo, requestType);
+    FMTLOG(fmtlog::INF, "YDTrader::notifyResponse errorNo:{} requestType:{}", errorNo, requestType);
 }
 
 void YDTradeGateWay::notifyReadyForLogin(bool hasLoginFailed)
 {
     m_ConnectedStatus = Message::ELoginStatus::ELOGIN_CONNECTED;
     ReqUserLogin();
-    m_Logger->Log->info("YDTrader::notifyReadyForLogin {} connected successed.", m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "YDTrader::notifyReadyForLogin {} connected successed.", m_XTraderConfig.Account);
 }
 
 void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
@@ -583,7 +581,7 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
     if(0 == errorNo)
     {
         m_MaxOrderRef = maxOrderRef;
-        m_Logger->Log->info("YDTrader::notifyLogin {} login successed. maxOrderRef:{}", m_XTraderConfig.Account, maxOrderRef);
+        FMTLOG(fmtlog::INF, "YDTrader::notifyLogin {} login successed. maxOrderRef:{}", m_XTraderConfig.Account, maxOrderRef);
 
         char buffer[512] = {0};
         sprintf(buffer, "YDTrader::notifyLogin Account:%s login successed, maxOrderRef:%d", m_XTraderConfig.Account.c_str(), maxOrderRef);
@@ -612,8 +610,7 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
         {
             errorString = "Unkown Error.";
         }
-        m_Logger->Log->info("YDTrader::notifyLogin {} login failed. ErrorNo:{} ErrorMsg:{}",
-                                  m_XTraderConfig.Account, errorNo, errorString.c_str());
+        FMTLOG(fmtlog::INF, "YDTrader::notifyLogin {} login failed. ErrorNo:{} ErrorMsg:{}", m_XTraderConfig.Account, errorNo, errorString);
         char buffer[512] = {0};
         sprintf(buffer, "YDTrader::notifyLogin Account:%s login failed, ErrorNo:%d ErrorMsg:%S", 
                         m_XTraderConfig.Account.c_str(), errorNo, errorString.c_str());
@@ -635,7 +632,7 @@ void YDTradeGateWay::notifyFinishInit(void)
 {
     m_ConnectedStatus = Message::ELoginStatus::ELOGIN_SUCCESSED;
     m_YDAccount = const_cast<YDAccount*>(m_YDAPI->getMyAccount());
-    m_Logger->Log->info("YDTrader::notifyFinishInit Tickers:{}", m_TickerPropertyList.size());
+    FMTLOG(fmtlog::INF, "YDTrader::notifyFinishInit Tickers:{}", m_TickerPropertyList.size());
     for(auto it = m_TickerPropertyList.begin(); it != m_TickerPropertyList.end(); it++)
     {
         std::string Ticker = it->Ticker;
@@ -651,16 +648,15 @@ void YDTradeGateWay::notifyFinishInit(void)
             m_YDInstrumentMap[Ticker] = ret;
             // 订阅合约行情
             // m_YDAPI->subscribe(ret);
-            m_Logger->Log->info("YDTrader::notifyFinishInit Exchange:{} Account:{} Ticker:{}",
-                                      ExchangeID, m_YDAccount->AccountID, Ticker);
+           FMTLOG(fmtlog::INF, "YDTrader::notifyFinishInit Exchange:{} Account:{} Ticker:{}", ExchangeID, m_YDAccount->AccountID, Ticker);
         }
         else
         {
-            m_Logger->Log->warn("YDTrader::notifyFinishInit getInstrumentByID failed, Exchange:{} Account:{} Ticker:{}",
-                                      ExchangeID, m_YDAccount->AccountID, Ticker);
+            FMTLOG(fmtlog::ERR, "YDTrader::notifyFinishInit getInstrumentByID failed, Exchange:{} Account:{} Ticker:{}",
+                    ExchangeID, m_YDAccount->AccountID, Ticker);
         }
     }
-    m_Logger->Log->info("YDTrader::notifyFinishInit YDInstruments:{}", m_YDInstrumentMap.size());
+    FMTLOG(fmtlog::INF, "YDTrader::notifyFinishInit YDInstruments:{}", m_YDInstrumentMap.size());
     // 日初数据查询，日初资金、日初仓位查询
     QueryPrePosition();
 }
@@ -671,7 +667,7 @@ void YDTradeGateWay::notifyCaughtUp(void)
     ReqQryFund();
 
     m_ReadyTrading = true;
-    m_Logger->Log->info("YDTrader::notifyCaughtUp ReadyTrading:{}", m_ReadyTrading);
+    FMTLOG(fmtlog::INF, "YDTrader::notifyCaughtUp ReadyTrading:{}", m_ReadyTrading);
     // 更新挂单订单状态
     for (auto it1 = m_OrderStatusMap.begin(); it1 != m_OrderStatusMap.end(); it1++)
     {
@@ -973,7 +969,7 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
         char errorString[512] = {0};
         sprintf(errorString, "YDTrader:notifyOrder, Account:%s not found Order, InstrumentID:%s OrderRef:%d  OrderLocalID:%ld OrderSysID:%ld",
                 m_YDAccount->AccountID, pInstrument->InstrumentID, pOrder->OrderRef, pOrder->OrderLocalID, pOrder->OrderSysID);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -997,7 +993,7 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
             pOrder->OrderRef, pOrder->OrderType, pOrder->YDOrderFlag, pOrder->ErrorNo,
             pOrder->OrderSysID, pOrder->OrderStatus, pOrder->TradeVolume, pOrder->InsertTime,
             pOrder->OrderLocalID);
-    m_Logger->Log->info(errorBuffer);
+    FMTLOG(fmtlog::INF, errorBuffer);
 }
 
 void YDTradeGateWay::notifyTrade(const YDTrade *pTrade, const YDInstrument *pInstrument, const YDAccount *pAccount)
@@ -1088,7 +1084,7 @@ void YDTradeGateWay::notifyTrade(const YDTrade *pTrade, const YDInstrument *pIns
         char errorString[512] = {0};
         sprintf(errorString, "YDTrader:notifyTrade, Broker:%s, InvestorID:%s InstrumentID:%s not found Order, OrderRef:%d OrderSysID:%d",
                 m_XTraderConfig.Broker.c_str(), m_YDAccount->AccountID, pInstrument->InstrumentID, pTrade->OrderRef, pTrade->OrderSysID);
-        m_Logger->Log->warn(errorString);
+        FMTLOG(fmtlog::WRN, errorString);
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -1109,7 +1105,7 @@ void YDTradeGateWay::notifyTrade(const YDTrade *pTrade, const YDInstrument *pIns
             pAccount->AccountID, pInstrument->InstrumentID, pTrade->Direction, pTrade->OffsetFlag,
             pTrade->HedgeFlag, pTrade->TradeID, pTrade->OrderSysID, pTrade->Price, pTrade->Volume,
             pTrade->TradeTime, pTrade->Commission, pTrade->OrderLocalID, pTrade->OrderRef);
-    m_Logger->Log->info(errorString);
+    FMTLOG(fmtlog::INF, errorString);
 }
 
 void YDTradeGateWay::notifyFailedOrder(const YDInputOrder *pFailedOrder, const YDInstrument *pInstrument, const YDAccount *pAccount)
@@ -1147,14 +1143,14 @@ void YDTradeGateWay::notifyFailedOrder(const YDInputOrder *pFailedOrder, const Y
     sprintf(errorString, "YDTrader::notifyFailedOrder Account:%s Ticker:%s OrdeRref:%d Direction:%d OffsetFlag:%d ErrorNo:%d",
             pAccount->AccountID, pInstrument->InstrumentID, pFailedOrder->OrderRef,
             pFailedOrder->Direction, pFailedOrder->OffsetFlag, pFailedOrder->ErrorNo);
-    m_Logger->Log->info(errorString);
+    FMTLOG(fmtlog::INF, errorString);
 }
 
 void YDTradeGateWay::notifyFailedCancelOrder(const YDFailedCancelOrder *pFailedCancelOrder,const YDExchange *pExchange,const YDAccount *pAccount)
 {
     if(NULL == pFailedCancelOrder || NULL == pExchange || NULL == pAccount)
     {
-        m_Logger->Log->warn("YDTrader::notifyFailedCancelOrder invalid Pointer NULL");
+        FMTLOG(fmtlog::WRN, "YDTrader::notifyFailedCancelOrder invalid Pointer NULL");
         return;
     }
     // OrderStatus
@@ -1183,16 +1179,16 @@ void YDTradeGateWay::notifyFailedCancelOrder(const YDFailedCancelOrder *pFailedC
     char errorString[512] = {0};
     sprintf(errorString, "YDTrader::notifyFailedCancelOrder Account:%s OrdeSysID:%d ErrorNo:%d",
             pAccount->AccountID, pFailedCancelOrder->OrderSysID, pFailedCancelOrder->ErrorNo);
-    m_Logger->Log->warn(errorString);
+    FMTLOG(fmtlog::WRN, errorString);
 }
 
 void YDTradeGateWay::notifyExtendedAccount(const YDExtendedAccount *pAccount)
 {
     if(m_ReadyTrading)
     {
-        m_Logger->Log->info("YDTrader::notifyExtendedAccount Account:{} PreBalance:{} Balance:{} Available:{} Deposit:{} Withdraw:{}",
-                            pAccount->m_pAccount->AccountID, pAccount->m_pAccount->PreBalance, pAccount->Balance, pAccount->Available, 
-                            pAccount->m_pAccount->Deposit, pAccount->m_pAccount->Withdraw);
+        FMTLOG(fmtlog::INF, "YDTrader::notifyExtendedAccount Account:{} PreBalance:{} Balance:{} Available:{} Deposit:{} Withdraw:{}",
+                pAccount->m_pAccount->AccountID, pAccount->m_pAccount->PreBalance, pAccount->Balance, pAccount->Available, 
+                pAccount->m_pAccount->Deposit, pAccount->m_pAccount->Withdraw);
         Message::TAccountFund& AccountFund = m_AccountFundMap[pAccount->m_pAccount->AccountID];
         AccountFund.PreBalance = pAccount->m_pAccount->PreBalance;
         AccountFund.Balance = pAccount->Balance;

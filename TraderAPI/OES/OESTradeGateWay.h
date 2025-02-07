@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "Util.hpp"
 #include "YMLConfig.hpp"
-#include "Logger.h"
+#include "FMTLogger.hpp"
 #include "PackMessage.hpp"
 #include "StockTradeGateWay.hpp"
 #include "OESTraderSPI.hpp"
