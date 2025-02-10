@@ -2,6 +2,7 @@
 #define TRADEGATEWAY_HPP
 
 #include <string>
+#include <fmt/core.h>
 #include "LockFreeQueue.hpp"
 #include "PackMessage.hpp"
 #include "FMTLogger.hpp"

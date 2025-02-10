@@ -14,8 +14,6 @@ class FutureTradeGateWay : public TradeGateWay
 public:
     virtual void RepayMarginDirect(double value)
     {
-        char stringBuffer[256] = {0};
-        sprintf(stringBuffer, "FutureTradeGateWay::RepayMarginDirect Account:%s invalid Command", m_XTraderConfig.Account.c_str());
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -24,16 +22,15 @@ public:
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, "FutureTrader", sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
+        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
+                        "FutureTradeGateWay::RepayMarginDirect Account:{} invalid Command", m_XTraderConfig.Account);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
-        FMTLOG(fmtlog::ERR, stringBuffer);
+        FMTLOG(fmtlog::ERR, "FutureTradeGateWay::RepayMarginDirect Account:{} invalid Command", m_XTraderConfig.Account);
     }
 
     virtual void TransferFundIn(double value)
     {
-        char stringBuffer[256] = {0};
-        sprintf(stringBuffer, "FutureTradeGateWay::TransferFundIn Account:%s invalid Command", m_XTraderConfig.Account.c_str());
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -42,16 +39,15 @@ public:
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, "FutureTrader", sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
+        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
+                        "FutureTradeGateWay::TransferFundIn Account:{} invalid Command", m_XTraderConfig.Account);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
-        FMTLOG(fmtlog::ERR, stringBuffer);
+        FMTLOG(fmtlog::ERR, "FutureTradeGateWay::TransferFundIn Account:{} invalid Command", m_XTraderConfig.Account);
     }
 
     virtual void TransferFundOut(double value)
     {
-        char stringBuffer[256] = {0};
-        sprintf(stringBuffer, "FutureTradeGateWay::TransferFundOut Account:%s invalid Command", m_XTraderConfig.Account.c_str());
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -60,10 +56,11 @@ public:
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, "FutureTrader", sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        strncpy(message.EventLog.Event, stringBuffer, sizeof(message.EventLog.Event));
+        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
+                        "FutureTradeGateWay::TransferFundOut Account:{} invalid Command", m_XTraderConfig.Account);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
-        FMTLOG(fmtlog::ERR, stringBuffer);
+        FMTLOG(fmtlog::ERR, "FutureTradeGateWay::TransferFundOut Account:{} invalid Command", m_XTraderConfig.Account);
     }
 
     virtual void UpdatePosition(const Message::TOrderStatus& OrderStatus, Message::TAccountPosition& position)

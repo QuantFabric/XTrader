@@ -123,9 +123,7 @@ void TestTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
 
 void TestTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& request)
 {
-    char OrderRef[32] = {0};
     int orderID = Utils::getCurrentTodaySec();
-    sprintf(OrderRef, "%09d", orderID);
     // Order Status
     Message::TOrderStatus OrderStatus;
     memset(&OrderStatus, 0, sizeof(OrderStatus));
@@ -135,7 +133,7 @@ void TestTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& requ
     strncpy(OrderStatus.Account, m_XTraderConfig.Account.c_str(), sizeof(OrderStatus.Account));
     strncpy(OrderStatus.ExchangeID, request.ExchangeID, sizeof(OrderStatus.ExchangeID));
     strncpy(OrderStatus.Ticker, request.Ticker, sizeof(OrderStatus.Ticker));
-    strncpy(OrderStatus.OrderRef, OrderRef, sizeof(OrderStatus.OrderRef));
+    fmt::format_to_n(OrderStatus.OrderRef, sizeof(OrderStatus.OrderRef), "{:09d}", orderID);
     strncpy(OrderStatus.RiskID, request.RiskID, sizeof(OrderStatus.RiskID));
     OrderStatus.SendPrice = request.Price;
     OrderStatus.SendVolume = request.Volume;

@@ -9,7 +9,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build/)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.9.1)
+SET(AppVersion 0.9.2)
 SET(XTrader_Version ${PROJECT_NAME}_${AppVersion})
 
 # 默认输出debug版

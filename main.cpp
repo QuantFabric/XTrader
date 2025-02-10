@@ -5,7 +5,7 @@
 
 void printHelp()
 {
-    printf("Usage:  XServer -f ~/config.yml -d\n");
+    printf("Usage:  XTrader -f ~/config.yml -d\n");
     printf("\t-f: Config File Path\n");
     printf("\t-a: Account\n");
     printf("\t-L: Plugin So path\n");

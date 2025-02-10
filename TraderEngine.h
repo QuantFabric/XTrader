@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <stdlib.h>
+#include <fmt/core.h>
 #include "HPPackClient.h"
 #include "YMLConfig.hpp"
 #include "XPluginEngine.hpp"

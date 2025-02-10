@@ -4,7 +4,7 @@ PROJECT(OESTrader)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.3.0)
+SET(AppVersion 0.4.0)
 SET(APIVersion OES0.17.4.1)
 SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 

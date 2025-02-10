@@ -211,12 +211,10 @@ void TraderEngine::HandleRequestMessage()
                     else if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
                     {
                         SendRiskCheckReqeust(request);
-                        // Utils::gLogger->Log->debug("TraderEngine::HandleRequestMessage send msg to ChannelID:{}", request.ChannelID);
                     }
                     else if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ECHECK_INIT)
                     {
                         SendRiskCheckReqeust(request);
-                        // Utils::gLogger->Log->debug("TraderEngine::HandleRequestMessage send msg to ChannelID:{}", request.ChannelID);
                     }
                     break;
                 }
@@ -229,7 +227,6 @@ void TraderEngine::HandleRequestMessage()
                     else if(request.ActionRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
                     {
                         SendRiskCheckReqeust(request);
-                        // Utils::gLogger->Log->debug("TraderEngine::HandleRequestMessage send msg to ChannelID:{}", request.ChannelID);
                     }
                     break;
                 }
@@ -552,7 +549,6 @@ void TraderEngine::UpdateAppStatus(const std::string& cmd, Message::TAppStatus& 
     AppStatus.PID = getpid();
     strncpy(AppStatus.Status, "Start", sizeof(AppStatus.Status));
 
-    char command[512] = {0};
     std::string AppLogPath;
     char* p = getenv("APP_LOG_PATH");
     if(p == NULL)
@@ -563,9 +559,7 @@ void TraderEngine::UpdateAppStatus(const std::string& cmd, Message::TAppStatus& 
     {
         AppLogPath = p;
     }
-    sprintf(command, "nohup %s > %s/%s_%s_run.log 2>&1 &", cmd.c_str(), AppLogPath.c_str(), 
-	    AppName.c_str(), AppStatus.Account);
-    strncpy(AppStatus.StartScript, command, sizeof(AppStatus.StartScript));
+    fmt::format_to_n(AppStatus.StartScript, sizeof(AppStatus.StartScript), "nohup {} > {}/{}_{}_run.log 2>&1 &", cmd, AppLogPath, AppName, AppStatus.Account);
     std::string SoCommitID;
     std::string SoUtilsCommitID;
     m_TradeGateWay->GetCommitID(SoCommitID, SoUtilsCommitID);
@@ -580,5 +574,5 @@ void TraderEngine::UpdateAppStatus(const std::string& cmd, Message::TAppStatus& 
     strncpy(AppStatus.LastStartTime, Utils::getCurrentTimeUs(), sizeof(AppStatus.LastStartTime));
     strncpy(AppStatus.UpdateTime, Utils::getCurrentTimeUs(), sizeof(AppStatus.UpdateTime));
     FMTLOG(fmtlog::INF, "TraderEngine::UpdateAppStatus AppCommitID:{} AppUtilsCommitID:{} SoCommitID:{} SoUtilsCommitID:{} CMD:{}",
-            APP_COMMITID, UTILS_COMMITID, SoCommitID, SoUtilsCommitID, command);
+            APP_COMMITID, UTILS_COMMITID, SoCommitID, SoUtilsCommitID, AppStatus.StartScript);
 }

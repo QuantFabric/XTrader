@@ -4,7 +4,7 @@ PROJECT(TestTrader)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.3.0)
+SET(AppVersion 0.4.0)
 SET(APIVersion "Test 1.0.0")
 SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 
