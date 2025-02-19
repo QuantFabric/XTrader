@@ -17,7 +17,7 @@ XTraderConfig:
   TickerListPath: /home/xtrader/Test/XTrader/Config/TickerList.yml 
   ErrorPath: /home/xtrader/Test/XTrader/Config/CTPError.yml
   RiskServerName: RiskServer
-  QuantServerName: QuantServer
+  OrderServerName: OrderServer
   TraderAPI: CTP
   TraderAPIConfig: /home/xtrader/Test/XTrader/Config/XTrader.yml
 

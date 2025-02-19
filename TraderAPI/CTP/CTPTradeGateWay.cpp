@@ -266,7 +266,7 @@ void CTPTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     strcpy(reqOrderField.InstrumentID, request.Ticker);
     strcpy(reqOrderField.ExchangeID, request.ExchangeID);
     strcpy(reqOrderField.UserID, m_UserID.c_str());
-    int orderID = Utils::getCurrentTodaySec() * 10000 + m_RequestID++;
+    int orderID =  (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + m_RequestID++;
     fmt::format_to_n(reqOrderField.OrderRef, sizeof(reqOrderField.OrderRef), "{:09}", orderID);
     reqOrderField.OrderPriceType = THOST_FTDC_OPT_LimitPrice;//限价
     if(Message::EOrderDirection::EBUY == request.Direction)
@@ -371,7 +371,7 @@ void CTPTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
 void CTPTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& request)
 {
     CThostFtdcInputOrderField  reqOrderField;
-    int orderID = Utils::getCurrentTodaySec() * 10000 + m_RequestID++;
+    int orderID = (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + m_RequestID++;
     if(Message::EOrderDirection::EBUY == request.Direction)
     {
         reqOrderField.Direction = THOST_FTDC_D_Buy;
@@ -451,7 +451,7 @@ void CTPTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
     reqOrderField.ActionFlag = THOST_FTDC_AF_Delete;
     strcpy(reqOrderField.OrderSysID, OrderStatus.OrderSysID);
     strcpy(reqOrderField.OrderRef, OrderStatus.OrderRef);
-    reqOrderField.OrderActionRef = Utils::getCurrentTodaySec() * 10000 + m_RequestID++;
+    reqOrderField.OrderActionRef = (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + m_RequestID++;
 
     int ret = m_CTPTraderAPI->ReqOrderAction(&reqOrderField, m_RequestID);
     std::string op = std::string("CTPTrader:ReqOrderAction Account:") + OrderStatus.Account + " OrderRef:"
@@ -1274,7 +1274,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
                         "CombOffsetFlag:{} CombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} VolumeCondition:{} "
                         "MinVolume:{} ContingentCondition:{} StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} BusinessUnit:{} "
                         "RequestID:{} OrderLocalID:{} ExchangeID:{} ParticipantID:{} ClientID:{} TraderID:{} InstallID:{} "
-                        "OrderSubmitStatus:{} NotifySequence:{} SettlementID:{} OrderSysID:{} OrderSource:{} OrderStatus:{} "
+                        "OrderSubmitStatus:{} NotifySequence:{} SettlementID:{} OrderSysID:{} OrderSource:{:d} OrderStatus:{} "
                         "OrderType:{} VolumeTraded:{} VolumeTotal:{} InsertDate:{} InsertTime:{} ActiveTime:{} SuspendTime:{} "
                         "UpdateTime:{} CancelTime:{} ActiveTraderID:{} ClearingPartID:{} SequenceNo:{} FrontID:{} SessionID:{} "
                         "UserProductInfo:{} StatusMsg:{} UserForceClose:{} ActiveUserID:{} BrokerOrderSeq:{} RelativeOrderSysID:{} "
@@ -1391,8 +1391,8 @@ void CTPTradeGateWay::OnRtnTrade(CThostFtdcTradeField *pTrade)
                 pTrade->BrokerID, pTrade->InvestorID, pTrade->InstrumentID, pTrade->OrderRef, pTrade->OrderSysID);
     }
     FMTLOG(fmtlog::INF, "CTPTrader:OnRtnTrade, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} UserID:{} ExchangeID:{} TradeID:{} "
-                        "Direction:{} OrderSysID:{} ParticipantID:{} ClientID:{} TradingRole:{} OffsetFlag:{} HedgeFlag:{} Price:{} "
-                        "Volume:{} TradeDate:{} TradeTime:{} TradeType:{} PriceSource:{} TraderID:{} OrderLocalID:{} ClearingPartID:{} "
+                        "Direction:{} OrderSysID:{} ParticipantID:{} ClientID:{} TradingRole:{:d} OffsetFlag:{} HedgeFlag:{} Price:{} "
+                        "Volume:{} TradeDate:{} TradeTime:{} TradeType:{:d} PriceSource:{:d} TraderID:{} OrderLocalID:{} ClearingPartID:{} "
                         "BusinessUnit:{} SequenceNo:{} SettlementID:{} BrokerOrderSeq:{} TradeSource:{} InvestUnitID:{} ExchangeInstID:{}",
             pTrade->BrokerID, pTrade->InvestorID, pTrade->InstrumentID,pTrade->OrderRef, pTrade->UserID,
             pTrade->ExchangeID, pTrade->TradeID, pTrade->Direction, pTrade->OrderSysID, pTrade->ParticipantID, 
@@ -1657,7 +1657,7 @@ void CTPTradeGateWay::OnRspQryOrder(CThostFtdcOrderField *pOrder, CThostFtdcRspI
                             "CombOffsetFlag:{} CombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} VolumeCondition:{} MinVolume:{} "
                             "ContingentCondition:{} StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} BusinessUnit:{} RequestID:{} OrderLocalID:{} "
                             "ExchangeID:{} ParticipantID:{} ClientID:{} TraderID:{} InstallID:{} OrderSubmitStatus:{} NotifySequence:{} SettlementID:{} "
-                            "OrderSysID:{} OrderSource:{} OrderStatus:{} OrderType:{} VolumeTraded:{} VolumeTotal:{} InsertDate:{} InsertTime:{} "
+                            "OrderSysID:{} OrderSource:{:d} OrderStatus:{} OrderType:{} VolumeTraded:{} VolumeTotal:{} InsertDate:{} InsertTime:{} "
                             "ActiveTime:{} SuspendTime:{} UpdateTime:{} CancelTime:{} ActiveTraderID:{} ClearingPartID:{} SequenceNo:{} "
                             "FrontID:{} SessionID:{} UserProductInfo:{} StatusMsg:{} UserForceClose:{} ActiveUserID:{} BrokerOrderSeq:{} "
                             "RelativeOrderSysID:{} ZCETotalTradedVolume:{} IsSwapOrder:{} BranchID:{} InvestUnitID:{} AccountID:{} "
@@ -1705,8 +1705,8 @@ void CTPTradeGateWay::OnRspQryTrade(CThostFtdcTradeField *pTrade, CThostFtdcRspI
     if(!IsRspError(pRspInfo) && pTrade != NULL)
     {
         FMTLOG(fmtlog::INF, "CTPTrader:OnRspQryTrade, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} UserID:{} ExchangeID:{} "
-                            "TradeID:{} Direction:{} OrderSysID:{} ParticipantID:{} ClientID:{} TradingRole:{} OffsetFlag:{} HedgeFlag:{} "
-                            "Price:{} Volume:{} TradeDate:{} TradeTime:{} TradeType:{} PriceSource:{} TraderID:{} OrderLocalID:{} "
+                            "TradeID:{} Direction:{} OrderSysID:{} ParticipantID:{} ClientID:{} TradingRole:{:d} OffsetFlag:{} HedgeFlag:{} "
+                            "Price:{} Volume:{} TradeDate:{} TradeTime:{} TradeType:{:d} PriceSource:{:d} TraderID:{} OrderLocalID:{} "
                             "ClearingPartID:{} BusinessUnit:{} SequenceNo:{} SettlementID:{} BrokerOrderSeq:{} TradeSource:{} InvestUnitID:{} "
                             "ExchangeInstID:{}",
                 pTrade->BrokerID, pTrade->InvestorID, pTrade->InstrumentID,pTrade->OrderRef, pTrade->UserID,

@@ -9,7 +9,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.9.2)
+SET(AppVersion 0.9.3)
 SET(XTrader_Version ${PROJECT_NAME}_${AppVersion})
 
 # 默认输出debug版
@@ -49,6 +49,19 @@ macro(Get_UtilsCommitID GIT_UTILSCOMMITID)
     endif()
 endmacro()
 
+macro(Get_SHMServerCommitID GIT_SHMSERVERCOMMITID)
+    find_package(Git QUIET)     # 查找Git，QUIET静默方式不报错
+    if(GIT_FOUND)
+      execute_process(          # 执行一个子进程
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD # 命令
+        OUTPUT_VARIABLE ${GIT_SHMSERVERCOMMITID}        # 输出字符串存入变量
+        OUTPUT_STRIP_TRAILING_WHITESPACE    # 删除字符串尾的换行符
+        ERROR_QUIET                         # 对执行错误静默
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../SHMServer/ # 执行路径
+        )
+    endif()
+endmacro()
+
 macro(Get_GitCommited_Date GIT_COMMITED_DATE)
     find_package(Git QUIET)     # 查找Git，QUIET静默方式不报错
     if(GIT_FOUND)
@@ -83,6 +96,10 @@ set(UTILS_COMMITID "")
 Get_UtilsCommitID(UTILS_COMMITID)
 message(STATUS "UtilsCommitID is ${UTILS_COMMITID}")
 
+set(SHMSERVER_COMMITID "")
+Get_SHMServerCommitID(SHMSERVER_COMMITID)
+message(STATUS "SHMServerCommitID is ${SHMSERVER_COMMITID}")
+
 set(GIT_COMMITED_DATE "")
 Get_GitCommited_Date(GIT_COMMITED_DATE)
 message(STATUS "GitCommitedDate is ${GIT_COMMITED_DATE}")
@@ -93,6 +110,7 @@ message(STATUS "GitVersion is ${GIT_VERSION}")
 
 add_definitions(-DAPP_COMMITID=\"${APP_COMMITID}\")
 add_definitions(-DUTILS_COMMITID=\"${UTILS_COMMITID}\")
+add_definitions(-DSHMSERVER_COMMITID=\"${SHMSERVER_COMMITID}\")
 add_definitions(-DGIT_COMMITED_DATE=\"${GIT_COMMITED_DATE}\")
 add_definitions(-DGIT_VERSION=\"${GIT_VERSION}\")
 

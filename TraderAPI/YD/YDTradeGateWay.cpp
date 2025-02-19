@@ -192,7 +192,7 @@ void YDTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& req)
     inputOrder.HedgeFlag = YD_HF_Speculation;
     inputOrder.Price = req.Price;
     inputOrder.OrderVolume = req.Volume;
-    inputOrder.OrderRef = Utils::getCurrentTodaySec() * 10000 + ++m_MaxOrderRef % 10000;
+    inputOrder.OrderRef = (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + ++m_MaxOrderRef % 10000;
     if(Message::EOrderType::ELIMIT ==  req.OrderType)
     {
         inputOrder.OrderType = YD_ODT_Limit;
@@ -241,16 +241,16 @@ void YDTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& req)
         Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
         UpdatePosition(OrderStatus, AccountPosition);
         PrintAccountPosition(AccountPosition, "YDTrader::insertOrder ");
-        FMTLOG(fmtlog::INF, "YDTrader::ReqInsertOrder successed, Account:{} Ticker:{} OrderRef:{} Direction:{} "
-                            "OffsetFlag:{} OrderType:{} Price:{} OrderVolume:{}",
+        FMTLOG(fmtlog::INF, "YDTrader::ReqInsertOrder successed, Account:{} Ticker:{} OrderRef:{} Direction:{:d} "
+                            "OffsetFlag:{:d} OrderType:{:d} Price:{} OrderVolume:{}",
                 m_YDAccount->AccountID, Instrument->InstrumentID, inputOrder.OrderRef, inputOrder.Direction, inputOrder.OffsetFlag, 
                 inputOrder.OrderType, inputOrder.Price, inputOrder.OrderVolume);
     }
     else
     {
         m_OrderStatusMap.erase(OrderRef);
-        FMTLOG(fmtlog::WRN, "YDTrader::ReqInsertOrder failed, Account:{} Ticker:{} OrderRef:{} Direction:{} "
-                            "OffsetFlag:{} OrderType:{} Price:{} OrderVolume:{}",
+        FMTLOG(fmtlog::WRN, "YDTrader::ReqInsertOrder failed, Account:{} Ticker:{} OrderRef:{} Direction:{:d} "
+                            "OffsetFlag:{:d} OrderType:{:d} Price:{} OrderVolume:{}",
                 m_YDAccount->AccountID, Instrument->InstrumentID, inputOrder.OrderRef,
                 inputOrder.Direction, inputOrder.OffsetFlag, inputOrder.OrderType,
                 inputOrder.Price, inputOrder.OrderVolume);
@@ -261,7 +261,7 @@ void YDTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& reques
 {
     YDInputOrder inputOrder;
     memset(&inputOrder, 0, sizeof(inputOrder));
-    inputOrder.OrderRef = Utils::getCurrentTodaySec() * 10000 + ++m_MaxOrderRef % 10000;
+    inputOrder.OrderRef = (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + ++m_MaxOrderRef % 10000;
     if(Message::EOrderDirection::EBUY == request.Direction)
     {
         inputOrder.Direction= YD_D_Buy;
@@ -721,7 +721,7 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
 
         char buffer[32] = {0};
         timeStamp2String(pOrder->InsertTime, buffer);
-        fmt::format_to_n(OrderStatus.SendTime, sizeof(OrderStatus.SendTime), "{} {:03}000", Utils::getCurrentDay(), buffer);
+        fmt::format_to_n(OrderStatus.SendTime, sizeof(OrderStatus.SendTime), "{} {}000", Utils::getCurrentDay(), buffer);
         OrderStatus.SendVolume = pOrder->OrderVolume;
         std::string Account = m_YDAccount->AccountID;
         std::string Ticker = pInstrument->InstrumentID;
@@ -799,6 +799,15 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
         {
             m_OrderStatusMap.erase(OrderRef);
         }
+        FMTLOG(fmtlog::INF, "YDTrader::notifyOrder Account:{} Ticker:{} Direction:{:d} OffsetFlag:{:d} HedgeFlag:{:d} "
+                            "ConnectionSelectionType:{:d} Price:{:.2f} OrderVolume:{} OrderRef:{} OrderType:{:d} "
+                            "YDOrderFlag:{:d} ErrorNo:{} OrderSysID:{} OrderStatus:{} TradeVolume:{} InsertTime:{} OrderLocalID:{} "
+                            "LongOrderSysID:{}",
+                pAccount->AccountID, pInstrument->InstrumentID, pOrder->Direction, pOrder->OffsetFlag,
+                pOrder->HedgeFlag, pOrder->ConnectionSelectionType, pOrder->Price, pOrder->OrderVolume,
+                pOrder->OrderRef, pOrder->OrderType, pOrder->YDOrderFlag, pOrder->ErrorNo,
+                pOrder->OrderSysID, pOrder->OrderStatus, pOrder->TradeVolume, pOrder->InsertTime,
+                pOrder->OrderLocalID, pOrder->LongOrderSysID);
         return;
     }
     // 处理报单回报
@@ -978,14 +987,15 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
         FMTLOG(fmtlog::WRN, "YDTrader:notifyOrder, Account:{} not found Order, InstrumentID:{} OrderRef:{} OrderLocalID:{} OrderSysID:{}",
                 m_YDAccount->AccountID, pInstrument->InstrumentID, pOrder->OrderRef, pOrder->OrderLocalID, pOrder->OrderSysID);
     }
-    FMTLOG(fmtlog::INF, "YDTrader::notifyOrder Account:{} Ticker:{} Direction:{} OffsetFlag:{} HedgeFlag:{} "
-                         "ConnectionSelectionType:{} Price:{:.2f} OrderVolume:{} OrderRef:{} OrderType:{} "
-                         "YDOrderFlag:{} ErrorNo:{} OrderSysID:{} OrderStatus:{} TradeVolume:{} InsertTime:{} OrderLocalID:{}",
+    FMTLOG(fmtlog::INF, "YDTrader::notifyOrder Account:{} Ticker:{} Direction:{:d} OffsetFlag:{:d} HedgeFlag:{:d} "
+                         "ConnectionSelectionType:{:d} Price:{:.2f} OrderVolume:{} OrderRef:{} OrderType:{:d} "
+                         "YDOrderFlag:{:d} ErrorNo:{} OrderSysID:{} OrderStatus:{} TradeVolume:{} InsertTime:{} OrderLocalID:{} "
+                         "LongOrderSysID:{}",
             pAccount->AccountID, pInstrument->InstrumentID, pOrder->Direction, pOrder->OffsetFlag,
             pOrder->HedgeFlag, pOrder->ConnectionSelectionType, pOrder->Price, pOrder->OrderVolume,
             pOrder->OrderRef, pOrder->OrderType, pOrder->YDOrderFlag, pOrder->ErrorNo,
             pOrder->OrderSysID, pOrder->OrderStatus, pOrder->TradeVolume, pOrder->InsertTime,
-            pOrder->OrderLocalID);
+            pOrder->OrderLocalID, pOrder->LongOrderSysID);
 }
 
 void YDTradeGateWay::notifyTrade(const YDTrade *pTrade, const YDInstrument *pInstrument, const YDAccount *pAccount)
@@ -1091,7 +1101,7 @@ void YDTradeGateWay::notifyTrade(const YDTrade *pTrade, const YDInstrument *pIns
         FMTLOG(fmtlog::WRN, "YDTrader:notifyTrade, Account:{} not found Order, InstrumentID:{} OrderRef:{} OrderLocalID:{} OrderSysID:{}",
                 m_YDAccount->AccountID, pInstrument->InstrumentID, pTrade->OrderRef, pTrade->OrderLocalID, pTrade->OrderSysID);
     }
-    FMTLOG(fmtlog::INF, "YDTrader::notifyTrade Account:{} Ticker:{} Direction:{} OffsetFlag:{} HedgeFlag:{} TradeID:{} "
+    FMTLOG(fmtlog::INF, "YDTrader::notifyTrade Account:{} Ticker:{} Direction:{:d} OffsetFlag:{:d} HedgeFlag:{:d} TradeID:{} "
                          "OrderSysID:{} Price:{:.2f} Volume:{} TradeTime:{} Commission:{:.2f} OrderLocalID:{} OrderRef:{}",
             pAccount->AccountID, pInstrument->InstrumentID, pTrade->Direction, pTrade->OffsetFlag,
             pTrade->HedgeFlag, pTrade->TradeID, pTrade->OrderSysID, pTrade->Price, pTrade->Volume,
@@ -1128,7 +1138,7 @@ void YDTradeGateWay::notifyFailedOrder(const YDInputOrder *pFailedOrder, const Y
         PrintAccountPosition(AccountPosition, "YDTrader::notifyFailedOrder ");
         m_OrderStatusMap.erase(it1);
     }
-    FMTLOG(fmtlog::INF, "YDTrader::notifyFailedOrder Account:{} Ticker:{} OrdeRref:{} Direction:{} OffsetFlag:{} ErrorNo:{}",
+    FMTLOG(fmtlog::INF, "YDTrader::notifyFailedOrder Account:{} Ticker:{} OrdeRref:{} Direction:{:d} OffsetFlag:{:d} ErrorNo:{}",
             pAccount->AccountID, pInstrument->InstrumentID, pFailedOrder->OrderRef,
             pFailedOrder->Direction, pFailedOrder->OffsetFlag, pFailedOrder->ErrorNo);
 }

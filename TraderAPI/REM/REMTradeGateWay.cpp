@@ -264,7 +264,7 @@ void REMTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
         reqOrderField.m_Tif = EES_OrderTif_IOC;
         reqOrderField.m_MinQty = reqOrderField.m_Qty;
     }
-    reqOrderField.m_ClientOrderToken = Utils::getCurrentTodaySec() * 10000 + order_token % 10000 + 1;
+    reqOrderField.m_ClientOrderToken = (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + order_token % 10000 + 1;
     std::string OrderRef = fmt::format("{}", reqOrderField.m_ClientOrderToken);
     Message::TOrderStatus& OrderStatus = m_OrderStatusMap[OrderRef];
     OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
@@ -313,7 +313,7 @@ void REMTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& reque
 {
     EES_ClientToken order_token = 0;
     m_TraderAPI->GetMaxToken(&order_token);
-    std::string OrderRef = fmt::format("{}", Utils::getCurrentTodaySec() * 10000 + order_token % 10000 + 1);
+    std::string OrderRef = fmt::format("{}", (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + order_token % 10000 + 1);
     Message::TOrderStatus OrderStatus;
     memset(&OrderStatus, 0, sizeof(OrderStatus));
     OrderStatus.BusinessType = m_XTraderConfig.BusinessType;

@@ -5,7 +5,7 @@ TraderEngine::TraderEngine() : m_RequestMessageQueue(1 << 12), m_ReportMessageQu
 {
     m_HPPackClient = NULL;
     m_RiskClient = NULL;
-    m_QuantClient = NULL;
+    m_pOrderServer = NULL;
     m_TradeGateWay = NULL;
 }
 
@@ -24,8 +24,8 @@ void TraderEngine::LoadConfig(const std::string& path)
         FMTLOG(fmtlog::INF, "LoadXTraderConfig ServerIP:{} Port:{} OpenTime:{} CloseTime:{}", 
                 m_XTraderConfig.ServerIP, m_XTraderConfig.Port, m_XTraderConfig.OpenTime, m_XTraderConfig.CloseTime);
         FMTLOG(fmtlog::INF, "LoadXTraderConfig TickerListPath:{} ErrorPath:{}",  m_XTraderConfig.TickerListPath, m_XTraderConfig.ErrorPath);    
-        FMTLOG(fmtlog::INF, "LoadXTraderConfig RiskServerName:{} QuantServerName:{} TraderAPI:{}",
-                m_XTraderConfig.RiskServerName, m_XTraderConfig.QuantServerName, m_XTraderConfig.TraderAPI);
+        FMTLOG(fmtlog::INF, "LoadXTraderConfig RiskServerName:{} OrderServerName:{} TraderAPI:{}",
+                m_XTraderConfig.RiskServerName, m_XTraderConfig.OrderServerName, m_XTraderConfig.TraderAPI);
     }
     m_OpenTime = Utils::getTimeStampMs(m_XTraderConfig.OpenTime.c_str());
     m_CloseTime = Utils::getTimeStampMs(m_XTraderConfig.CloseTime.c_str());
@@ -56,17 +56,17 @@ void TraderEngine::LoadTradeGateWay(const std::string& soPath)
 
 void TraderEngine::Run()
 {
-    FMTLOG(fmtlog::INF, "TraderEngine::Run RiskServer:{} QuantServer:{}", m_XTraderConfig.RiskServerName, m_XTraderConfig.QuantServerName);
+    FMTLOG(fmtlog::INF, "TraderEngine::Run RiskServer:{} OrderServer:{}", m_XTraderConfig.RiskServerName, m_XTraderConfig.OrderServerName);
     // Connect to XWatcher
     RegisterClient(m_XTraderConfig.ServerIP.c_str(), m_XTraderConfig.Port);
     // Connect to RiskServer
     FMTLOG(fmtlog::INF, "TraderEngine::Run connect to RiskServer:{}", m_XTraderConfig.RiskServerName);
     m_RiskClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.Account);
     m_RiskClient->Start(m_XTraderConfig.RiskServerName);
-    // Connect to QuantServer
-    FMTLOG(fmtlog::INF, "TraderEngine::Run connect to QuantServer:{}", m_XTraderConfig.QuantServerName);
-    m_QuantClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.Account);
-    m_QuantClient->Start(m_XTraderConfig.QuantServerName);
+    // Start OrderServer
+    FMTLOG(fmtlog::INF, "TraderEngine::Run Start OrderServer:{}", m_XTraderConfig.OrderServerName + m_XTraderConfig.Account);
+    m_pOrderServer = new OrderServer();
+    m_pOrderServer->Start(m_XTraderConfig.OrderServerName + m_XTraderConfig.Account);
     sleep(1);
     // Update App Status
     InitAppStatus();
@@ -80,8 +80,8 @@ void TraderEngine::Run()
     usleep(1000000);
     m_pWorkThread = new std::thread(&TraderEngine::WorkFunc, this);
 
-    // m_RiskClient->Join();
-    // m_QuantClient->Join();
+    m_RiskClient->Join();
+    m_pOrderServer->Join();
     m_pWorkThread->join();
 }
 
@@ -92,8 +92,8 @@ void TraderEngine::WorkFunc()
     InitRiskCheck();
     while(true)
     {
-        // 从QuantServer内存通道读取报单、撤单请求并写入请求队列
-        ReadRequestFromQuant();
+        // 从OrderServer内存通道读取报单、撤单请求并写入请求队列
+        HandleOrderFromQuant();
         // 从客户端读取报单、撤单请求并写入请求队列
         ReadRequestFromClient();
         // 处理请求
@@ -106,7 +106,6 @@ void TraderEngine::WorkFunc()
         SendReportToQuant();
 
         m_RiskClient->HandleMsg();
-        m_QuantClient->HandleMsg();
         unsigned long CurrentTimeStamp = Utils::getTimeMs();
         static unsigned long PreTimeStamp = CurrentTimeStamp / 1000;
         if(PreTimeStamp < CurrentTimeStamp / 1000)
@@ -137,15 +136,14 @@ void TraderEngine::RegisterClient(const char *ip, unsigned int port)
 }
 
 
-void TraderEngine::ReadRequestFromQuant()
+void TraderEngine::HandleOrderFromQuant()
 {
     static Message::PackMessage message;
-    m_QuantClient->HandleMsg();
-    bool ok = m_QuantClient->Pop(message);
+    bool ok = m_pOrderServer->Pop(message);
     if(ok)
     {
-        FMTLOG(fmtlog::INF, "TraderEngine::ReadRequestFromQuant recv msg from ChannelID:{}", message.ChannelID);
-        FMTLOG(fmtlog::DBG, "Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
+        FMTLOG(fmtlog::INF, "TraderEngine::HandleOrderFromQuant recv msg from ChannelID:{}", message.ChannelID);
+        FMTLOG(fmtlog::DBG, "TraderEngine::HandleOrderFromQuant Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
                 message.OrderRequest.Account, message.OrderRequest.Ticker, message.OrderRequest.RiskStatus, 
                 message.OrderRequest.OrderToken, message.OrderRequest.RiskID, message.OrderRequest.Price, 
                 message.OrderRequest.Volume, message.OrderRequest.ErrorMsg, message.MessageType);
@@ -430,8 +428,7 @@ void TraderEngine::SendReportToQuant()
         bool ok = m_ReportMessageQueue.Pop(report);
         if(ok)
         {
-            m_QuantClient->Push(report);
-            m_QuantClient->HandleMsg();
+            m_pOrderServer->Push(report);
         }
         else
         {
@@ -563,7 +560,7 @@ void TraderEngine::UpdateAppStatus(const std::string& cmd, Message::TAppStatus& 
     std::string SoCommitID;
     std::string SoUtilsCommitID;
     m_TradeGateWay->GetCommitID(SoCommitID, SoUtilsCommitID);
-    std::string CommitID = std::string(APP_COMMITID) + ":" + SoCommitID;
+    std::string CommitID = std::string(APP_COMMITID) + ":" + SoCommitID + ":" + SHMSERVER_COMMITID;
     strncpy(AppStatus.CommitID, CommitID.c_str(), sizeof(AppStatus.CommitID));
     std::string UtilsCommitID = std::string(UTILS_COMMITID) + ":" + SoUtilsCommitID;
     strncpy(AppStatus.UtilsCommitID, UtilsCommitID.c_str(), sizeof(AppStatus.UtilsCommitID));
@@ -573,6 +570,6 @@ void TraderEngine::UpdateAppStatus(const std::string& cmd, Message::TAppStatus& 
     strncpy(AppStatus.StartTime, Utils::getCurrentTimeUs(), sizeof(AppStatus.StartTime));
     strncpy(AppStatus.LastStartTime, Utils::getCurrentTimeUs(), sizeof(AppStatus.LastStartTime));
     strncpy(AppStatus.UpdateTime, Utils::getCurrentTimeUs(), sizeof(AppStatus.UpdateTime));
-    FMTLOG(fmtlog::INF, "TraderEngine::UpdateAppStatus AppCommitID:{} AppUtilsCommitID:{} SoCommitID:{} SoUtilsCommitID:{} CMD:{}",
-            APP_COMMITID, UTILS_COMMITID, SoCommitID, SoUtilsCommitID, AppStatus.StartScript);
+    FMTLOG(fmtlog::INF, "TraderEngine::UpdateAppStatus AppCommitID:{} AppUtilsCommitID:{} SoCommitID:{} SoUtilsCommitID:{} SHMServerCommitID:{} CMD:{}",
+            APP_COMMITID, UTILS_COMMITID, SoCommitID, SoUtilsCommitID, SHMSERVER_COMMITID, AppStatus.StartScript);
 }

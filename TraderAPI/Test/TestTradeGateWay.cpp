@@ -123,7 +123,7 @@ void TestTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
 
 void TestTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& request)
 {
-    int orderID = Utils::getCurrentTodaySec();
+    int orderID = (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000;
     // Order Status
     Message::TOrderStatus OrderStatus;
     memset(&OrderStatus, 0, sizeof(OrderStatus));

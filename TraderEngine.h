@@ -11,6 +11,7 @@
 #include "TraderAPI/TradeGateWay.hpp"
 #include "SHMConnection.hpp"
 #include "FMTLogger.hpp"
+#include "OrderServer.hpp"
 
 struct ClientConf : public SHMIPC::CommonConf
 {
@@ -29,7 +30,7 @@ public:
 protected:
     void WorkFunc();
     void RegisterClient(const char *ip, unsigned int port);
-    void ReadRequestFromQuant();
+    void HandleOrderFromQuant();
     void ReadRequestFromClient();
     void HandleRequestMessage();
     void HandleRiskResponse();
@@ -49,7 +50,7 @@ protected:
 private:
     HPPackClient* m_HPPackClient;
     SHMIPC::SHMConnection<Message::PackMessage, ClientConf>* m_RiskClient;
-    SHMIPC::SHMConnection<Message::PackMessage, ClientConf>* m_QuantClient;
+    OrderServer* m_pOrderServer;
     Utils::XTraderConfig m_XTraderConfig;
     bool m_Trading;
     unsigned long m_CurrentTimeStamp;
