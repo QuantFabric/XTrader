@@ -192,7 +192,7 @@ void YDTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& req)
     inputOrder.HedgeFlag = YD_HF_Speculation;
     inputOrder.Price = req.Price;
     inputOrder.OrderVolume = req.Volume;
-    inputOrder.OrderRef = (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + ++m_MaxOrderRef % 10000;
+    inputOrder.OrderRef = FutureOrderRef(req.EngineID, ++m_MaxOrderRef);
     if(Message::EOrderType::ELIMIT ==  req.OrderType)
     {
         inputOrder.OrderType = YD_ODT_Limit;
@@ -718,7 +718,7 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
         strncpy(OrderStatus.Ticker, pInstrument->InstrumentID, sizeof(OrderStatus.Ticker));
         strncpy(OrderStatus.OrderRef, OrderRef.c_str(), sizeof(OrderStatus.OrderRef));
         strncpy(OrderStatus.ExchangeID, m_TickerExchangeMap[pInstrument->InstrumentID].c_str(), sizeof(OrderStatus.ExchangeID));
-
+        
         char buffer[32] = {0};
         timeStamp2String(pOrder->InsertTime, buffer);
         fmt::format_to_n(OrderStatus.SendTime, sizeof(OrderStatus.SendTime), "{} {}000", Utils::getCurrentDay(), buffer);

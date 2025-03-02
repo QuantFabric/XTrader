@@ -266,7 +266,7 @@ void CTPTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     strcpy(reqOrderField.InstrumentID, request.Ticker);
     strcpy(reqOrderField.ExchangeID, request.ExchangeID);
     strcpy(reqOrderField.UserID, m_UserID.c_str());
-    int orderID =  (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + m_RequestID++;
+    int orderID =  FutureOrderRef(request.EngineID, m_RequestID++);
     fmt::format_to_n(reqOrderField.OrderRef, sizeof(reqOrderField.OrderRef), "{:09}", orderID);
     reqOrderField.OrderPriceType = THOST_FTDC_OPT_LimitPrice;//限价
     if(Message::EOrderDirection::EBUY == request.Direction)
@@ -371,7 +371,7 @@ void CTPTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
 void CTPTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& request)
 {
     CThostFtdcInputOrderField  reqOrderField;
-    int orderID = (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + m_RequestID++;
+    int orderID = FutureOrderRef(request.EngineID, m_RequestID++);
     if(Message::EOrderDirection::EBUY == request.Direction)
     {
         reqOrderField.Direction = THOST_FTDC_D_Buy;

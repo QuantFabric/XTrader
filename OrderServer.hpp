@@ -13,7 +13,6 @@
 #include "LockFreeQueue.hpp"
 #include <shared_mutex>
 
-
 #include "SHMServer.hpp"
 
 struct ServerConf : public SHMIPC::CommonConf

@@ -81,13 +81,13 @@ public:
         } 
     }
 
-    void SendRequest(const Message::PackMessage& request)
+    void SendRequest(Message::PackMessage& request)
     {
         switch(request.MessageType)
         {
-            CheckOrderRequest(request.OrderRequest);
             case Message::EMessageType::EOrderRequest:
             {
+                CheckOrderRequest(request.OrderRequest);
                 if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ENOCHECKED)
                 {
                     ReqInsertOrder(request.OrderRequest);
@@ -151,12 +151,10 @@ public:
         }
     }
 protected:
-    void CheckOrderRequest(const Message::TOrderRequest& req)
+    void CheckOrderRequest(Message::TOrderRequest& request)
     {
-        if(0 == req.Offset)
+        if(0 == request.Offset)
         {
-            Message::TOrderRequest& request = const_cast<Message::TOrderRequest&>(req);
-            
             std::string Key = std::string(request.Account) + ":" + request.Ticker;
             Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
             if(Message::EOrderDirection::EBUY == request.Direction)
@@ -237,6 +235,12 @@ protected:
                 OrderStatus.OrderStatus, OrderStatus.CanceledVolume, OrderStatus.RecvMarketTime, OrderStatus.SendTime, OrderStatus.InsertTime,
                 OrderStatus.BrokerACKTime, OrderStatus.ExchangeACKTime, OrderStatus.UpdateTime,
                 OrderStatus.ErrorID, OrderStatus.ErrorMsg, OrderStatus.RiskID);
+    }
+
+    int32_t FutureOrderRef(int32_t EngineID, int32_t SeqID)
+    {
+        int32_t orderID = (uint64_t(Utils::getTimeSec() + 8 * 3600 - 17 * 3600) % 86400) * 10000 + SeqID;
+        return orderID;
     }
 public:
     Utils::LockFreeQueue<Message::PackMessage> m_ReportMessageQueue;

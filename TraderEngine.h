@@ -15,6 +15,7 @@
 
 struct ClientConf : public SHMIPC::CommonConf
 {
+    static const bool Publish = false;
     static const bool Performance = false;
 };
 
@@ -37,7 +38,7 @@ protected:
     void HandleExecuteReport();
     void HandleCommand(const Message::PackMessage& msg);
     void SendReportToQuant();
-    void SendRequest(const Message::PackMessage& request);
+    void SendRequest(Message::PackMessage& request);
     void SendRiskCheckReqeust(const Message::PackMessage& request);
     void SendMonitorMessage(const Message::PackMessage& msg);
     void InitRiskCheck();
@@ -61,6 +62,13 @@ private:
     Utils::LockFreeQueue<Message::PackMessage> m_RequestMessageQueue;
     Utils::LockFreeQueue<Message::PackMessage> m_ReportMessageQueue;
     std::thread* m_pWorkThread;
+    typedef phmap::parallel_flat_hash_map<int32_t, int32_t, 
+                                        phmap::priv::hash_default_hash<int32_t>,
+                                        phmap::priv::hash_default_eq<int32_t>,
+                                        std::allocator<std::pair<int32_t, int32_t>>, 
+                                        8, std::shared_mutex>
+    StrategyChannelMapT;
+    StrategyChannelMapT m_StrategyChannelMap;
 };
 
 #endif // TRADERENGINE_HPP

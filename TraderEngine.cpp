@@ -56,20 +56,26 @@ void TraderEngine::LoadTradeGateWay(const std::string& soPath)
 
 void TraderEngine::Run()
 {
-    FMTLOG(fmtlog::INF, "TraderEngine::Run RiskServer:{} OrderServer:{}", m_XTraderConfig.RiskServerName, m_XTraderConfig.OrderServerName);
+    FMTLOG(fmtlog::INF, "TraderEngine::Run RiskServer:{} OrderServer:{}", 
+            m_XTraderConfig.RiskServerName, m_XTraderConfig.OrderServerName);
     // Connect to XWatcher
     RegisterClient(m_XTraderConfig.ServerIP.c_str(), m_XTraderConfig.Port);
+    sleep(1);
     // Connect to RiskServer
-    FMTLOG(fmtlog::INF, "TraderEngine::Run connect to RiskServer:{}", m_XTraderConfig.RiskServerName);
     m_RiskClient = new SHMIPC::SHMConnection<Message::PackMessage, ClientConf>(m_XTraderConfig.Account);
     m_RiskClient->Start(m_XTraderConfig.RiskServerName);
+    FMTLOG(fmtlog::INF, "TraderEngine::Run connect to RiskServer:{} {}", 
+            m_XTraderConfig.RiskServerName, m_RiskClient->IsConnected());
     // Start OrderServer
-    FMTLOG(fmtlog::INF, "TraderEngine::Run Start OrderServer:{}", m_XTraderConfig.OrderServerName + m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "TraderEngine::Run Start OrderServer:{}", 
+            m_XTraderConfig.OrderServerName + m_XTraderConfig.Account);
     m_pOrderServer = new OrderServer();
     m_pOrderServer->Start(m_XTraderConfig.OrderServerName + m_XTraderConfig.Account);
     sleep(1);
     // Update App Status
     InitAppStatus();
+    // 风控初始化检查
+    InitRiskCheck();
     // 创建交易API实例
     m_TradeGateWay->CreateTraderAPI();
     // 登录交易网关
@@ -77,7 +83,7 @@ void TraderEngine::Run()
     // 查询Order、Trade、Fund、Position信息
     m_TradeGateWay->Qry();
 
-    usleep(1000000);
+    sleep(1);
     m_pWorkThread = new std::thread(&TraderEngine::WorkFunc, this);
 
     m_RiskClient->Join();
@@ -88,8 +94,6 @@ void TraderEngine::Run()
 void TraderEngine::WorkFunc()
 {
     FMTLOG(fmtlog::INF, "TraderEngine::WorkFunc WorkThread start");
-    // 风控初始化检查
-    InitRiskCheck();
     while(true)
     {
         // 从OrderServer内存通道读取报单、撤单请求并写入请求队列
@@ -143,10 +147,25 @@ void TraderEngine::HandleOrderFromQuant()
     if(ok)
     {
         FMTLOG(fmtlog::INF, "TraderEngine::HandleOrderFromQuant recv msg from ChannelID:{}", message.ChannelID);
-        FMTLOG(fmtlog::DBG, "TraderEngine::HandleOrderFromQuant Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
-                message.OrderRequest.Account, message.OrderRequest.Ticker, message.OrderRequest.RiskStatus, 
-                message.OrderRequest.OrderToken, message.OrderRequest.RiskID, message.OrderRequest.Price, 
-                message.OrderRequest.Volume, message.OrderRequest.ErrorMsg, message.MessageType);
+        int32_t EngineID = -1;
+        if(Message::EMessageType::EOrderRequest == message.MessageType)
+        {
+            EngineID = message.OrderRequest.EngineID;
+            FMTLOG(fmtlog::DBG, "TraderEngine::HandleOrderFromQuant Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
+                    message.OrderRequest.Account, message.OrderRequest.Ticker, message.OrderRequest.RiskStatus, 
+                    message.OrderRequest.OrderToken, message.OrderRequest.RiskID, message.OrderRequest.Price, 
+                    message.OrderRequest.Volume, message.OrderRequest.ErrorMsg, message.MessageType);
+        }
+        else if(Message::EMessageType::EActionRequest == message.MessageType)
+        {
+            EngineID = message.ActionRequest.EngineID;
+            FMTLOG(fmtlog::DBG, "TraderEngine::HandleOrderFromQuant Account:{} OrderRef:{} ExchangeID:{} EngineID:{} RiskID:{} RiskStatus:{} {:#X}", 
+                    message.ActionRequest.Account, message.ActionRequest.OrderRef, message.ActionRequest.ExchangeID, 
+                    message.ActionRequest.EngineID, message.ActionRequest.RiskID, message.ActionRequest.RiskStatus, 
+                    message.MessageType);
+        }
+        m_StrategyChannelMap[EngineID] = message.ChannelID;
+
         while(!m_RequestMessageQueue.Push(message));
     }
 }
@@ -428,7 +447,15 @@ void TraderEngine::SendReportToQuant()
         bool ok = m_ReportMessageQueue.Pop(report);
         if(ok)
         {
-            m_pOrderServer->Push(report);
+            if(Message::EMessageType::EOrderStatus == report.MessageType && report.OrderStatus.EngineID > 0)
+            {
+                auto it = m_StrategyChannelMap.find(report.OrderStatus.EngineID);
+                if(it != m_StrategyChannelMap.end())
+                {
+                    report.ChannelID = it->second;
+                    m_pOrderServer->Push(report);
+                }
+            }
         }
         else
         {
@@ -437,7 +464,7 @@ void TraderEngine::SendReportToQuant()
     }
 }
 
-void TraderEngine::SendRequest(const Message::PackMessage& request)
+void TraderEngine::SendRequest(Message::PackMessage& request)
 {
     m_TradeGateWay->SendRequest(request);
 }
