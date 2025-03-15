@@ -74,15 +74,12 @@ void TraderEngine::Run()
     sleep(1);
     // Update App Status
     InitAppStatus();
-    // 风控初始化检查
-    InitRiskCheck();
     // 创建交易API实例
     m_TradeGateWay->CreateTraderAPI();
     // 登录交易网关
     m_TradeGateWay->LoadTrader();
     // 查询Order、Trade、Fund、Position信息
     m_TradeGateWay->Qry();
-
     sleep(1);
     m_pWorkThread = new std::thread(&TraderEngine::WorkFunc, this);
 
@@ -94,6 +91,8 @@ void TraderEngine::Run()
 void TraderEngine::WorkFunc()
 {
     FMTLOG(fmtlog::INF, "TraderEngine::WorkFunc WorkThread start");
+    // 风控初始化检查
+    InitRiskCheck();
     while(true)
     {
         // 从OrderServer内存通道读取报单、撤单请求并写入请求队列
