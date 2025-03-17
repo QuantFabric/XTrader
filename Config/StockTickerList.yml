@@ -1,127 +1,121 @@
 TickerList:                             
   -
     TickerIndex: 0
-    Ticker: 000001.SZ
+    Ticker: SZ000001
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 1
-    Ticker: 000002.SZ
+    Ticker: SZ000002
     ExchangeID: SZ
     PriceTick: 0.01
-
   -
     TickerIndex: 2
-    Ticker: 000004.SZ
+    Ticker: SZ000004
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 3
-    Ticker: 000005.SZ
+    Ticker: SZ000005
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 4
-    Ticker: 000006.SZ
+    Ticker: SZ000006
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 5
-    Ticker: 000007.SZ
+    Ticker: SZ000007
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 6
-    Ticker: 000008.SZ
+    Ticker: SZ000008
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 7
-    Ticker: 002001.SZ
+    Ticker: SZ002001
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 8
-    Ticker: 300001.SZ
+    Ticker: SZ300001
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 9
-    Ticker: 600000.SH
+    Ticker: SH600000
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 10
-    Ticker: 600004.SH
-    ExchangeID: SH
-    PriceTick: 0.01
-  -
-    TickerIndex: 11
-    Ticker: 600005.SH
+    Ticker: SH600004
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 12
-    Ticker: 600006.SH
+    Ticker: SH600006
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 13
-    Ticker: 600007.SH
+    Ticker: SH600007
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 14
-    Ticker: 600008.SH
+    Ticker: SH600008
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 15
-    Ticker: 600009.SH
+    Ticker: SH600009
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 16
-    Ticker: 600010.SH
+    Ticker: SH600010
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 17
-    Ticker: 688001.SH
+    Ticker: SH688001
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 18
-    Ticker: 688002.SH
+    Ticker: SH688002
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 19
-    Ticker: 159901.SZ
+    Ticker: SZ159901
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 20
-    Ticker: 123010.SZ
+    Ticker: SZ123010
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 21
-    Ticker: 131801.SZ
+    Ticker: SZ131801
     ExchangeID: SZ
     PriceTick: 0.01
   -
     TickerIndex: 22
-    Ticker: 510050.SH
+    Ticker: SH510050
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 23
-    Ticker: 113017.SH
+    Ticker: SH113017
     ExchangeID: SH
     PriceTick: 0.01
   -
     TickerIndex: 24
-    Ticker: 204001.SH
+    Ticker: SH204001
     ExchangeID: SH
     PriceTick: 0.01

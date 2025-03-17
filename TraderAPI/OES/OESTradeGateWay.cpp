@@ -175,12 +175,12 @@ void OESTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     // Ticker不在TickerList内
     if(0 == OrderReq.mktId)
     {
-        if(Utils::endWith(request.Ticker, "SH"))
+        if(Utils::startWith(request.Ticker, "SH"))
         {
             OrderReq.mktId = eOesMarketIdT::OES_MKT_SH_ASHARE;
             m_TickerExchangeMap[request.Ticker] = "SH";
         }
-        else if(Utils::endWith(request.Ticker, "SZ"))
+        else if(Utils::startWith(request.Ticker, "SZ"))
         {
             OrderReq.mktId = eOesMarketIdT::OES_MKT_SZ_ASHARE;
             m_TickerExchangeMap[request.Ticker] = "SZ";
@@ -190,7 +190,7 @@ void OESTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     OrderReq.bsType = OESOrderDirection(request);
     OrderReq.ordQty = request.Volume;
     OrderReq.ordPrice = request.Price * 10000;
-    strncpy(OrderReq.securityId, request.Ticker, 6);
+    strncpy(OrderReq.securityId, request.Ticker + 2, 6);
     if(1)
     {
         if(request.Volume == 100)
@@ -246,6 +246,7 @@ void OESTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     OrderStatus.OrderToken = request.OrderToken;
     OrderStatus.OrderSide = OrderSide(OrderReq.bsType);
     OrderStatus.OrderStatus = Message::EOrderStatusType::EORDER_SENDED;
+    OrderStatus.EngineID = request.EngineID;
     strncpy(OrderStatus.SendTime, request.SendTime, sizeof(OrderStatus.SendTime));
     strncpy(OrderStatus.InsertTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.InsertTime));
     strncpy(OrderStatus.UpdateTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.UpdateTime));
@@ -319,11 +320,11 @@ void OESTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
     CancelReq.mktId = OESExchangeID(m_TickerExchangeMap[OrderStatus.Ticker]);
     if(0 == CancelReq.mktId)
     {
-        if(Utils::endWith(OrderStatus.Ticker, "SH"))
+        if(Utils::startWith(OrderStatus.Ticker, "SH"))
         {
             CancelReq.mktId = eOesMarketIdT::OES_MKT_SH_ASHARE;
         }
-        else if(Utils::endWith(OrderStatus.Ticker, "SZ"))
+        else if(Utils::startWith(OrderStatus.Ticker, "SZ"))
         {
             CancelReq.mktId = eOesMarketIdT::OES_MKT_SZ_ASHARE;
         }
@@ -855,7 +856,7 @@ void OESTradeGateWay::OnBusinessReject(const OesRptMsgHeadT *pRptMsgHead, const 
         {
             ExchangeID = "Unkown";
         }
-        std::string Ticker = std::string(pOrderReject->securityId) + "." + ExchangeID;
+        std::string Ticker = ExchangeID + std::string(pOrderReject->securityId);
 
         Message::TOrderStatus& OrderStatus = m_OrderStatusMap[OrderRef];
         OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
@@ -1152,7 +1153,7 @@ void OESTradeGateWay::OnStockHoldingVariation(const OesStkHoldingItemT *pStkHold
 {
     std::string Account = m_XTraderConfig.Account;
     std::string Exchange = ExchangeID(pStkHoldingItem->mktId);
-    std::string Ticker = std::string(pStkHoldingItem->securityId) + "." + Exchange;
+    std::string Ticker = Exchange + std::string(pStkHoldingItem->securityId);
     std::string Key = Account + ":" + Ticker;
     auto it = m_TickerAccountPositionMap.find(Key);
     if(m_TickerAccountPositionMap.end() == it)
@@ -1356,7 +1357,7 @@ void OESTradeGateWay::OnQueryStkHolding(const OesStkHoldingItemT *pStkHolding, c
 {
     std::string Account = m_XTraderConfig.Account;
     std::string Exchange = ExchangeID(pStkHolding->mktId);
-    std::string Ticker = std::string(pStkHolding->securityId) + "." + Exchange;
+    std::string Ticker = Exchange + std::string(pStkHolding->securityId);
     std::string Key = Account + ":" + Ticker;
     auto it = m_TickerAccountPositionMap.find(Key);
     if(m_TickerAccountPositionMap.end() == it)
