@@ -95,6 +95,7 @@ void TraderEngine::WorkFunc()
     InitRiskCheck();
     while(true)
     {
+        m_pOrderServer->PollMsg();
         // 从OrderServer内存通道读取报单、撤单请求并写入请求队列
         HandleOrderFromQuant();
         // 从客户端读取报单、撤单请求并写入请求队列
@@ -107,7 +108,7 @@ void TraderEngine::WorkFunc()
         HandleExecuteReport();
         // 写入回报到QuantServer内存通道
         SendReportToQuant();
-
+        m_pOrderServer->PollMsg();
         m_RiskClient->HandleMsg();
         unsigned long CurrentTimeStamp = Utils::getTimeMs();
         static unsigned long PreTimeStamp = CurrentTimeStamp / 1000;

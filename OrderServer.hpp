@@ -18,7 +18,7 @@
 struct ServerConf : public SHMIPC::CommonConf
 {
     static const bool Publish = false;
-    static const bool Performance = true;
+    static const bool Performance = false;
 };
 
 class OrderServer : public SHMIPC::SHMServer<Message::PackMessage, ServerConf>
