@@ -30,6 +30,7 @@ public:
 
 protected:
     void WorkFunc();
+    void HelperFunc();
     void RegisterClient(const char *ip, unsigned int port);
     void HandleOrderFromQuant();
     void ReadRequestFromClient();
@@ -61,7 +62,9 @@ private:
     std::string m_Command;
     Utils::LockFreeQueue<Message::PackMessage> m_RequestMessageQueue;
     Utils::LockFreeQueue<Message::PackMessage> m_ReportMessageQueue;
+    Utils::LockFreeQueue<Message::PackMessage> m_MonitorMessageQueue;
     std::thread* m_pWorkThread;
+    std::thread* m_pMonitorThread;
     typedef phmap::parallel_flat_hash_map<int32_t, int32_t, 
                                         phmap::priv::hash_default_hash<int32_t>,
                                         phmap::priv::hash_default_eq<int32_t>,

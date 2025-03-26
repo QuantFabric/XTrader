@@ -234,7 +234,9 @@ void YDTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& req)
         OrderStatus.OrderStatus = Message::EOrderStatusType::EORDER_SENDED;
         PrintOrderStatus(OrderStatus, "YDTrader::insertOrder ");
     }
+    uint64_t start = Utils::getTimeNs();
     bool ret = m_YDAPI->insertOrder(&inputOrder, Instrument, Account);
+    uint64_t end = Utils::getTimeNs();
     if(ret)
     {
         UpdateOrderStatus(OrderStatus);
@@ -242,9 +244,9 @@ void YDTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& req)
         UpdatePosition(OrderStatus, AccountPosition);
         PrintAccountPosition(AccountPosition, "YDTrader::insertOrder ");
         FMTLOG(fmtlog::INF, "YDTrader::ReqInsertOrder successed, Account:{} Ticker:{} OrderRef:{} Direction:{:d} "
-                            "OffsetFlag:{:d} OrderType:{:d} Price:{} OrderVolume:{}",
+                            "OffsetFlag:{:d} OrderType:{:d} Price:{} OrderVolume:{} API Latency:{}",
                 m_YDAccount->AccountID, Instrument->InstrumentID, inputOrder.OrderRef, inputOrder.Direction, inputOrder.OffsetFlag, 
-                inputOrder.OrderType, inputOrder.Price, inputOrder.OrderVolume);
+                inputOrder.OrderType, inputOrder.Price, inputOrder.OrderVolume, end - start);
     }
     else
     {

@@ -343,8 +343,9 @@ void CTPTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     strncpy(OrderStatus.RecvMarketTime, request.RecvMarketTime, sizeof(OrderStatus.RecvMarketTime));
     OrderStatus.OrderStatus = Message::EOrderStatusType::EORDER_SENDED;
     PrintOrderStatus(OrderStatus, "CTPTrader::ReqInsertOrder ");
-    
+    uint64_t start = Utils::getTimeUs();
     int ret = m_CTPTraderAPI->ReqOrderInsert(&reqOrderField, m_RequestID);
+    uint64_t end = Utils::getTimeUs();
     std::string op = std::string("CTPTrader:ReqOrderInsert Account:") + request.Account + " Ticker:"
                      + request.Ticker + " OrderRef:" + reqOrderField.OrderRef;
     HandleRetCode(ret, op);
@@ -355,12 +356,12 @@ void CTPTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
         UpdateOrderStatus(OrderStatus);
         FMTLOG(fmtlog::DBG, "CTPTrader:ReqInsertOrder, InvestorID:{} ExchangeID:{} Ticker:{} UserID:{} OrderPriceType:{} Direction:{} "
                             "CombOffsetFlag:{} CombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} MinVolume:{} ContingentCondition:{} "
-                            "StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} TimeCondition:{} VolumeCondition:{} RequestID:{}",
+                            "StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} TimeCondition:{} VolumeCondition:{} RequestID:{} API Latency:{}us",
                 reqOrderField.InvestorID, reqOrderField.ExchangeID, reqOrderField.InstrumentID,
                 reqOrderField.UserID, reqOrderField.OrderPriceType, reqOrderField.Direction, reqOrderField.CombOffsetFlag,
                 reqOrderField.CombHedgeFlag, reqOrderField.LimitPrice, reqOrderField.VolumeTotalOriginal,
                 reqOrderField.MinVolume, reqOrderField.ContingentCondition, reqOrderField.StopPrice, reqOrderField.ForceCloseReason,
-                reqOrderField.IsAutoSuspend, reqOrderField.TimeCondition, reqOrderField.VolumeCondition, reqOrderField.RequestID);
+                reqOrderField.IsAutoSuspend, reqOrderField.TimeCondition, reqOrderField.VolumeCondition, reqOrderField.RequestID, end - start);
     }
     else
     {

@@ -70,7 +70,7 @@ void TraderEngine::Run()
     FMTLOG(fmtlog::INF, "TraderEngine::Run Start OrderServer:{}", 
             m_XTraderConfig.OrderServerName + m_XTraderConfig.Account);
     m_pOrderServer = new OrderServer();
-    m_pOrderServer->Start(m_XTraderConfig.OrderServerName + m_XTraderConfig.Account);
+    m_pOrderServer->Start(m_XTraderConfig.OrderServerName + m_XTraderConfig.Account, m_XTraderConfig.CPUSET.at(1));
     sleep(1);
     // Update App Status
     InitAppStatus();
@@ -82,24 +82,22 @@ void TraderEngine::Run()
     m_TradeGateWay->Qry();
     sleep(1);
     m_pWorkThread = new std::thread(&TraderEngine::WorkFunc, this);
+    m_pMonitorThread = new std::thread(&TraderEngine::HelperFunc, this);
 
     m_RiskClient->Join();
     m_pOrderServer->Join();
     m_pWorkThread->join();
+    m_pMonitorThread->join();
 }
 
 void TraderEngine::WorkFunc()
 {
-    FMTLOG(fmtlog::INF, "TraderEngine::WorkFunc WorkThread start");
-    // 风控初始化检查
-    InitRiskCheck();
+    bool ret = Utils::ThreadBind(pthread_self(), m_XTraderConfig.CPUSET.at(0));
+    FMTLOG(fmtlog::INF, "TraderEngine::WorkFunc WorkThread Running CPU:{} ret:{}", m_XTraderConfig.CPUSET.at(0), ret);
     while(true)
     {
-        m_pOrderServer->PollMsg();
         // 从OrderServer内存通道读取报单、撤单请求并写入请求队列
         HandleOrderFromQuant();
-        // 从客户端读取报单、撤单请求并写入请求队列
-        ReadRequestFromClient();
         // 处理请求
         HandleRequestMessage();
         // 处理风控检查结果
@@ -108,8 +106,24 @@ void TraderEngine::WorkFunc()
         HandleExecuteReport();
         // 写入回报到QuantServer内存通道
         SendReportToQuant();
-        m_pOrderServer->PollMsg();
-        m_RiskClient->HandleMsg();
+    }
+}
+
+void TraderEngine::HelperFunc()
+{
+    FMTLOG(fmtlog::INF, "TraderEngine::HelperFunc MonitorThread Running");
+    // 风控初始化检查
+    InitRiskCheck();
+    Message::PackMessage msg;
+    while(true)
+    {
+        // 从客户端读取报单、撤单请求并写入请求队列
+        ReadRequestFromClient();
+        bool ret = m_MonitorMessageQueue.Pop(msg);
+        if(ret)
+        {
+            SendMonitorMessage(msg);
+        }
         unsigned long CurrentTimeStamp = Utils::getTimeMs();
         static unsigned long PreTimeStamp = CurrentTimeStamp / 1000;
         if(PreTimeStamp < CurrentTimeStamp / 1000)
@@ -122,8 +136,8 @@ void TraderEngine::WorkFunc()
             if(m_XTraderConfig.QryFund)
             {
                 m_TradeGateWay->ReqQryFund();
+                PreTimeStamp += 1;
             }
-            PreTimeStamp += 1;
         }
     }
 }
@@ -143,30 +157,38 @@ void TraderEngine::RegisterClient(const char *ip, unsigned int port)
 void TraderEngine::HandleOrderFromQuant()
 {
     static Message::PackMessage message;
-    bool ok = m_pOrderServer->Pop(message);
-    if(ok)
+    while(true)
     {
-        FMTLOG(fmtlog::INF, "TraderEngine::HandleOrderFromQuant recv msg from ChannelID:{}", message.ChannelID);
-        int32_t EngineID = -1;
-        if(Message::EMessageType::EOrderRequest == message.MessageType)
+        uint64_t start = Utils::getTimeUs();
+        bool ok = m_pOrderServer->Pop(message);
+        if(ok)
         {
-            EngineID = message.OrderRequest.EngineID;
-            FMTLOG(fmtlog::DBG, "TraderEngine::HandleOrderFromQuant Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
-                    message.OrderRequest.Account, message.OrderRequest.Ticker, message.OrderRequest.RiskStatus, 
-                    message.OrderRequest.OrderToken, message.OrderRequest.RiskID, message.OrderRequest.Price, 
-                    message.OrderRequest.Volume, message.OrderRequest.ErrorMsg, message.MessageType);
+            int32_t EngineID = -1;
+            if(Message::EMessageType::EOrderRequest == message.MessageType)
+            {
+                EngineID = message.OrderRequest.EngineID;
+                FMTLOG(fmtlog::DBG, "TraderEngine::HandleOrderFromQuant Account:{} Ticker:{} RiskStatus:{} OrderToken:{} RiskID:{} Price:{} Volume:{} ErrorMsg:{} {:#X}", 
+                        message.OrderRequest.Account, message.OrderRequest.Ticker, message.OrderRequest.RiskStatus, 
+                        message.OrderRequest.OrderToken, message.OrderRequest.RiskID, message.OrderRequest.Price, 
+                        message.OrderRequest.Volume, message.OrderRequest.ErrorMsg, message.MessageType);
+            }
+            else if(Message::EMessageType::EActionRequest == message.MessageType)
+            {
+                EngineID = message.ActionRequest.EngineID;
+                FMTLOG(fmtlog::DBG, "TraderEngine::HandleOrderFromQuant Account:{} OrderRef:{} ExchangeID:{} EngineID:{} RiskID:{} RiskStatus:{} {:#X}", 
+                        message.ActionRequest.Account, message.ActionRequest.OrderRef, message.ActionRequest.ExchangeID, 
+                        message.ActionRequest.EngineID, message.ActionRequest.RiskID, message.ActionRequest.RiskStatus, 
+                        message.MessageType);
+            }
+            m_StrategyChannelMap[EngineID] = message.ChannelID;
+            while(!m_RequestMessageQueue.Push(message));
+            uint64_t end = Utils::getTimeUs();
+            FMTLOG(fmtlog::INF, "TraderEngine::HandleOrderFromQuant recv msg from ChannelID:{} Latency:{}us", message.ChannelID, end - start);
         }
-        else if(Message::EMessageType::EActionRequest == message.MessageType)
+        else
         {
-            EngineID = message.ActionRequest.EngineID;
-            FMTLOG(fmtlog::DBG, "TraderEngine::HandleOrderFromQuant Account:{} OrderRef:{} ExchangeID:{} EngineID:{} RiskID:{} RiskStatus:{} {:#X}", 
-                    message.ActionRequest.Account, message.ActionRequest.OrderRef, message.ActionRequest.ExchangeID, 
-                    message.ActionRequest.EngineID, message.ActionRequest.RiskID, message.ActionRequest.RiskStatus, 
-                    message.MessageType);
+            break;
         }
-        m_StrategyChannelMap[EngineID] = message.ChannelID;
-
-        while(!m_RequestMessageQueue.Push(message));
     }
 }
 
@@ -174,7 +196,7 @@ void TraderEngine::ReadRequestFromClient()
 {
     while(true)
     {
-        Message::PackMessage message;
+        static Message::PackMessage message;
         bool ok = m_HPPackClient->m_PackMessageQueue.Pop(message);
         if(ok)
         {
@@ -212,7 +234,8 @@ void TraderEngine::HandleRequestMessage()
     // 处理报单、撤单请求，发送至风控系统或直接通过API报单、撤单
     while(true)
     {
-        Message::PackMessage request;
+        uint64_t start = Utils::getTimeUs();
+        static Message::PackMessage request;
         bool ok = m_RequestMessageQueue.Pop(request);
         if(ok)
         {
@@ -221,13 +244,13 @@ void TraderEngine::HandleRequestMessage()
                 case Message::EMessageType::EOrderRequest:
                 {
                     request.OrderRequest.BusinessType = m_XTraderConfig.BusinessType;
-                    if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ENOCHECKED)
-                    {
-                        SendRequest(request);
-                    }
-                    else if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
+                    if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
                     {
                         SendRiskCheckReqeust(request);
+                    }
+                    else if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ENOCHECKED)
+                    {
+                        SendRequest(request);
                     }
                     else if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ECHECK_INIT)
                     {
@@ -237,13 +260,13 @@ void TraderEngine::HandleRequestMessage()
                 }
                 case Message::EMessageType::EActionRequest:
                 {
-                    if(request.ActionRequest.RiskStatus == Message::ERiskStatusType::ENOCHECKED)
-                    {
-                        SendRequest(request);
-                    }
-                    else if(request.ActionRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
+                    if(request.ActionRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
                     {
                         SendRiskCheckReqeust(request);
+                    }
+                    else if(request.ActionRequest.RiskStatus == Message::ERiskStatusType::ENOCHECKED)
+                    {
+                        SendRequest(request);
                     }
                     break;
                 }
@@ -253,6 +276,8 @@ void TraderEngine::HandleRequestMessage()
                     break;
                 }
             }
+            uint64_t end = Utils::getTimeUs();
+            FMTLOG(fmtlog::DBG, "TraderEngine::HandleRequestMessage Latency:{}us", end - start);
         }
         else
         {
@@ -263,15 +288,15 @@ void TraderEngine::HandleRequestMessage()
 
 void TraderEngine::HandleRiskResponse()
 {
+    static Message::PackMessage message;
+    m_RiskClient->HandleMsg();
     // 处理风控检查结果
     while(true)
     {
-        m_RiskClient->HandleMsg();
-        Message::PackMessage message;
+        uint64_t start = Utils::getTimeUs();
         bool ok = m_RiskClient->Pop(message);
         if(ok)
         {
-            FMTLOG(fmtlog::INF, "TraderEngine::HandleRiskResponse recv msg from ChannelID:{}", message.ChannelID);
             switch(message.MessageType)
             {
                 case Message::EMessageType::EOrderRequest:
@@ -286,7 +311,7 @@ void TraderEngine::HandleRiskResponse()
                 }
                 case Message::EMessageType::ERiskReport:
                 {
-                    SendMonitorMessage(message);
+                    m_MonitorMessageQueue.Push(message);
                     break;
                 }
                 default:
@@ -295,6 +320,8 @@ void TraderEngine::HandleRiskResponse()
                     break;
                 }
             }
+            uint64_t end = Utils::getTimeUs();
+            FMTLOG(fmtlog::INF, "TraderEngine::HandleRiskResponse recv msg from ChannelID:{} Latency:{}us", message.ChannelID, end - start);
         }
         else
         {
@@ -308,7 +335,8 @@ void TraderEngine::HandleExecuteReport()
     // OrderStatus,AccountFund,AccountPosition写入内存队列，所有监控消息回传
     while(true)
     {
-        Message::PackMessage report;
+        uint64_t start = Utils::getTimeUs();
+        static Message::PackMessage report;
         // 从交易网关回报队列取出消息
         bool ok = m_TradeGateWay->m_ReportMessageQueue.Pop(report);
         if(ok)
@@ -319,13 +347,15 @@ void TraderEngine::HandleExecuteReport()
                 case Message::EMessageType::EAccountFund:
                 case Message::EMessageType::EAccountPosition:
                 {
+                    m_RiskClient->Push(report);
+                    m_RiskClient->HandleMsg();
                     m_ReportMessageQueue.Push(report);
-                    SendMonitorMessage(report);
+                    m_MonitorMessageQueue.Push(report);
                     break;
                 }
                 case Message::EMessageType::EEventLog:
                 {
-                    SendMonitorMessage(report);
+                    m_MonitorMessageQueue.Push(report);
                     break;
                 }
                 default:
@@ -333,6 +363,8 @@ void TraderEngine::HandleExecuteReport()
                     FMTLOG(fmtlog::WRN, "TraderEngine::HandleExcuteReport Unkown Message Type:{:#X}", report.MessageType);
                     break;
                 }
+                uint64_t end = Utils::getTimeUs();
+                FMTLOG(fmtlog::DBG, "TraderEngine::HandleExcuteReport Latency:{}us", end - start);
             }
         }
         else
@@ -443,7 +475,8 @@ void TraderEngine::SendReportToQuant()
 {
     while(true)
     {
-        Message::PackMessage report;
+        uint64_t start = Utils::getTimeUs();
+        static Message::PackMessage report;
         bool ok = m_ReportMessageQueue.Pop(report);
         if(ok)
         {
@@ -456,6 +489,24 @@ void TraderEngine::SendReportToQuant()
                     m_pOrderServer->Push(report);
                 }
             }
+            else if(Message::EMessageType::EAccountFund == report.MessageType)
+            {
+                for(auto it = m_StrategyChannelMap.begin(); it != m_StrategyChannelMap.end(); it++)
+                {
+                    report.ChannelID = it->second;
+                    m_pOrderServer->Push(report); 
+                }
+            }
+            else if(Message::EMessageType::EAccountPosition == report.MessageType)
+            {
+                for(auto it = m_StrategyChannelMap.begin(); it != m_StrategyChannelMap.end(); it++)
+                {
+                    report.ChannelID = it->second;
+                    m_pOrderServer->Push(report); 
+                }
+            }
+            uint64_t end = Utils::getTimeUs();
+            FMTLOG(fmtlog::DBG, "TraderEngine::SendReportToQuant Latency:{}us", end - start);
         }
         else
         {
@@ -482,8 +533,6 @@ void TraderEngine::SendMonitorMessage(const Message::PackMessage& message)
         case Message::EMessageType::EOrderStatus:
         {
             m_HPPackClient->SendData((const unsigned char*)&message, sizeof(message));
-            m_RiskClient->Push(message);
-            m_RiskClient->HandleMsg();
             break;
         }
         case Message::EMessageType::EEventLog:
