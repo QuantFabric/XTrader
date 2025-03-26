@@ -344,13 +344,30 @@ void TraderEngine::HandleExecuteReport()
             switch(report.MessageType)
             {
                 case Message::EMessageType::EOrderStatus:
+                {
+                    m_RiskClient->Push(report);
+                    m_RiskClient->HandleMsg();
+                    m_ReportMessageQueue.Push(report);
+                    m_MonitorMessageQueue.Push(report);
+
+                    break;
+                }
                 case Message::EMessageType::EAccountFund:
+                {
+                    m_RiskClient->Push(report);
+                    m_RiskClient->HandleMsg();
+                    m_ReportMessageQueue.Push(report);
+                    m_MonitorMessageQueue.Push(report);
+                    m_pOrderServer->UpdateAccountFund(report);
+                    break;
+                }
                 case Message::EMessageType::EAccountPosition:
                 {
                     m_RiskClient->Push(report);
                     m_RiskClient->HandleMsg();
                     m_ReportMessageQueue.Push(report);
                     m_MonitorMessageQueue.Push(report);
+                    m_pOrderServer->UpdateAccountPosition(report);
                     break;
                 }
                 case Message::EMessageType::EEventLog:
