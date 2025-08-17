@@ -35,8 +35,8 @@ REMConfig:
   EESTraderLibPath: /home/xtrader/Test/XTrader/Lib/
 
 CTPConfig:
-  FrontAddr: tcp://180.168.146.187:10201
-  #FrontAddr: tcp://180.168.146.187:10130
+  FrontAddr: tcp://182.254.243.31:30001
+  #FrontAddr: tcp://182.254.243.31:40001
 
 YDConfig:
   APIConfig: /home/xtrader/Test/XTrader/Config/yd.txt
