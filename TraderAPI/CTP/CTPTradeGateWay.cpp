@@ -950,13 +950,13 @@ void CTPTradeGateWay::OnRspOrderAction(CThostFtdcInputOrderActionField *pInputOr
         {
             // Update OrderStatus
             it->second.OrderStatus = Message::EOrderStatusType::EACTION_ERROR;
-            strncpy(it->second.Product, m_XTraderConfig.Product.c_str(), sizeof(it->second.Product));
-            strncpy(it->second.Broker, m_XTraderConfig.Broker.c_str(), sizeof(it->second.Broker));
-            strncpy(it->second.Account, pInputOrderAction->InvestorID, sizeof(it->second.Account));
-            strncpy(it->second.ExchangeID, pInputOrderAction->ExchangeID, sizeof(it->second.ExchangeID));
-            strncpy(it->second.Ticker, pInputOrderAction->InstrumentID, sizeof(it->second.Ticker));
-            strncpy(it->second.OrderRef, pInputOrderAction->OrderRef, sizeof(it->second.OrderRef));
-            strncpy(it->second.OrderSysID, pInputOrderAction->OrderSysID, sizeof(it->second.OrderSysID));
+            // strncpy(it->second.Product, m_XTraderConfig.Product.c_str(), sizeof(it->second.Product));
+            // strncpy(it->second.Broker, m_XTraderConfig.Broker.c_str(), sizeof(it->second.Broker));
+            // strncpy(it->second.Account, pInputOrderAction->InvestorID, sizeof(it->second.Account));
+            // strncpy(it->second.ExchangeID, pInputOrderAction->ExchangeID, sizeof(it->second.ExchangeID));
+            // strncpy(it->second.Ticker, pInputOrderAction->InstrumentID, sizeof(it->second.Ticker));
+            // strncpy(it->second.OrderRef, pInputOrderAction->OrderRef, sizeof(it->second.OrderRef));
+            // strncpy(it->second.OrderSysID, pInputOrderAction->OrderSysID, sizeof(it->second.OrderSysID));
 
             Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), it->second.ErrorMsg,
                             sizeof(it->second.ErrorMsg), "gb2312", "utf-8");
@@ -1192,6 +1192,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
             strncpy(OrderStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.ExchangeACKTime));
             strncpy(OrderStatus.OrderSysID, pOrder->OrderSysID, sizeof(OrderStatus.OrderSysID));
             OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ERROR;
+            OrderStatus.CanceledVolume = pOrder->VolumeTotalOriginal;
         }
         // 撤单被交易所拒绝
         else if(THOST_FTDC_OSS_CancelRejected == pOrder->OrderSubmitStatus)
