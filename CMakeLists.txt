@@ -9,7 +9,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.9.3)
+SET(AppVersion 0.9.5)
 SET(XTrader_Version ${PROJECT_NAME}_${AppVersion})
 
 # 默认输出debug版
@@ -21,7 +21,7 @@ set(CMAKE_CXX_FLAGS "-g -fPIC -O3 -Wfatal-errors -Wl,-export-dynamic")
 
 add_definitions(-DFMT_HEADER_ONLY)
 add_definitions(-DFMTLOG_HEADER_ONLY)
-add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 
 macro(Get_CommitID APP_COMMITID)
     find_package(Git QUIET)     # 查找Git，QUIET静默方式不报错

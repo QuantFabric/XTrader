@@ -4,8 +4,8 @@ PROJECT(CTPTrader)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.5.0)
-SET(APIVersion "CTP 6.7.8")
+SET(AppVersion 0.7.0)
+SET(APIVersion "CTP 6.7.11")
 SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 
 # 默认输出debug版
@@ -16,7 +16,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_definitions(-DFMT_HEADER_ONLY)
 add_definitions(-DFMTLOG_HEADER_ONLY)
-add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 
 macro(Get_CommitID SO_COMMITID)
     find_package(Git QUIET)     # 查找Git，QUIET静默方式不报错
@@ -66,11 +66,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/ConcurrentQueue/1.
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/lib)
 # YAML-CPP
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/YAML-CPP/0.6.3/include/)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/YAML-CPP/0.6.3/lib)
-# CTP 6.7.8
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/CTP/6.7.8/include)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/CTP/6.7.8/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.8.0/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.8.0/lib)
+# CTP 6.7.11
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/CTP/6.7.11/include)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/CTP/6.7.11/lib)
 
 # Parallel HashMap
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/parallel_hashmap/)

@@ -81,7 +81,7 @@ void CTPTradeGateWay::CreateTraderAPI()
     }
     // 指定CTP flow目录
     std::string flow = app_log_path + "/flow/" + m_XTraderConfig.Account;
-    m_CTPTraderAPI = CThostFtdcTraderApi::CreateFtdcTraderApi(flow.c_str());
+    m_CTPTraderAPI = CThostFtdcTraderApi::CreateFtdcTraderApi(flow.c_str(), m_CTPConfig.ProductionMode);
 }
 
 void CTPTradeGateWay::DestroyTraderAPI()

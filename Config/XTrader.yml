@@ -37,6 +37,7 @@ REMConfig:
 CTPConfig:
   FrontAddr: tcp://180.168.146.187:10201
   #FrontAddr: tcp://180.168.146.187:10130
+  ProductionMode: true
 
 YDConfig:
   APIConfig: /home/xtrader/Test/XTrader/Config/yd.txt

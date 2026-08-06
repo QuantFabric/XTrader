@@ -150,7 +150,7 @@ public:
             }
         }
     }
-protected:
+
     void CheckOrderRequest(Message::TOrderRequest& request)
     {
         if(0 == request.Offset)
@@ -189,7 +189,7 @@ protected:
             }
         }
     }
-
+protected:
     void UpdateOrderStatus(Message::TOrderStatus& OrderStatus)
     {
         strncpy(OrderStatus.UpdateTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.UpdateTime));

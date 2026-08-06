@@ -246,6 +246,7 @@ void TraderEngine::HandleRequestMessage()
                     request.OrderRequest.BusinessType = m_XTraderConfig.BusinessType;
                     if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::EPREPARE_CHECKED)
                     {
+                        m_TradeGateWay->CheckOrderRequest(request.OrderRequest);
                         SendRiskCheckReqeust(request);
                     }
                     else if(request.OrderRequest.RiskStatus == Message::ERiskStatusType::ENOCHECKED)
