@@ -53,10 +53,6 @@ TickerList:
     ExchangeID: SZ
     PriceTick: 0.01
     MaxVolume: 20000
-  -
-    TickerIndex: 9
-    Ticker: SH600000
-    ExchangeID: SH
     PriceTick: 0.01
     MaxVolume: 20000
   -
