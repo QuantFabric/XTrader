@@ -4,118 +4,142 @@ TickerList:
     Ticker: SZ000001
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 1
     Ticker: SZ000002
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 2
     Ticker: SZ000004
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 3
     Ticker: SZ000005
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 4
     Ticker: SZ000006
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 5
     Ticker: SZ000007
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 6
     Ticker: SZ000008
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 7
     Ticker: SZ002001
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 8
     Ticker: SZ300001
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 9
     Ticker: SH600000
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 10
     Ticker: SH600004
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 12
     Ticker: SH600006
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 13
     Ticker: SH600007
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 14
     Ticker: SH600008
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 15
     Ticker: SH600009
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 16
     Ticker: SH600010
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 17
     Ticker: SH688001
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 18
     Ticker: SH688002
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 19
     Ticker: SZ159901
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 20
     Ticker: SZ123010
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 21
     Ticker: SZ131801
     ExchangeID: SZ
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 22
     Ticker: SH510050
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 23
     Ticker: SH113017
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
   -
     TickerIndex: 24
     Ticker: SH204001
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 100
