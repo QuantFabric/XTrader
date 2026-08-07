@@ -5,12 +5,14 @@ TickerList:
     ExchangeID: CFFEX
     PriceTick: 0.2
     MaxVolume: 20
+
   -
     TickerIndex: 1
     Ticker: IC2609
     ExchangeID: CFFEX
     PriceTick: 0.2
     MaxVolume: 20
+
   -
     TickerIndex: 2
     Ticker: IC2612
@@ -47,6 +49,7 @@ TickerList:
     ExchangeID: CFFEX
     PriceTick: 0.2
     MaxVolume: 20
+
   -
     TickerIndex: 8
     Ticker: IH2608
