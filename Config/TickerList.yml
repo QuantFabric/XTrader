@@ -1,101 +1,121 @@
 TickerList:                             
   -
     TickerIndex: 0
-    Ticker: IC209
+    Ticker: IC2610
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 1
-    Ticker: IC2510
+    Ticker: IC2611
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 2
-    Ticker: IC2512
+    Ticker: IC2612
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 3
-    Ticker: IC2603
+    Ticker: IC2703
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 4
-    Ticker: IF2509
+    Ticker: IF2610
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 5
-    Ticker: IF2510
+    Ticker: IF2611
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 6
-    Ticker: IF2512
+    Ticker: IF2612
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 7
-    Ticker: IF2603
+    Ticker: IF2703
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 8
-    Ticker: IH2909
+    Ticker: IH2610
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 9
-    Ticker: IH2510
+    Ticker: IH2611
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 10
-    Ticker: IH2512
+    Ticker: IH2612
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 11
-    Ticker: IH2603
+    Ticker: IH2703
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 12
-    Ticker: IM2509
+    Ticker: IM2610
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 13
-    Ticker: IM2510
+    Ticker: IM2611
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 14
-    Ticker: IM2512
+    Ticker: IM2612
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 15
-    Ticker: IM2603
+    Ticker: IM2703
     ExchangeID: CFFEX
     PriceTick: 0.2
+    MaxVolume: 20
   -
     TickerIndex: 16
     Ticker: SH000300
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 20000
   -
     TickerIndex: 17
     Ticker: SH000905
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 20000
   -
     TickerIndex: 18
     Ticker: SH000016
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 20000
   -
     TickerIndex: 19
     Ticker: SH000852
     ExchangeID: SH
     PriceTick: 0.01
+    MaxVolume: 20000

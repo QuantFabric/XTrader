@@ -722,7 +722,7 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
         strncpy(OrderStatus.ExchangeID, m_TickerExchangeMap[pInstrument->InstrumentID].c_str(), sizeof(OrderStatus.ExchangeID));
         
         char buffer[32] = {0};
-        timeStamp2String(pOrder->InsertTime, buffer);
+        timeStamp2String(pOrder->InsertTime, buffer, NULL);
         fmt::format_to_n(OrderStatus.SendTime, sizeof(OrderStatus.SendTime), "{} {}000", Utils::getCurrentDay(), buffer);
         OrderStatus.SendVolume = pOrder->OrderVolume;
         std::string Account = m_YDAccount->AccountID;

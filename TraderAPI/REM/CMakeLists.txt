@@ -4,7 +4,7 @@ PROJECT(REMTrader)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.4.0)
+SET(AppVersion 0.5.0)
 SET(APIVersion REM3.1.3.49)
 SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 
@@ -64,8 +64,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/lib)
 # YAML-CPP
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/YAML-CPP/0.6.3/include/)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/YAML-CPP/0.6.3/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.8.0/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.8.0/lib)
 # REM
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/3.1.3.49/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/3.1.3.49/lib)

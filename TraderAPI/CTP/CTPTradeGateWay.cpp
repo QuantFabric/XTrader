@@ -81,7 +81,7 @@ void CTPTradeGateWay::CreateTraderAPI()
     }
     // 指定CTP flow目录
     std::string flow = app_log_path + "/flow/" + m_XTraderConfig.Account;
-    m_CTPTraderAPI = CThostFtdcTraderApi::CreateFtdcTraderApi(flow.c_str());
+    m_CTPTraderAPI = CThostFtdcTraderApi::CreateFtdcTraderApi(flow.c_str(), m_CTPConfig.ProductionMode);
 }
 
 void CTPTradeGateWay::DestroyTraderAPI()
@@ -950,7 +950,6 @@ void CTPTradeGateWay::OnRspOrderAction(CThostFtdcInputOrderActionField *pInputOr
         {
             // Update OrderStatus
             it->second.OrderStatus = Message::EOrderStatusType::EACTION_ERROR;
-
             Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), it->second.ErrorMsg,
                             sizeof(it->second.ErrorMsg), "gb2312", "utf-8");
             it->second.ErrorID = pRspInfo->ErrorID;
