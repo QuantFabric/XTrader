@@ -66,8 +66,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/ConcurrentQueue/1.
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/lib)
 # YAML-CPP
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.8.0/include/)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.8.0/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.9.0/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.9.0/lib)
 # CTP 6.7.11
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/CTP/6.7.11/include)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/CTP/6.7.11/lib)
