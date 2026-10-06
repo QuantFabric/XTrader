@@ -650,7 +650,7 @@ void TraderEngine::UpdateAppStatus(const std::string& cmd, Message::TAppStatus& 
     {
         AppLogPath = p;
     }
-    fmt::format_to_n(AppStatus.StartScript, sizeof(AppStatus.StartScript), "nohup {} > {}/{}_{}_run.log 2>&1 &", cmd, AppLogPath, AppName, AppStatus.Account);
+    sprintf(AppStatus.StartScript, "nohup %s > %s/%s_%s_run.log 2>&1 &", cmd.c_str(), AppLogPath.c_str(), AppName.c_str(), AppStatus.Account);
     std::string SoCommitID;
     std::string SoUtilsCommitID;
     m_TradeGateWay->GetCommitID(SoCommitID, SoUtilsCommitID);
