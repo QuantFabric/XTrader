@@ -833,6 +833,68 @@ void CTPTradeGateWay::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, C
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                         sizeof(errorBuffer), "gb2312", "utf-8");
+        // OrderStatus
+        std::string OrderRef = pInputOrder->OrderRef;
+        auto it1 = m_OrderStatusMap.find(OrderRef);
+        if(it1 != m_OrderStatusMap.end())
+        {
+            Message::TOrderStatus& OrderStatus = it1->second;
+            strncpy(OrderStatus.BrokerACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.BrokerACKTime));
+            OrderStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ERROR;
+            OrderStatus.CanceledVolume = OrderStatus.SendVolume;
+            Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), OrderStatus.ErrorMsg,
+                            sizeof(OrderStatus.ErrorMsg), "gb2312", "utf-8");
+            OrderStatus.ErrorID = pRspInfo->ErrorID;
+            std::string Key = std::string(OrderStatus.Account) + ":" + OrderStatus.Ticker;
+            // Update Position
+            Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
+            UpdatePosition(OrderStatus, AccountPosition);
+            UpdateOrderStatus(OrderStatus);
+            {
+                Message::PackMessage message;
+                memset(&message, 0, sizeof(message));
+                message.MessageType = Message::EMessageType::EEventLog;
+                message.EventLog.Level = Message::EEventLogLevel::EERROR;
+                strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
+                strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
+                strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
+                strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
+                strncpy(message.EventLog.Ticker, pInputOrder->InstrumentID, sizeof(message.EventLog.Ticker));
+                strncpy(message.EventLog.ExchangeID, pInputOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
+                fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
+                                "CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} ErrorID:{}, ErrorMessage:{}",
+                                m_XTraderConfig.BrokerID, m_XTraderConfig.Account,
+                                pInputOrder->InstrumentID, pInputOrder->OrderRef, pRspInfo->ErrorID, OrderStatus.ErrorMsg);
+                strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
+                while(!m_ReportMessageQueue.Push(message));
+                FMTLOG(fmtlog::WRN, "CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} ErrorID:{}, ErrorMessage:{}",
+                        m_XTraderConfig.BrokerID, m_XTraderConfig.Account,
+                        pInputOrder->InstrumentID, pInputOrder->OrderRef, pRspInfo->ErrorID, OrderStatus.ErrorMsg);
+            }
+
+            PrintOrderStatus(OrderStatus, "CTPTrader::OnRspOrderInsert ");
+            m_OrderStatusMap.erase(it1);
+        }
+        else
+        {
+            Message::PackMessage message;
+            memset(&message, 0, sizeof(message));
+            message.MessageType = Message::EMessageType::EEventLog;
+            message.EventLog.Level = Message::EEventLogLevel::EWARNING;
+            strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
+            strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
+            strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
+            strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
+            strncpy(message.EventLog.Ticker, pInputOrder->InstrumentID, sizeof(message.EventLog.Ticker));
+            strncpy(message.EventLog.ExchangeID, pInputOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
+            fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
+                            "CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} not found Order, OrderRef:{}",
+                            pInputOrder->BrokerID, pInputOrder->InvestorID, pInputOrder->InstrumentID, pInputOrder->OrderRef);
+            strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
+            while(!m_ReportMessageQueue.Push(message));
+            FMTLOG(fmtlog::WRN, "CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} not found Order, OrderRef:{}",
+                    pInputOrder->BrokerID, pInputOrder->InvestorID, pInputOrder->InstrumentID, pInputOrder->OrderRef);
+        }
         FMTLOG(fmtlog::INF, "CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} UserID:{} OrderPriceType:{} "
                             "Direction:{} CombOffsetFlag:{} CombHedgeFlag:{} LimitPrice:{} VolumeTotalOriginal:{} TimeCondition:{} "
                             "VolumeCondition:{} MinVolume:{} ContingentCondition:{} StopPrice:{} ForceCloseReason:{} IsAutoSuspend:{} "
