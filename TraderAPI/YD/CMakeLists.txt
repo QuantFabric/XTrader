@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 PROJECT(YDTrader)
 
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.7.0)
+SET(AppVersion 0.8.0)
 SET(APIVersion YD1.502.53)
 SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 

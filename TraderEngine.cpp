@@ -1,4 +1,5 @@
 #include "TraderEngine.h"
+#include "SafeUtils.hpp"
 
 
 TraderEngine::TraderEngine() : m_RequestMessageQueue(1 << 12), m_ReportMessageQueue(1 << 12)
@@ -180,7 +181,10 @@ void TraderEngine::HandleOrderFromQuant()
                         message.ActionRequest.EngineID, message.ActionRequest.RiskID, message.ActionRequest.RiskStatus, 
                         message.MessageType);
             }
-            m_StrategyChannelMap[EngineID] = message.ChannelID;
+            XTrader::UpsertParallelMapEntry<int32_t>(
+                m_StrategyChannelMap, EngineID, [&](int32_t& ChannelID) {
+                    ChannelID = message.ChannelID;
+                });
             while(!m_RequestMessageQueue.Push(message));
             uint64_t end = Utils::getTimeUs();
             FMTLOG(fmtlog::INF, "TraderEngine::HandleOrderFromQuant recv msg from ChannelID:{} Latency:{}us", message.ChannelID, end - start);
@@ -500,26 +504,28 @@ void TraderEngine::SendReportToQuant()
         {
             if(Message::EMessageType::EOrderStatus == report.MessageType && report.OrderStatus.EngineID > 0)
             {
-                auto it = m_StrategyChannelMap.find(report.OrderStatus.EngineID);
-                if(it != m_StrategyChannelMap.end())
+                int32_t ChannelID = -1;
+                if(XTrader::ReadParallelMapEntry(m_StrategyChannelMap, report.OrderStatus.EngineID, ChannelID))
                 {
-                    report.ChannelID = it->second;
+                    report.ChannelID = ChannelID;
                     m_pOrderServer->Push(report);
                 }
             }
             else if(Message::EMessageType::EAccountFund == report.MessageType)
             {
-                for(auto it = m_StrategyChannelMap.begin(); it != m_StrategyChannelMap.end(); it++)
+                const auto ChannelIDs = XTrader::SnapshotParallelMapValues<int32_t>(m_StrategyChannelMap);
+                for(int32_t ChannelID : ChannelIDs)
                 {
-                    report.ChannelID = it->second;
+                    report.ChannelID = ChannelID;
                     m_pOrderServer->Push(report); 
                 }
             }
             else if(Message::EMessageType::EAccountPosition == report.MessageType)
             {
-                for(auto it = m_StrategyChannelMap.begin(); it != m_StrategyChannelMap.end(); it++)
+                const auto ChannelIDs = XTrader::SnapshotParallelMapValues<int32_t>(m_StrategyChannelMap);
+                for(int32_t ChannelID : ChannelIDs)
                 {
-                    report.ChannelID = it->second;
+                    report.ChannelID = ChannelID;
                     m_pOrderServer->Push(report); 
                 }
             }

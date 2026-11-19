@@ -9,7 +9,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build/)
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.9.5)
+SET(AppVersion 0.9.6)
 SET(XTrader_Version ${PROJECT_NAME}_${AppVersion})
 
 # 默认输出debug版
@@ -147,3 +147,4 @@ target_link_libraries(${XTrader_Version} pthread hpsocket4c yaml-cpp dl rt)
 
 # 编译API SO
 add_subdirectory(TraderAPI)
+add_subdirectory(Tests)

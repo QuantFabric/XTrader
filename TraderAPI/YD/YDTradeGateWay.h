@@ -8,6 +8,7 @@
 #include "FMTLogger.hpp"
 #include "PackMessage.hpp"
 #include "FutureTradeGateWay.hpp"
+#include "phmap.h"
 
 #include "ydApi.h"
 #include "ydUtil.h"
@@ -39,7 +40,7 @@ public:
     virtual void ReqCancelOrderRejected(const Message::TActionRequest& request);
 protected:
     virtual void OnExchangeACK(const Message::TOrderStatus& OrderStatus);
-    int OrderSide(int direction, int offset, const std::string& Key);
+    int OrderSide(int direction, int offset, const XTrader::AccountTickerKey& Key);
     void QueryPrePosition();
     void UpdateQueryPosition(const Message::TOrderStatus& OrderStatus, Message::TAccountPosition& position);
 protected:
@@ -58,8 +59,8 @@ private:
     YDExtendedApi* m_YDAPI;
     Utils::YDConfig m_YDConfig;
     YDAccount* m_YDAccount;
-    std::unordered_map<std::string, YDExchange*> m_YDExchangeMap;
-    std::unordered_map<std::string, YDInstrument*> m_YDInstrumentMap;
+    phmap::flat_hash_map<std::string, YDExchange*> m_YDExchangeMap;
+    phmap::flat_hash_map<std::string, YDInstrument*> m_YDInstrumentMap;
     int m_MaxOrderRef;
     bool m_ReadyTrading;
 };

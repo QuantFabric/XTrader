@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 PROJECT(REMTrader)
 
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.5.0)
+SET(AppVersion 0.6.0)
 SET(APIVersion REM3.1.3.49)
 SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 

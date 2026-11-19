@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 PROJECT(OESTrader)
 
 set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-SET(AppVersion 0.5.0)
+SET(AppVersion 0.6.0)
 SET(APIVersion OES0.17.4.1)
 SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 

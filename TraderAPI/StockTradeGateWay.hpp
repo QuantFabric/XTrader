@@ -2,7 +2,6 @@
 #define STOCKTRADEGATEWAY_HPP
 
 #include <string>
-#include <unordered_map>
 #include "TradeGateWay.hpp"
 #include "PackMessage.hpp"
 

@@ -2,7 +2,6 @@
 #define FUTURETRADEGATEWAY_HPP
 
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 
 #include "TradeGateWay.hpp"
@@ -285,14 +284,17 @@ public:
     {
         for(auto it = m_TickerPropertyList.begin(); it != m_TickerPropertyList.end(); it++)
         {
-            std::string Key = m_XTraderConfig.Account + ":" + it->Ticker;
-            Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
-            AccountPosition.BusinessType = m_XTraderConfig.BusinessType;
-            strncpy(AccountPosition.Product,  m_XTraderConfig.Product.c_str(), sizeof(AccountPosition.Product));
-            strncpy(AccountPosition.Broker,  m_XTraderConfig.Broker.c_str(), sizeof(AccountPosition.Broker));
-            strncpy(AccountPosition.Account, m_XTraderConfig.Account.c_str(), sizeof(AccountPosition.Account));
-            strncpy(AccountPosition.Ticker, it->Ticker.c_str(), sizeof(AccountPosition.Ticker));
-            strncpy(AccountPosition.ExchangeID, it->ExchangeID.c_str(), sizeof(AccountPosition.ExchangeID));
+            const auto Key = XTrader::MakeAccountTickerKey(m_XTraderConfig.Account, it->Ticker);
+            XTrader::UpsertParallelMapEntry<Message::TAccountPosition>(
+                m_TickerAccountPositionMap, Key,
+                [&](Message::TAccountPosition& AccountPosition) {
+                    AccountPosition.BusinessType = m_XTraderConfig.BusinessType;
+                    strncpy(AccountPosition.Product, m_XTraderConfig.Product.c_str(), sizeof(AccountPosition.Product));
+                    strncpy(AccountPosition.Broker, m_XTraderConfig.Broker.c_str(), sizeof(AccountPosition.Broker));
+                    strncpy(AccountPosition.Account, m_XTraderConfig.Account.c_str(), sizeof(AccountPosition.Account));
+                    strncpy(AccountPosition.Ticker, it->Ticker.c_str(), sizeof(AccountPosition.Ticker));
+                    strncpy(AccountPosition.ExchangeID, it->ExchangeID.c_str(), sizeof(AccountPosition.ExchangeID));
+                });
         }
         FMTLOG(fmtlog::INF, "FutureTradeGateWay::InitPosition Account:{} Tickers:{}", m_XTraderConfig.Account, m_TickerPropertyList.size());
     }

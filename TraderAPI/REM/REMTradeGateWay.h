@@ -49,7 +49,7 @@ protected:
     void UnloadEESTrader();
     void HandleLoginResult(int code, std::string& errorString);
     void HandleRetResult(int code, const std::string& op);
-    int OrderSide(unsigned char side, const std::string& Key);
+    int OrderSide(unsigned char side, const XTrader::AccountTickerKey& Key);
     int REMOrderSide(const Message::TOrderRequest& req);
     const char* ExchangeID(EES_ExchangeID ExchangeID);
     EES_ExchangeID REMExchangeID(const std::string& ExchangeID);

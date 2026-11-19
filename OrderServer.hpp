@@ -6,11 +6,12 @@
 #include <string.h>
 #include <cstdlib>
 #include <mutex>
-#include <unordered_map>
 #include <unistd.h>
+#include "AccountTickerKey.hpp"
 #include "PackMessage.hpp"
 #include "FMTLogger.hpp"
 #include "LockFreeQueue.hpp"
+#include "SafeUtils.hpp"
 #include "phmap.h"
 #include <shared_mutex>
 
@@ -47,8 +48,12 @@ public:
     
     void UpdateAccountPosition(const Message::PackMessage& msg)
     {
-        std::string key = std::string(msg.AccountPosition.Account) + ":" + msg.AccountPosition.Ticker;
-        m_AccountPositionMap[key] = msg;
+        const auto key = XTrader::MakeAccountTickerKey(
+            msg.AccountPosition.Account, msg.AccountPosition.Ticker);
+        XTrader::UpsertParallelMapEntry<Message::PackMessage>(
+            m_AccountPositionMap, key, [&](Message::PackMessage& position) {
+                position = msg;
+            });
     }
 
 protected:
@@ -63,21 +68,20 @@ protected:
             m_AllChannel[ChannelID].SendQueue.Push(Msg);
         }
 
-        for(auto it = m_AccountPositionMap.begin(); it != m_AccountPositionMap.end(); it++)
-        {
+        m_AccountPositionMap.for_each([&](const AccountPositionMapT::value_type& item) {
             Msg.TimeStamp = SHMIPC::RDTSC();
-            memcpy(&Msg.Data, &(it->second), sizeof(Msg.Data));
+            memcpy(&Msg.Data, &item.second, sizeof(Msg.Data));
             m_AllChannel[ChannelID].SendQueue.Push(Msg);
-        }
+        });
         fprintf(stdout, "OrderServer Push Init Data Done\n");
     }
 
 protected:
     Message::PackMessage m_AccountFundMsg;
-    typedef phmap::parallel_flat_hash_map<std::string, Message::PackMessage, 
-                                        phmap::priv::hash_default_hash<std::string>,
-                                        phmap::priv::hash_default_eq<std::string>,
-                                        std::allocator<std::pair<std::string, Message::PackMessage>>, 
+    typedef phmap::parallel_flat_hash_map<XTrader::AccountTickerKey, Message::PackMessage,
+                                        XTrader::AccountTickerKeyHash,
+                                        XTrader::AccountTickerKeyEqual,
+                                        std::allocator<std::pair<const XTrader::AccountTickerKey, Message::PackMessage>>,
                                         8, std::shared_mutex>
     AccountPositionMapT;
     AccountPositionMapT m_AccountPositionMap;

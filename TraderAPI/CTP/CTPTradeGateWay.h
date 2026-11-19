@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unordered_map>
 #include "ThostFtdcTraderApi.h"
 #include "Util.hpp"
 #include "YMLConfig.hpp"
@@ -44,7 +43,7 @@ protected:
     void ReqAuthenticate();
     void ReqSettlementInfoConfirm();
     void HandleRetCode(int code, const std::string& op);
-    int OrderSide(char direction, char offset, const std::string& Key);
+    int OrderSide(char direction, char offset, const XTrader::AccountTickerKey& Key);
     int Ordertype(char timec, char volumec);
     bool IsRspError(CThostFtdcRspInfoField *pRspInfo);
 private:

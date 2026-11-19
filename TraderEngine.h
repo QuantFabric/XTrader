@@ -66,8 +66,8 @@ private:
     std::thread* m_pWorkThread;
     std::thread* m_pMonitorThread;
     typedef phmap::parallel_flat_hash_map<int32_t, int32_t, 
-                                        phmap::priv::hash_default_hash<int32_t>,
-                                        phmap::priv::hash_default_eq<int32_t>,
+                                        phmap::Hash<int32_t>,
+                                        phmap::EqualTo<int32_t>,
                                         std::allocator<std::pair<int32_t, int32_t>>, 
                                         8, std::shared_mutex>
     StrategyChannelMapT;

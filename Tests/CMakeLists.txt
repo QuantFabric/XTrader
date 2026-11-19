@@ -1,0 +1,4 @@
+add_executable(XTraderSafeUtilsTest SafeUtilsTest.cpp)
+target_include_directories(XTraderSafeUtilsTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_link_libraries(XTraderSafeUtilsTest pthread)
+add_test(NAME XTraderSafeUtilsTest COMMAND XTraderSafeUtilsTest)

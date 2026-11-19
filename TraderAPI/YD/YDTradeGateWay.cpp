@@ -211,8 +211,8 @@ void YDTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& req)
     const YDInstrument* Instrument = m_YDInstrumentMap[req.Ticker];
     const YDAccount* Account = m_YDAccount;
     std::string OrderRef = fmt::format("{}", inputOrder.OrderRef);
-    std::string Key = std::string(m_YDAccount->AccountID) + ":" + Instrument->InstrumentID;
-    Message::TOrderStatus& OrderStatus = m_OrderStatusMap[OrderRef];
+    const auto Key = XTrader::MakeAccountTickerKey(m_YDAccount->AccountID, Instrument->InstrumentID);
+    Message::TOrderStatus OrderStatus{};
     {
         OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
         strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
@@ -234,14 +234,24 @@ void YDTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& req)
         OrderStatus.OrderStatus = Message::EOrderStatusType::EORDER_SENDED;
         PrintOrderStatus(OrderStatus, "YDTrader::insertOrder ");
     }
+    XTrader::UpsertParallelMapEntry<Message::TOrderStatus>(
+        m_OrderStatusMap, OrderRef,
+        [&](Message::TOrderStatus& storedStatus) {
+            storedStatus = OrderStatus;
+        });
     uint64_t start = Utils::getTimeNs();
     bool ret = m_YDAPI->insertOrder(&inputOrder, Instrument, Account);
     uint64_t end = Utils::getTimeNs();
     if(ret)
     {
         UpdateOrderStatus(OrderStatus);
-        Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
-        UpdatePosition(OrderStatus, AccountPosition);
+        Message::TAccountPosition AccountPosition{};
+        XTrader::UpsertParallelMapEntry<Message::TAccountPosition>(
+            m_TickerAccountPositionMap, Key,
+            [&](Message::TAccountPosition& storedPosition) {
+                UpdatePosition(OrderStatus, storedPosition);
+                AccountPosition = storedPosition;
+            });
         PrintAccountPosition(AccountPosition, "YDTrader::insertOrder ");
         FMTLOG(fmtlog::INF, "YDTrader::ReqInsertOrder successed, Account:{} Ticker:{} OrderRef:{} Direction:{:d} "
                             "OffsetFlag:{:d} OrderType:{:d} Price:{} OrderVolume:{} API Latency:{}",
@@ -250,7 +260,7 @@ void YDTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& req)
     }
     else
     {
-        m_OrderStatusMap.erase(OrderRef);
+        XTrader::EraseParallelMapEntry(m_OrderStatusMap, OrderRef);
         FMTLOG(fmtlog::WRN, "YDTrader::ReqInsertOrder failed, Account:{} Ticker:{} OrderRef:{} Direction:{:d} "
                             "OffsetFlag:{:d} OrderType:{:d} Price:{} OrderVolume:{}",
                 m_YDAccount->AccountID, Instrument->InstrumentID, inputOrder.OrderRef,
@@ -292,7 +302,7 @@ void YDTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& reques
     memset(&OrderStatus, 0, sizeof(OrderStatus));
     OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
     fmt::format_to_n(OrderStatus.OrderRef, sizeof(OrderStatus.OrderRef), "{}", inputOrder.OrderRef);
-    std::string Key = std::string(request.Account) + ":" + request.Ticker;
+    const auto Key = XTrader::MakeAccountTickerKey(request.Account, request.Ticker);
     strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
     strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
     strncpy(OrderStatus.Account, request.Account, sizeof(OrderStatus.Account));
@@ -324,27 +334,32 @@ void YDTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& reques
 
 void YDTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
 {
-    auto it = m_OrderStatusMap.find(request.OrderRef);
-    if(it != m_OrderStatusMap.end())
+    Message::TOrderStatus OrderStatus{};
+    if(XTrader::ReadParallelMapEntry(m_OrderStatusMap, request.OrderRef, OrderStatus))
     {
         YDCancelOrder cancelOrder;
         memset(&cancelOrder,0,sizeof(cancelOrder));
-        cancelOrder.OrderSysID = atol(it->second.OrderSysID);
+        cancelOrder.OrderSysID = atol(OrderStatus.OrderSysID);
         cancelOrder.ConnectionSelectionType = YD_CS_Any;
         cancelOrder.YDOrderFlag = YD_YOF_Normal;
-        YDExchange* Exchange = m_YDExchangeMap[it->second.ExchangeID];
+        YDExchange* Exchange = m_YDExchangeMap[OrderStatus.ExchangeID];
         bool ret = m_YDAPI->cancelOrder(&cancelOrder, Exchange, m_YDAccount);
         if(ret)
         {
-            it->second.OrderStatus = Message::EOrderStatusType::ECANCELLING;
-            strncpy(it->second.UpdateTime, Utils::getCurrentTimeUs(), sizeof(it->second.UpdateTime));
+            XTrader::ModifyParallelMapEntry(
+                m_OrderStatusMap, request.OrderRef,
+                [&](Message::TOrderStatus& storedStatus) {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::ECANCELLING;
+                    strncpy(storedStatus.UpdateTime, Utils::getCurrentTimeUs(), sizeof(storedStatus.UpdateTime));
+                    OrderStatus = storedStatus;
+                });
             FMTLOG(fmtlog::INF, "YDTrader::ReqCancelOrder successed, Account:{} Ticker:{} OrderRef:{} OrderSysID:{}",
-                    m_YDAccount->AccountID, it->second.Ticker, it->second.OrderRef, cancelOrder.OrderSysID);
+                    m_YDAccount->AccountID, OrderStatus.Ticker, OrderStatus.OrderRef, cancelOrder.OrderSysID);
         }
         else
         {
             FMTLOG(fmtlog::WRN, "YDTrader::ReqCancelOrder failed, Account:{} Ticker:{} OrderRef:{} OrderSysID:{}",
-                    m_YDAccount->AccountID, it->second.Ticker, it->second.OrderRef, cancelOrder.OrderSysID);
+                    m_YDAccount->AccountID, OrderStatus.Ticker, OrderStatus.OrderRef, cancelOrder.OrderSysID);
         }
     }
     else
@@ -355,16 +370,20 @@ void YDTradeGateWay::ReqCancelOrder(const Message::TActionRequest& request)
 
 void YDTradeGateWay::ReqCancelOrderRejected(const Message::TActionRequest& request)
 {
-    auto it = m_OrderStatusMap.find(request.OrderRef);
-    if(it == m_OrderStatusMap.end())
+    Message::TOrderStatus OrderStatus{};
+    bool found = XTrader::ModifyParallelMapEntry(
+        m_OrderStatusMap, request.OrderRef,
+        [&](Message::TOrderStatus& storedStatus) {
+            storedStatus.OrderStatus = Message::EOrderStatusType::ERISK_ACTION_REJECTED;
+            storedStatus.ErrorID = request.ErrorID;
+            strncpy(storedStatus.ErrorMsg, request.ErrorMsg, sizeof(storedStatus.ErrorMsg));
+            OrderStatus = storedStatus;
+        });
+    if(!found)
     {
         FMTLOG(fmtlog::WRN, "YDTrader::ReqCancelOrderRejected Account:{} OrderRef:{} not found.", request.Account, request.OrderRef);
         return ;
     }
-    Message::TOrderStatus& OrderStatus = m_OrderStatusMap[request.OrderRef];
-    OrderStatus.OrderStatus = Message::EOrderStatusType::ERISK_ACTION_REJECTED;
-    OrderStatus.ErrorID = request.ErrorID;
-    strncpy(OrderStatus.ErrorMsg, request.ErrorMsg, sizeof(OrderStatus.ErrorMsg));
     UpdateOrderStatus(OrderStatus);
     PrintOrderStatus(OrderStatus, "YDTrader::ReqCancelOrderRejected ");
 }
@@ -378,10 +397,15 @@ void YDTradeGateWay::OnExchangeACK(const Message::TOrderStatus& OrderStatus)
             OrderStatus.OrderRef, OrderStatus.OrderLocalID, insert - send, end - insert);
 }
 
-int YDTradeGateWay::OrderSide(int direction, int offset, const std::string& Key)
+int YDTradeGateWay::OrderSide(int direction, int offset, const XTrader::AccountTickerKey& Key)
 {
     int side = -1;
-    Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
+    Message::TAccountPosition AccountPosition{};
+    XTrader::UpsertParallelMapEntry<Message::TAccountPosition>(
+        m_TickerAccountPositionMap, Key,
+        [&](Message::TAccountPosition& storedPosition) {
+            AccountPosition = storedPosition;
+        });
     if(YD_D_Buy == direction && YD_OF_Open == offset)
     {
         side = Message::EOrderSide::EOPEN_LONG;
@@ -444,23 +468,25 @@ void YDTradeGateWay::QueryPrePosition()
                 PrePosition->PositionDirection, PrePosition->PrePosition);
         std::string Account = PrePosition->m_pAccount->AccountID;
         std::string Ticker = PrePosition->m_pInstrument->InstrumentID;
-        std::string Key = Account + ":" + Ticker;
-        auto it = m_TickerAccountPositionMap.find(Key);
-        if(it != m_TickerAccountPositionMap.end())
-        {
+        const auto Key = XTrader::MakeAccountTickerKey(Account, Ticker);
+        XTrader::ModifyParallelMapEntry(
+            m_TickerAccountPositionMap, Key,
+            [&](Message::TAccountPosition& AccountPosition) {
             if(YD_PD_Long == PrePosition->PositionDirection)
             {
-                it->second.FuturePosition.LongYdVolume = PrePosition->PrePosition;
+                AccountPosition.FuturePosition.LongYdVolume = PrePosition->PrePosition;
             }
             else if(YD_PD_Short == PrePosition->PositionDirection)
             {
-                it->second.FuturePosition.ShortYdVolume = PrePosition->PrePosition;
+                AccountPosition.FuturePosition.ShortYdVolume = PrePosition->PrePosition;
             }
-        }
+            });
     }
-    for(auto it = m_TickerAccountPositionMap.begin(); it != m_TickerAccountPositionMap.end(); it++)
+    const auto Positions =
+        XTrader::SnapshotParallelMapValues<Message::TAccountPosition>(m_TickerAccountPositionMap);
+    for(const auto& AccountPosition : Positions)
     {
-        PrintAccountPosition(it->second, "YDTrader::QryPrePosition PrePosition");
+        PrintAccountPosition(AccountPosition, "YDTrader::QryPrePosition PrePosition");
     }
 }
 
@@ -665,34 +691,44 @@ void YDTradeGateWay::notifyCaughtUp(void)
     m_ReadyTrading = true;
     FMTLOG(fmtlog::INF, "YDTrader::notifyCaughtUp ReadyTrading:{}", m_ReadyTrading);
     // 更新挂单订单状态
-    for (auto it1 = m_OrderStatusMap.begin(); it1 != m_OrderStatusMap.end(); it1++)
+    auto Orders =
+        XTrader::SnapshotParallelMapValues<Message::TOrderStatus>(m_OrderStatusMap);
+    for(auto OrderStatus : Orders)
     {
-        UpdateOrderStatus(it1->second);
-        std::string Account = it1->second.Account;
-        std::string Ticker = it1->second.Ticker;
-        std::string Key = Account + ":" + Ticker;
-        Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
-        UpdateQueryPosition(it1->second, AccountPosition);
-        UpdateFrozenPosition(it1->second, AccountPosition);
-        PrintOrderStatus(it1->second, "YDTrader::notifyCaughtUp OrderStatus ");
+        UpdateOrderStatus(OrderStatus);
+        std::string Account = OrderStatus.Account;
+        std::string Ticker = OrderStatus.Ticker;
+        const auto Key = XTrader::MakeAccountTickerKey(Account, Ticker);
+        XTrader::UpsertParallelMapEntry<Message::TAccountPosition>(
+            m_TickerAccountPositionMap, Key,
+            [&](Message::TAccountPosition& AccountPosition) {
+                UpdateQueryPosition(OrderStatus, AccountPosition);
+                UpdateFrozenPosition(OrderStatus, AccountPosition);
+            });
+        PrintOrderStatus(OrderStatus, "YDTrader::notifyCaughtUp OrderStatus ");
     }
     // 更新仓位信息
-    for (auto it = m_TickerAccountPositionMap.begin(); it != m_TickerAccountPositionMap.end(); it++)
+    const auto Positions = XTrader::ModifyParallelMapEntries(
+        m_TickerAccountPositionMap,
+        [](Message::TAccountPosition& AccountPosition) {
+            strncpy(AccountPosition.UpdateTime, Utils::getCurrentTimeUs(), sizeof(AccountPosition.UpdateTime));
+        });
+    for(const auto& [Key, AccountPosition] : Positions)
     {
-        strncpy(it->second.UpdateTime, Utils::getCurrentTimeUs(), sizeof(it->second.UpdateTime));
+        (void)Key;
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EAccountPosition;
-        memcpy(&message.AccountPosition, &it->second, sizeof(message.AccountPosition));
+        memcpy(&message.AccountPosition, &AccountPosition, sizeof(message.AccountPosition));
         while(!m_ReportMessageQueue.Push(message));
-        PrintAccountPosition(it->second, "YDTrader::notifyCaughtUp Current Position ");
+        PrintAccountPosition(AccountPosition, "YDTrader::notifyCaughtUp Current Position ");
     }
     // 撤销所有挂单
     if(m_XTraderConfig.CancelAll)
     {
-        for(auto it = m_OrderStatusMap.begin(); it != m_OrderStatusMap.end(); it++)
+        for(const auto& OrderStatus : Orders)
         {
-            CancelOrder(it->second);
+            CancelOrder(OrderStatus);
         }
     }
 }
@@ -712,75 +748,80 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
             OrderRef = fmt::format("{}", pOrder->OrderRef);
         }
 
-        Message::TOrderStatus& OrderStatus= m_OrderStatusMap[OrderRef];
-        OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
-        strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
-        strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
-        strncpy(OrderStatus.Account, pAccount->AccountID, sizeof(OrderStatus.Account));
-        strncpy(OrderStatus.Ticker, pInstrument->InstrumentID, sizeof(OrderStatus.Ticker));
-        strncpy(OrderStatus.OrderRef, OrderRef.c_str(), sizeof(OrderStatus.OrderRef));
-        strncpy(OrderStatus.ExchangeID, m_TickerExchangeMap[pInstrument->InstrumentID].c_str(), sizeof(OrderStatus.ExchangeID));
-        
-        char buffer[32] = {0};
-        timeStamp2String(pOrder->InsertTime, buffer, NULL);
-        fmt::format_to_n(OrderStatus.SendTime, sizeof(OrderStatus.SendTime), "{} {}000", Utils::getCurrentDay(), buffer);
-        OrderStatus.SendVolume = pOrder->OrderVolume;
         std::string Account = m_YDAccount->AccountID;
         std::string Ticker = pInstrument->InstrumentID;
-        std::string Key = Account + ":" + Ticker;
-        Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
-        if(YD_ODT_Limit == pOrder->OrderType)
-        {
-            OrderStatus.OrderType = Message::EOrderType::ELIMIT;
-        }
-        else if(YD_ODT_FAK == pOrder->OrderType)
-        {
-            OrderStatus.OrderType = Message::EOrderType::EFAK;
-        }
-        else if(YD_ODT_FOK == pOrder->OrderType)
-        {
-            OrderStatus.OrderType = Message::EOrderType::EFOK;
-        }
-        OrderStatus.OrderSide = OrderSide(pOrder->Direction, pOrder->OffsetFlag, Key);
-        // Order Status
-        if(YD_OS_Queuing == pOrder->OrderStatus)
-        {
-            if(0 == pOrder->TradeVolume)
-            {
-                OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ACK;
-            }
-            else if(pOrder->TradeVolume > 0)
-            {
-                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
-            }
-        }
-        else if(YD_OS_AllTraded == pOrder->OrderStatus)
-        {
-            OrderStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
-        }
-        else if(YD_OS_Canceled == pOrder->OrderStatus)
-        {
-            if(pOrder->TradeVolume > 0)
-            {
-                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED_CANCELLED;
-                OrderStatus.CanceledVolume = pOrder->OrderVolume - pOrder->TradeVolume;
-            }
-            else
-            {
-                OrderStatus.OrderStatus = Message::EOrderStatusType::ECANCELLED;
-                OrderStatus.CanceledVolume = pOrder->OrderVolume;
-            }
-        }
-        else if(YD_OS_Rejected == pOrder->OrderStatus)
-        {
-            OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ERROR;
-        }
-        if(strnlen(OrderStatus.OrderSysID, sizeof(OrderStatus.OrderSysID)) == 0)
-        {
-            fmt::format_to_n(OrderStatus.OrderSysID, sizeof(OrderStatus.OrderSysID), "{}", pOrder->OrderSysID);
-            fmt::format_to_n(OrderStatus.OrderLocalID, sizeof(OrderStatus.OrderLocalID), "{}", pOrder->OrderLocalID);
-            strncpy(OrderStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.ExchangeACKTime));
-        }
+        const auto Key = XTrader::MakeAccountTickerKey(Account, Ticker);
+        const int orderSide = OrderSide(pOrder->Direction, pOrder->OffsetFlag, Key);
+        Message::TOrderStatus OrderStatus{};
+        XTrader::UpsertParallelMapEntry<Message::TOrderStatus>(
+            m_OrderStatusMap, OrderRef,
+            [&](Message::TOrderStatus& storedStatus) {
+                storedStatus.BusinessType = m_XTraderConfig.BusinessType;
+                strncpy(storedStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(storedStatus.Product));
+                strncpy(storedStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(storedStatus.Broker));
+                strncpy(storedStatus.Account, pAccount->AccountID, sizeof(storedStatus.Account));
+                strncpy(storedStatus.Ticker, pInstrument->InstrumentID, sizeof(storedStatus.Ticker));
+                strncpy(storedStatus.OrderRef, OrderRef.c_str(), sizeof(storedStatus.OrderRef));
+                strncpy(storedStatus.ExchangeID, m_TickerExchangeMap[pInstrument->InstrumentID].c_str(), sizeof(storedStatus.ExchangeID));
+
+                char buffer[32] = {0};
+                timeStamp2String(pOrder->InsertTime, buffer, NULL);
+                fmt::format_to_n(storedStatus.SendTime, sizeof(storedStatus.SendTime), "{} {}000", Utils::getCurrentDay(), buffer);
+                storedStatus.SendVolume = pOrder->OrderVolume;
+                if(YD_ODT_Limit == pOrder->OrderType)
+                {
+                    storedStatus.OrderType = Message::EOrderType::ELIMIT;
+                }
+                else if(YD_ODT_FAK == pOrder->OrderType)
+                {
+                    storedStatus.OrderType = Message::EOrderType::EFAK;
+                }
+                else if(YD_ODT_FOK == pOrder->OrderType)
+                {
+                    storedStatus.OrderType = Message::EOrderType::EFOK;
+                }
+                storedStatus.OrderSide = orderSide;
+                // Order Status
+                if(YD_OS_Queuing == pOrder->OrderStatus)
+                {
+                    if(0 == pOrder->TradeVolume)
+                    {
+                        storedStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ACK;
+                    }
+                    else if(pOrder->TradeVolume > 0)
+                    {
+                        storedStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
+                    }
+                }
+                else if(YD_OS_AllTraded == pOrder->OrderStatus)
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
+                }
+                else if(YD_OS_Canceled == pOrder->OrderStatus)
+                {
+                    if(pOrder->TradeVolume > 0)
+                    {
+                        storedStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED_CANCELLED;
+                        storedStatus.CanceledVolume = pOrder->OrderVolume - pOrder->TradeVolume;
+                    }
+                    else
+                    {
+                        storedStatus.OrderStatus = Message::EOrderStatusType::ECANCELLED;
+                        storedStatus.CanceledVolume = pOrder->OrderVolume;
+                    }
+                }
+                else if(YD_OS_Rejected == pOrder->OrderStatus)
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ERROR;
+                }
+                if(strnlen(storedStatus.OrderSysID, sizeof(storedStatus.OrderSysID)) == 0)
+                {
+                    fmt::format_to_n(storedStatus.OrderSysID, sizeof(storedStatus.OrderSysID), "{}", pOrder->OrderSysID);
+                    fmt::format_to_n(storedStatus.OrderLocalID, sizeof(storedStatus.OrderLocalID), "{}", pOrder->OrderLocalID);
+                    strncpy(storedStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(storedStatus.ExchangeACKTime));
+                }
+                OrderStatus = storedStatus;
+            });
         // Update Position
         if(OrderStatus.OrderStatus == Message::EOrderStatusType::EPARTTRADED_CANCELLED ||
                 OrderStatus.OrderStatus == Message::EOrderStatusType::EALLTRADED)
@@ -791,7 +832,11 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
             OrderStatus.TradedPrice = pOrder->Price;
             OrderStatus.TradedAvgPrice = pOrder->Price;
             // Position Update
-            UpdateQueryPosition(OrderStatus, AccountPosition);
+            XTrader::UpsertParallelMapEntry<Message::TAccountPosition>(
+                m_TickerAccountPositionMap, Key,
+                [&](Message::TAccountPosition& AccountPosition) {
+                    UpdateQueryPosition(OrderStatus, AccountPosition);
+                });
         }
         // remove Order
         if(Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus ||
@@ -799,7 +844,7 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
                 Message::EOrderStatusType::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus ||
                 Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
         {
-            m_OrderStatusMap.erase(OrderRef);
+            XTrader::EraseParallelMapEntry(m_OrderStatusMap, OrderRef);
         }
         FMTLOG(fmtlog::INF, "YDTrader::notifyOrder Account:{} Ticker:{} Direction:{:d} OffsetFlag:{:d} HedgeFlag:{:d} "
                             "ConnectionSelectionType:{:d} Price:{:.2f} OrderVolume:{} OrderRef:{} OrderType:{:d} "
@@ -817,10 +862,10 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
     if(-1 == pOrder->OrderRef)
     {
         OrderRef = fmt::format("{}", pOrder->OrderSysID);
-        auto it = m_OrderStatusMap.find(OrderRef);
-        if(it == m_OrderStatusMap.end())
+        Message::TOrderStatus ExistingOrderStatus{};
+        if(!XTrader::ReadParallelMapEntry(m_OrderStatusMap, OrderRef, ExistingOrderStatus))
         {
-            Message::TOrderStatus& OrderStatus = m_OrderStatusMap[OrderRef];
+            Message::TOrderStatus OrderStatus{};
             OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
             strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
             strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
@@ -844,94 +889,111 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
             }
             std::string Account = m_YDAccount->AccountID;
             std::string Ticker = pInstrument->InstrumentID;
-            std::string Key = Account + ":" + Ticker;
+            const auto Key = XTrader::MakeAccountTickerKey(Account, Ticker);
             OrderStatus.OrderSide = OrderSide(pOrder->Direction, pOrder->OffsetFlag, Key);
             strncpy(OrderStatus.InsertTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.InsertTime));
             strncpy(OrderStatus.SendTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.SendTime));
             OrderStatus.OrderStatus = Message::EOrderStatusType::EORDER_SENDED;
 
-            Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
-            UpdatePosition(OrderStatus, AccountPosition);
+            XTrader::UpsertParallelMapEntry<Message::TOrderStatus>(
+                m_OrderStatusMap, OrderRef,
+                [&](Message::TOrderStatus& storedStatus) {
+                    storedStatus = OrderStatus;
+                });
+            XTrader::UpsertParallelMapEntry<Message::TAccountPosition>(
+                m_TickerAccountPositionMap, Key,
+                [&](Message::TAccountPosition& AccountPosition) {
+                    UpdatePosition(OrderStatus, AccountPosition);
+                });
         }
     }
     else
     {
         OrderRef = fmt::format("{}", pOrder->OrderRef);
     }
-    auto it = m_OrderStatusMap.find(OrderRef);
-    if(it != m_OrderStatusMap.end())
+    std::string Account = m_YDAccount->AccountID;
+    std::string Ticker = pInstrument->InstrumentID;
+    const auto Key = XTrader::MakeAccountTickerKey(Account, Ticker);
+    const int orderSide = OrderSide(pOrder->Direction, pOrder->OffsetFlag, Key);
+    Message::TOrderStatus OrderStatus{};
+    bool exchangeAckDue = false;
+    bool found = XTrader::ModifyParallelMapEntry(
+        m_OrderStatusMap, OrderRef,
+        [&](Message::TOrderStatus& storedStatus) {
+            storedStatus.OrderSide = orderSide;
+            if(pOrder->ErrorNo > 0)
+            {
+                storedStatus.ErrorID = pOrder->ErrorNo;
+                std::string errorString = "Unkown Error.";
+                auto errorIt = m_CodeErrorMap.find(pOrder->ErrorNo);
+                if(errorIt != m_CodeErrorMap.end())
+                {
+                    errorString = errorIt->second;
+                }
+                fmt::format_to_n(storedStatus.ErrorMsg, sizeof(storedStatus.ErrorMsg), "{}", errorString);
+            }
+            if(YD_ODT_Limit == pOrder->OrderType)
+            {
+                storedStatus.OrderType = Message::EOrderType::ELIMIT;
+            }
+            else if(YD_ODT_FAK == pOrder->OrderType)
+            {
+                storedStatus.OrderType = Message::EOrderType::EFAK;
+            }
+            else if(YD_ODT_FOK == pOrder->OrderType)
+            {
+                storedStatus.OrderType = Message::EOrderType::EFOK;
+            }
+            // Order Status
+            if(YD_OS_Queuing == pOrder->OrderStatus)
+            {
+                if(0 == pOrder->TradeVolume)
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ACK;
+                }
+                else if(pOrder->TradeVolume > 0)
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
+                }
+            }
+            else if(YD_OS_AllTraded == pOrder->OrderStatus)
+            {
+                storedStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
+            }
+            else if(YD_OS_Canceled == pOrder->OrderStatus)
+            {
+                if(pOrder->TradeVolume > 0)
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED_CANCELLED;
+                    storedStatus.CanceledVolume = pOrder->OrderVolume - pOrder->TradeVolume;
+                }
+                else
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::ECANCELLED;
+                    storedStatus.CanceledVolume = pOrder->OrderVolume;
+                }
+            }
+            else if(YD_OS_Rejected == pOrder->OrderStatus)
+            {
+                storedStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ERROR;
+            }
+            if(strnlen(storedStatus.OrderSysID, sizeof(storedStatus.OrderSysID)) == 0)
+            {
+                fmt::format_to_n(storedStatus.OrderSysID, sizeof(storedStatus.OrderSysID), "{}", pOrder->OrderSysID);
+                fmt::format_to_n(storedStatus.OrderLocalID, sizeof(storedStatus.OrderLocalID), "{}", pOrder->OrderLocalID);
+                strncpy(storedStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(storedStatus.ExchangeACKTime));
+                exchangeAckDue = true;
+            }
+            OrderStatus = storedStatus;
+        });
+    if(found)
     {
-        Message::TOrderStatus& OrderStatus= m_OrderStatusMap[OrderRef];
-        std::string Account = m_YDAccount->AccountID;
-        std::string Ticker = pInstrument->InstrumentID;
-        std::string Key = Account + ":" + Ticker;
-        Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
-        OrderStatus.OrderSide = OrderSide(pOrder->Direction, pOrder->OffsetFlag, Key);
-        if(pOrder->ErrorNo > 0)
+        XTrader::UpsertParallelMapEntry<Message::TAccountPosition>(
+            m_TickerAccountPositionMap, Key, [](Message::TAccountPosition&) {});
+        Message::TAccountPosition AccountPosition{};
+        XTrader::ReadParallelMapEntry(m_TickerAccountPositionMap, Key, AccountPosition);
+        if(exchangeAckDue)
         {
-            OrderStatus.ErrorID = pOrder->ErrorNo;
-            std::string errorString;
-            auto it2 = m_CodeErrorMap.find(pOrder->ErrorNo);
-            if(it2 != m_CodeErrorMap.end())
-            {
-                errorString = it2->second;
-            }
-            else
-            {
-                errorString = "Unkown Error.";
-            }
-            fmt::format_to_n(OrderStatus.ErrorMsg, sizeof(OrderStatus.ErrorMsg), "{}", errorString);
-        }
-        if(YD_ODT_Limit == pOrder->OrderType)
-        {
-            OrderStatus.OrderType = Message::EOrderType::ELIMIT;
-        }
-        else if(YD_ODT_FAK == pOrder->OrderType)
-        {
-            OrderStatus.OrderType = Message::EOrderType::EFAK;
-        }
-        else if(YD_ODT_FOK == pOrder->OrderType)
-        {
-            OrderStatus.OrderType = Message::EOrderType::EFOK;
-        }
-        // Order Status
-        if(YD_OS_Queuing == pOrder->OrderStatus)
-        {
-            if(0 == pOrder->TradeVolume)
-            {
-                OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ACK;
-            }
-            else if(pOrder->TradeVolume > 0)
-            {
-                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
-            }
-        }
-        else if(YD_OS_AllTraded == pOrder->OrderStatus)
-        {
-            OrderStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
-        }
-        else if(YD_OS_Canceled == pOrder->OrderStatus)
-        {
-            if(pOrder->TradeVolume > 0)
-            {
-                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED_CANCELLED;
-                OrderStatus.CanceledVolume = pOrder->OrderVolume - pOrder->TradeVolume;
-            }
-            else
-            {
-                OrderStatus.OrderStatus = Message::EOrderStatusType::ECANCELLED;
-                OrderStatus.CanceledVolume = pOrder->OrderVolume;
-            }
-        }
-        else if(YD_OS_Rejected == pOrder->OrderStatus)
-        {
-            OrderStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ERROR;
-        }
-        if(strnlen(OrderStatus.OrderSysID, sizeof(OrderStatus.OrderSysID)) == 0)
-        {
-            fmt::format_to_n(OrderStatus.OrderSysID, sizeof(OrderStatus.OrderSysID), "{}", pOrder->OrderSysID);
-            fmt::format_to_n(OrderStatus.OrderLocalID, sizeof(OrderStatus.OrderLocalID), "{}", pOrder->OrderLocalID);
-            strncpy(OrderStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(OrderStatus.ExchangeACKTime));
             OnExchangeACK(OrderStatus);
         }
         // Update OrderStatus
@@ -947,9 +1009,13 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
                     Message::EOrderStatusType::ECANCELLED == OrderStatus.OrderStatus ||
                     Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
             {
-                UpdatePosition(OrderStatus, AccountPosition);
+                XTrader::ModifyParallelMapEntry(
+                    m_TickerAccountPositionMap, Key,
+                    [&](Message::TAccountPosition& storedPosition) {
+                        UpdatePosition(OrderStatus, storedPosition);
+                    });
                 // remove Order
-                m_OrderStatusMap.erase(it);
+                XTrader::EraseParallelMapEntry(m_OrderStatusMap, OrderRef);
             }
         }
         else if(OrderStatus.OrderType == Message::EOrderType::EFAK || OrderStatus.OrderType == Message::EOrderType::EFOK)
@@ -963,9 +1029,13 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
             if(Message::EOrderStatusType::ECANCELLED == OrderStatus.OrderStatus ||
                     Message::EOrderStatusType::EEXCHANGE_ERROR == OrderStatus.OrderStatus)
             {
-                UpdatePosition(OrderStatus, AccountPosition);
+                XTrader::ModifyParallelMapEntry(
+                    m_TickerAccountPositionMap, Key,
+                    [&](Message::TAccountPosition& storedPosition) {
+                        UpdatePosition(OrderStatus, storedPosition);
+                    });
                 // remove Order
-                m_OrderStatusMap.erase(it);
+                XTrader::EraseParallelMapEntry(m_OrderStatusMap, OrderRef);
             }
         }
     }
@@ -1018,20 +1088,54 @@ void YDTradeGateWay::notifyTrade(const YDTrade *pTrade, const YDInstrument *pIns
     {
         OrderRef = fmt::format("{}", pTrade->OrderRef);
     }
-    auto it = m_OrderStatusMap.find(OrderRef);
-    if(it != m_OrderStatusMap.end())
+    Message::TOrderStatus OrderStatus{};
+    bool found = XTrader::ModifyParallelMapEntry(
+        m_OrderStatusMap, OrderRef,
+        [&](Message::TOrderStatus& storedStatus) {
+            double prevTotalAmount = storedStatus.TotalTradedVolume * storedStatus.TradedAvgPrice;
+            storedStatus.TotalTradedVolume += pTrade->Volume;
+            storedStatus.TradedVolume = pTrade->Volume;
+            storedStatus.TradedPrice = pTrade->Price;
+            storedStatus.TradedAvgPrice =
+                (pTrade->Price * pTrade->Volume + prevTotalAmount) /
+                storedStatus.TotalTradedVolume;
+            if(Message::EOrderType::ELIMIT == storedStatus.OrderType)
+            {
+                if(storedStatus.TotalTradedVolume == storedStatus.SendVolume)
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
+                }
+                else
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
+                }
+            }
+            else if(Message::EOrderType::EFAK == storedStatus.OrderType ||
+                    Message::EOrderType::EFOK == storedStatus.OrderType)
+            {
+                if(storedStatus.TotalTradedVolume == storedStatus.SendVolume)
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
+                }
+                else if(storedStatus.TotalTradedVolume ==
+                        storedStatus.SendVolume - storedStatus.CanceledVolume)
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED_CANCELLED;
+                }
+                else
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
+                }
+            }
+            OrderStatus = storedStatus;
+        });
+    if(found)
     {
-        Message::TOrderStatus& OrderStatus = it->second;
-        double prevTotalAmount = OrderStatus.TotalTradedVolume * OrderStatus.TradedAvgPrice;
-        OrderStatus.TotalTradedVolume +=  pTrade->Volume;
-        OrderStatus.TradedVolume =  pTrade->Volume;
-        OrderStatus.TradedPrice = pTrade->Price;
-        OrderStatus.TradedAvgPrice = (pTrade->Price * pTrade->Volume + prevTotalAmount) / OrderStatus.TotalTradedVolume;
-
         std::string Account = m_YDAccount->AccountID;
         std::string Ticker = pInstrument->InstrumentID;
-        std::string Key = Account + ":" + Ticker;
-        Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
+        const auto Key = XTrader::MakeAccountTickerKey(Account, Ticker);
+        XTrader::UpsertParallelMapEntry<Message::TAccountPosition>(
+            m_TickerAccountPositionMap, Key, [](Message::TAccountPosition&) {});
         if(Message::EOrderType::ELIMIT ==  OrderStatus.OrderType)
         {
             // Upadte OrderStatus
@@ -1045,11 +1149,15 @@ void YDTradeGateWay::notifyTrade(const YDTrade *pTrade, const YDInstrument *pIns
             }
             UpdateOrderStatus(OrderStatus);
             // Position Update
-            UpdatePosition(OrderStatus, AccountPosition);
+            XTrader::ModifyParallelMapEntry(
+                m_TickerAccountPositionMap, Key,
+                [&](Message::TAccountPosition& AccountPosition) {
+                    UpdatePosition(OrderStatus, AccountPosition);
+                });
             // remove Order When AllTraded
             if(Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus && OrderStatus.TotalTradedVolume == OrderStatus.SendVolume)
             {
-                m_OrderStatusMap.erase(it);
+                XTrader::EraseParallelMapEntry(m_OrderStatusMap, OrderRef);
             }
         }
         else if(Message::EOrderType::EFAK == OrderStatus.OrderType || Message::EOrderType::EFOK == OrderStatus.OrderType)
@@ -1057,29 +1165,40 @@ void YDTradeGateWay::notifyTrade(const YDTrade *pTrade, const YDInstrument *pIns
             if(OrderStatus.TotalTradedVolume == OrderStatus.SendVolume)
             {
                 OrderStatus.OrderStatus = Message::EOrderStatusType::EALLTRADED;
-                UpdatePosition(OrderStatus, AccountPosition);
+                XTrader::ModifyParallelMapEntry(
+                    m_TickerAccountPositionMap, Key,
+                    [&](Message::TAccountPosition& AccountPosition) {
+                        UpdatePosition(OrderStatus, AccountPosition);
+                    });
                 UpdateOrderStatus(OrderStatus);
             }
             else if(OrderStatus.TotalTradedVolume == OrderStatus.SendVolume - OrderStatus.CanceledVolume)
             {
                 // 更新成交数量仓位
-                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
-                UpdatePosition(OrderStatus, AccountPosition);
-                // 更新订单终结状态冻结仓位
-                OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED_CANCELLED;
-                UpdatePosition(OrderStatus, AccountPosition);
+                Message::TOrderStatus PartTradedStatus = OrderStatus;
+                PartTradedStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
+                XTrader::ModifyParallelMapEntry(
+                    m_TickerAccountPositionMap, Key,
+                    [&](Message::TAccountPosition& AccountPosition) {
+                        UpdatePosition(PartTradedStatus, AccountPosition);
+                        UpdatePosition(OrderStatus, AccountPosition);
+                    });
                 UpdateOrderStatus(OrderStatus);
             }
             else
             {
                 OrderStatus.OrderStatus = Message::EOrderStatusType::EPARTTRADED;
-                UpdatePosition(OrderStatus, AccountPosition);
+                XTrader::ModifyParallelMapEntry(
+                    m_TickerAccountPositionMap, Key,
+                    [&](Message::TAccountPosition& AccountPosition) {
+                        UpdatePosition(OrderStatus, AccountPosition);
+                    });
             }
             PrintOrderStatus(OrderStatus, "YDTrader::notifyTrade OrderStatus ");
             if(Message::EOrderStatusType::EALLTRADED == OrderStatus.OrderStatus ||
                     Message::EOrderStatusType::EPARTTRADED_CANCELLED == OrderStatus.OrderStatus)
             {
-                m_OrderStatusMap.erase(it);
+                XTrader::EraseParallelMapEntry(m_OrderStatusMap, OrderRef);
             }
         }
     }
@@ -1114,31 +1233,40 @@ void YDTradeGateWay::notifyFailedOrder(const YDInputOrder *pFailedOrder, const Y
 {
     // OrderStatus
     std::string OrderRef = fmt::format("{}", pFailedOrder->OrderRef);
-    auto it1 = m_OrderStatusMap.find(OrderRef);
-    if(it1 != m_OrderStatusMap.end())
+    std::string errorString = "Unkown Error.";
+    auto errorIt = m_CodeErrorMap.find(pFailedOrder->ErrorNo);
+    if(errorIt != m_CodeErrorMap.end())
     {
-        Message::TOrderStatus& OrderStatus = it1->second;
-        OrderStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ERROR;
-        OrderStatus.ErrorID = pFailedOrder->ErrorNo;
-        auto it2 = m_CodeErrorMap.find(pFailedOrder->ErrorNo);
-        if(m_CodeErrorMap.end() != it2)
-        {
-            fmt::format_to_n(OrderStatus.ErrorMsg, sizeof(OrderStatus.ErrorMsg), "{}", it2->second);
-        }
-        else
-        {
-            fmt::format_to_n(OrderStatus.ErrorMsg, sizeof(OrderStatus.ErrorMsg), "{}", "Unkown Error.");
-        }
-        OrderStatus.CanceledVolume = pFailedOrder->OrderVolume;
+        errorString = errorIt->second;
+    }
+    Message::TOrderStatus OrderStatus{};
+    bool found = XTrader::ModifyParallelMapEntry(
+        m_OrderStatusMap, OrderRef,
+        [&](Message::TOrderStatus& storedStatus) {
+            storedStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ERROR;
+            storedStatus.ErrorID = pFailedOrder->ErrorNo;
+            fmt::format_to_n(storedStatus.ErrorMsg, sizeof(storedStatus.ErrorMsg), "{}", errorString);
+            storedStatus.CanceledVolume = pFailedOrder->OrderVolume;
+            OrderStatus = storedStatus;
+        });
+    if(found)
+    {
         UpdateOrderStatus(OrderStatus);
         std::string Account = m_YDAccount->AccountID;
         std::string Ticker = pInstrument->InstrumentID;
-        std::string Key = Account + ":" + Ticker;
-        Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
-        UpdatePosition(OrderStatus, AccountPosition);
+        const auto Key = XTrader::MakeAccountTickerKey(Account, Ticker);
+        XTrader::UpsertParallelMapEntry<Message::TAccountPosition>(
+            m_TickerAccountPositionMap, Key, [](Message::TAccountPosition&) {});
+        Message::TAccountPosition AccountPosition{};
+        XTrader::ModifyParallelMapEntry(
+            m_TickerAccountPositionMap, Key,
+            [&](Message::TAccountPosition& storedPosition) {
+                UpdatePosition(OrderStatus, storedPosition);
+                AccountPosition = storedPosition;
+            });
         PrintOrderStatus(OrderStatus, "YDTrader::notifyFailedOrder ");
         PrintAccountPosition(AccountPosition, "YDTrader::notifyFailedOrder ");
-        m_OrderStatusMap.erase(it1);
+        XTrader::EraseParallelMapEntry(m_OrderStatusMap, OrderRef);
     }
     FMTLOG(fmtlog::INF, "YDTrader::notifyFailedOrder Account:{} Ticker:{} OrdeRref:{} Direction:{:d} OffsetFlag:{:d} ErrorNo:{}",
             pAccount->AccountID, pInstrument->InstrumentID, pFailedOrder->OrderRef,
@@ -1155,22 +1283,28 @@ void YDTradeGateWay::notifyFailedCancelOrder(const YDFailedCancelOrder *pFailedC
     // OrderStatus
     std::string OrderSysID  =fmt::format("{}", pFailedCancelOrder->OrderSysID);
     // YDFailedCancelOrder没有OrderRef
-    for(auto it = m_OrderStatusMap.begin(); it != m_OrderStatusMap.end(); it++)
+    std::string errorString = "Unkown Error.";
+    auto errorIt = m_CodeErrorMap.find(pFailedCancelOrder->ErrorNo);
+    if(errorIt != m_CodeErrorMap.end())
     {
-        if(Utils::equalWith(it->second.OrderSysID, OrderSysID))
+        errorString = errorIt->second;
+    }
+    const auto Orders =
+        XTrader::SnapshotParallelMapEntries(m_OrderStatusMap);
+    for(const auto& [OrderRef, SnapshotStatus] : Orders)
+    {
+        if(Utils::equalWith(SnapshotStatus.OrderSysID, OrderSysID))
         {
-            it->second.OrderStatus = Message::EOrderStatusType::EACTION_ERROR;
-            it->second.ErrorID = pFailedCancelOrder->ErrorNo;
-            auto it2 = m_CodeErrorMap.find(pFailedCancelOrder->ErrorNo);
-            if(m_CodeErrorMap.end() != it2)
-            {
-                fmt::format_to_n(it->second.ErrorMsg, sizeof(it->second.ErrorMsg), "{}", it2->second);
-            }
-            else
-            {
-                fmt::format_to_n(it->second.ErrorMsg, sizeof(it->second.ErrorMsg), "{}", "Unkown Error.");
-            }
-            UpdateOrderStatus(it->second);
+            Message::TOrderStatus OrderStatus{};
+            XTrader::ModifyParallelMapEntry(
+                m_OrderStatusMap, OrderRef,
+                [&](Message::TOrderStatus& storedStatus) {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EACTION_ERROR;
+                    storedStatus.ErrorID = pFailedCancelOrder->ErrorNo;
+                    fmt::format_to_n(storedStatus.ErrorMsg, sizeof(storedStatus.ErrorMsg), "{}", errorString);
+                    OrderStatus = storedStatus;
+                });
+            UpdateOrderStatus(OrderStatus);
             break;
         }
     }

@@ -3,11 +3,13 @@
 
 #include <string>
 #include <fmt/core.h>
+#include "AccountTickerKey.hpp"
 #include "LockFreeQueue.hpp"
 #include "PackMessage.hpp"
 #include "FMTLogger.hpp"
 #include "YMLConfig.hpp"
 #include "phmap.h"
+#include "SafeUtils.hpp"
 #include <shared_mutex>
 
 class TradeGateWay
@@ -155,8 +157,13 @@ public:
     {
         if(0 == request.Offset)
         {
-            std::string Key = std::string(request.Account) + ":" + request.Ticker;
-            Message::TAccountPosition& AccountPosition = m_TickerAccountPositionMap[Key];
+            const auto Key = XTrader::MakeAccountTickerKey(request.Account, request.Ticker);
+            Message::TAccountPosition AccountPosition{};
+            XTrader::UpsertParallelMapEntry<Message::TAccountPosition>(
+                m_TickerAccountPositionMap, Key,
+                [&](Message::TAccountPosition& position) {
+                    AccountPosition = position;
+                });
             if(Message::EOrderDirection::EBUY == request.Direction)
             {
                 if(AccountPosition.FuturePosition.ShortYdVolume - AccountPosition.FuturePosition.ShortClosingYdVolume >= request.Volume)
@@ -248,20 +255,21 @@ protected:
     Message::ELoginStatus m_ConnectedStatus;
     std::vector<Utils::TickerProperty> m_TickerPropertyList;
     Utils::XTraderConfig m_XTraderConfig;
-    std::unordered_map<std::string, std::string> m_TickerExchangeMap;
+    phmap::flat_hash_map<std::string, std::string> m_TickerExchangeMap;
 
-    typedef phmap::parallel_node_hash_map<std::string, Message::TAccountPosition, phmap::priv::hash_default_hash<std::string>,
-                                     phmap::priv::hash_default_eq<std::string>,
-                                     std::allocator<std::pair<const std::string, Message::TAccountPosition>>, 12, std::shared_mutex>
+    typedef phmap::parallel_flat_hash_map<XTrader::AccountTickerKey, Message::TAccountPosition,
+                                     XTrader::AccountTickerKeyHash, XTrader::AccountTickerKeyEqual,
+                                     std::allocator<std::pair<const XTrader::AccountTickerKey, Message::TAccountPosition>>,
+                                     8, std::shared_mutex>
     AccountPositionMapT;
     AccountPositionMapT m_TickerAccountPositionMap;
-    std::unordered_map<std::string, Message::TAccountFund> m_AccountFundMap;
-    typedef phmap::parallel_node_hash_map<std::string, Message::TOrderStatus, phmap::priv::hash_default_hash<std::string>,
-                                     phmap::priv::hash_default_eq<std::string>,
-                                     std::allocator<std::pair<const std::string, Message::TOrderStatus>>, 10, std::shared_mutex>
+    phmap::flat_hash_map<std::string, Message::TAccountFund> m_AccountFundMap;
+    typedef phmap::parallel_flat_hash_map<std::string, Message::TOrderStatus, phmap::Hash<std::string>,
+                                     phmap::EqualTo<std::string>,
+                                     std::allocator<std::pair<const std::string, Message::TOrderStatus>>, 8, std::shared_mutex>
     OrderStatusMapT;
     OrderStatusMapT m_OrderStatusMap;
-    std::unordered_map<int, std::string> m_CodeErrorMap;
+    phmap::flat_hash_map<int, std::string> m_CodeErrorMap;
 };
 
 #endif // TRADEGATEWAY_HPP
