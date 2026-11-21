@@ -71,8 +71,7 @@ void OESTradeGateWay::LoadTrader()
     {
         m_ConnectedStatus = Message::ELoginStatus::ELOGIN_FAILED;
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                        "OESTrader::LoadTrader Start failed, Account:{} ret={}", m_XTraderConfig.Account, ret);
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "OESTrader::LoadTrader Start failed, Account:{} ret={}", m_XTraderConfig.Account, ret);
         while(!m_ReportMessageQueue.Push(message));
 
         FMTLOG(fmtlog::ERR, "OESTrader::LoadTrader Start failed, Account:{} ret={}", m_XTraderConfig.Account, ret);
@@ -81,8 +80,7 @@ void OESTradeGateWay::LoadTrader()
     {
         m_ConnectedStatus = Message::ELoginStatus::ELOGIN_SUCCESSED;
         message.EventLog.Level = Message::EEventLogLevel::EINFO;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                        "OESTrader::LoadTrader Start successed, Account:{} OrderChannel:{} lastOutMsgSeq:{} ReportChannel:{}", 
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "OESTrader::LoadTrader Start successed, Account:{} OrderChannel:{} lastOutMsgSeq:{} ReportChannel:{}",
                         m_XTraderConfig.Account, m_OESTraderAPI->GetOrdChannelCount(), m_OESTraderAPI->m_DefaultClSeqNo, m_OESTraderAPI->GetRptChannelCount());
         while(!m_ReportMessageQueue.Push(message));
 
@@ -112,7 +110,7 @@ void OESTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), "OESTrader::ReLoadTrader Account:{}", m_XTraderConfig.Account);
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "OESTrader::ReLoadTrader Account:{}", m_XTraderConfig.Account);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
 
@@ -817,12 +815,12 @@ int32 OESTradeGateWay::OnDisconnected(eOesApiChannelTypeT channelType, OesApiSes
 
     if (pAsyncChannel->pChannelCfg->channelType == OESAPI_CHANNEL_TYPE_REPORT) 
     {
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), "OESTrader::OnDisconnected Account:{} Channel:{} lastInMsgSeq:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "OESTrader::OnDisconnected Account:{} Channel:{} lastInMsgSeq:{}",
                         m_XTraderConfig.Account, pAsyncChannel->pChannelCfg->channelTag, pAsyncChannel->lastInMsgSeq);
     }
     else if(pAsyncChannel->pChannelCfg->channelType == OESAPI_CHANNEL_TYPE_ORDER)
     {
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), "OESTrader::OnDisconnected Account:{} Channel:{} lastInMsgSeq:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "OESTrader::OnDisconnected Account:{} Channel:{} lastInMsgSeq:{}",
                         m_XTraderConfig.Account, pAsyncChannel->pChannelCfg->channelTag, pAsyncChannel->lastInMsgSeq);  
     }
     FMTLOG(fmtlog::WRN, "{}", message.EventLog.Event);
@@ -937,7 +935,7 @@ void OESTradeGateWay::OnOrderInsert(const OesRptMsgHeadT *pRptMsgHead, const Oes
             storedStatus.ErrorID = pRptMsgHead->ordRejReason;
             strncpy(storedStatus.ErrorMsg, errorString.c_str(), sizeof(storedStatus.ErrorMsg));
             storedStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ACK;
-            fmt::format_to_n(storedStatus.OrderLocalID, sizeof(storedStatus.OrderLocalID), "{}", pOrderInsert->clOrdId);
+            XTrader::FormatToFixedBuffer(storedStatus.OrderLocalID, "{}", pOrderInsert->clOrdId);
             strncpy(storedStatus.BrokerACKTime, Utils::getCurrentTimeUs(), sizeof(storedStatus.BrokerACKTime));
             OrderStatus = storedStatus;
         });
@@ -1271,15 +1269,13 @@ void OESTradeGateWay::OnFundTrsfReject(const OesRptMsgHeadT *pRptMsgHead, const 
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
         if(eOesFundTrsfDirectT::OES_FUND_TRSF_DIRECT_IN == pFundTrsfReject->direct)
         {
-            fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                            "TransferFundIn Failed, cashAcctId:{} Amount:{} ordRejReason:{} rejReason:{} errorInfo:{}",
+            XTrader::FormatToFixedBuffer(message.EventLog.Event, "TransferFundIn Failed, cashAcctId:{} Amount:{} ordRejReason:{} rejReason:{} errorInfo:{}",
                             pFundTrsfReject->cashAcctId, pFundTrsfReject->occurAmt/10000.0, pRptMsgHead->ordRejReason, 
                             pFundTrsfReject->rejReason, pFundTrsfReject->errorInfo);
         }
         else if(eOesFundTrsfDirectT::OES_FUND_TRSF_DIRECT_OUT == pFundTrsfReject->direct)
         {
-            fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                            "TransferFundOut Failed, cashAcctId:{} Amount:{} ordRejReason:{} rejReason:{} errorInfo:{}",    
+            XTrader::FormatToFixedBuffer(message.EventLog.Event, "TransferFundOut Failed, cashAcctId:{} Amount:{} ordRejReason:{} rejReason:{} errorInfo:{}",
                             pFundTrsfReject->cashAcctId, pFundTrsfReject->occurAmt/10000.0, pRptMsgHead->ordRejReason,
                             pFundTrsfReject->rejReason, pFundTrsfReject->errorInfo);
         }
@@ -1306,15 +1302,13 @@ void OESTradeGateWay::OnFundTrsfReport(const OesRptMsgHeadT *pRptMsgHead, const 
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
         if(eOesFundTrsfDirectT::OES_FUND_TRSF_DIRECT_IN == pFundTrsfReport->direct)
         {
-            fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                            "TransferFundIn Success, cashAcctId:{} Amount:{} ordRejReason:{} rejReason:{} errorInfo:{}",
+            XTrader::FormatToFixedBuffer(message.EventLog.Event, "TransferFundIn Success, cashAcctId:{} Amount:{} ordRejReason:{} rejReason:{} errorInfo:{}",
                             pFundTrsfReport->cashAcctId, pFundTrsfReport->occurAmt/10000.0,  pRptMsgHead->ordRejReason, 
                             pFundTrsfReport->rejReason, pFundTrsfReport->errorInfo);
         }
         else if(eOesFundTrsfDirectT::OES_FUND_TRSF_DIRECT_OUT == pFundTrsfReport->direct)
         {
-            fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                            "TransferFundOut Success, cashAcctId:{} Amount:{} ordRejReason:{} rejReason:{} errorInfo:{}",
+            XTrader::FormatToFixedBuffer(message.EventLog.Event, "TransferFundOut Success, cashAcctId:{} Amount:{} ordRejReason:{} rejReason:{} errorInfo:{}",
                             pFundTrsfReport->cashAcctId, pFundTrsfReport->occurAmt/10000.0, pRptMsgHead->ordRejReason, 
                             pFundTrsfReport->rejReason, pFundTrsfReport->errorInfo);
         }
@@ -1477,7 +1471,7 @@ void OESTradeGateWay::OnQueryOrder(const OesOrdItemT *pOrder, const OesQryCursor
             strncpy(OrderStatus.Ticker, Ticker.c_str(), sizeof(OrderStatus.Ticker));
             strncpy(OrderStatus.OrderRef, OrderRef.c_str(), sizeof(OrderStatus.OrderRef));
             strncpy(OrderStatus.OrderSysID, pOrder->exchOrdId, sizeof(OrderStatus.OrderSysID));
-            fmt::format_to_n(OrderStatus.OrderLocalID, sizeof(OrderStatus.OrderLocalID), "{}", pOrder->clOrdId);
+            XTrader::FormatToFixedBuffer(OrderStatus.OrderLocalID, "{}", pOrder->clOrdId);
             OrderStatus.SendPrice = pOrder->ordPrice/10000.0;
             OrderStatus.SendVolume = pOrder->ordQty;
             OrderStatus.OrderType = OrderType(pOrder->ordType);
@@ -1485,12 +1479,10 @@ void OESTradeGateWay::OnQueryOrder(const OesOrdItemT *pOrder, const OesQryCursor
             int32 ordDate = pOrder->ordDate;
             int32 ordTime = pOrder->ordTime; // 141206000
             int32 ordCnfmTime = pOrder->ordCnfmTime;
-            fmt::format_to_n(OrderStatus.InsertTime, sizeof(OrderStatus.InsertTime), 
-                            "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}000",
+            XTrader::FormatToFixedBuffer(OrderStatus.InsertTime, "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}000",
                             ordDate/10000, (ordDate/100)%100, ordDate%100, 
                             ordTime/10000000, (ordTime/100000)%100, (ordTime/1000)%100, ordTime%1000);
-            fmt::format_to_n(OrderStatus.BrokerACKTime, sizeof(OrderStatus.BrokerACKTime), 
-                            "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}000", 
+            XTrader::FormatToFixedBuffer(OrderStatus.BrokerACKTime, "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}000",
                             ordDate/10000, (ordDate/100)%100, ordDate%100, 
                             ordCnfmTime/10000000, (ordCnfmTime/100000)%100, (ordCnfmTime/1000)%100, ordCnfmTime%1000);
             strncpy(OrderStatus.ExchangeACKTime, OrderStatus.BrokerACKTime, sizeof(OrderStatus.ExchangeACKTime));
@@ -1553,8 +1545,7 @@ void OESTradeGateWay::OnQueryIssue(const OesIssueItemT *pIssue, const OesQryCurs
     message.EventLog.Level = Message::EEventLogLevel::EINFO;
     
     char buffer[512] = {0};
-    fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                    "OESTrader::OnQueryIssue Account:{} Ticker:{}.{} IssuePrice:{:.2f} IssueQty:{} UnderlyingTicker:{} SecurityName:{}",
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "OESTrader::OnQueryIssue Account:{} Ticker:{}.{} IssuePrice:{:.2f} IssueQty:{} UnderlyingTicker:{} SecurityName:{}",
                     m_XTraderConfig.Account, pIssue->securityId, ExchangeID(pIssue->mktId),
                     pIssue->issuePrice / 10000.0, pIssue->issueQty, pIssue->underlyingSecurityId, pIssue->securityName);
     strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
@@ -1576,8 +1567,7 @@ void OESTradeGateWay::OnQueryLotWinning(const OesLotWinningItemT *pLotWinning, c
     memset(&message, 0, sizeof(message));
     message.MessageType = Message::EMessageType::EEventLog;
     message.EventLog.Level = Message::EEventLogLevel::EINFO;
-    fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                    "OESTrader::OnQueryLotWinning Account:{} Ticker:{}.{} LotPrice:{:.2f} LotQty:{} SecurityName:{}",
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "OESTrader::OnQueryLotWinning Account:{} Ticker:{}.{} LotPrice:{:.2f} LotQty:{} SecurityName:{}",
                     m_XTraderConfig.Account, pLotWinning->securityId, ExchangeID(pLotWinning->mktId),
                     pLotWinning->lotPrice / 10000.0, pLotWinning->lotQty, pLotWinning->securityName);
     strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));

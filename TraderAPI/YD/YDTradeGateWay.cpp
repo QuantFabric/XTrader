@@ -94,7 +94,7 @@ void YDTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), "YDTrader Account:{} ReLoadTrader", m_XTraderConfig.Account);
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "YDTrader Account:{} ReLoadTrader", m_XTraderConfig.Account);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
 
@@ -301,7 +301,7 @@ void YDTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& reques
     Message::TOrderStatus OrderStatus;
     memset(&OrderStatus, 0, sizeof(OrderStatus));
     OrderStatus.BusinessType = m_XTraderConfig.BusinessType;
-    fmt::format_to_n(OrderStatus.OrderRef, sizeof(OrderStatus.OrderRef), "{}", inputOrder.OrderRef);
+    XTrader::FormatToFixedBuffer(OrderStatus.OrderRef, "{}", inputOrder.OrderRef);
     const auto Key = XTrader::MakeAccountTickerKey(request.Account, request.Ticker);
     strncpy(OrderStatus.Product, m_XTraderConfig.Product.c_str(), sizeof(OrderStatus.Product));
     strncpy(OrderStatus.Broker, m_XTraderConfig.Broker.c_str(), sizeof(OrderStatus.Broker));
@@ -615,8 +615,7 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                        "YDTrader::notifyLogin Account:{} login successed, maxOrderRef:{}", m_XTraderConfig.Account, maxOrderRef);
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "YDTrader::notifyLogin Account:{} login successed, maxOrderRef:{}", m_XTraderConfig.Account, maxOrderRef);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
@@ -642,8 +641,7 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                        "YDTrader::notifyLogin Account:{} login failed, ErrorNo:{} ErrorMsg:{}", 
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "YDTrader::notifyLogin Account:{} login failed, ErrorNo:{} ErrorMsg:{}",
                         m_XTraderConfig.Account, errorNo, errorString);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
@@ -766,7 +764,7 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
 
                 char buffer[32] = {0};
                 timeStamp2String(pOrder->InsertTime, buffer, NULL);
-                fmt::format_to_n(storedStatus.SendTime, sizeof(storedStatus.SendTime), "{} {}000", Utils::getCurrentDay(), buffer);
+                XTrader::FormatToFixedBuffer(storedStatus.SendTime, "{} {}000", Utils::getCurrentDay(), buffer);
                 storedStatus.SendVolume = pOrder->OrderVolume;
                 if(YD_ODT_Limit == pOrder->OrderType)
                 {
@@ -816,8 +814,8 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
                 }
                 if(strnlen(storedStatus.OrderSysID, sizeof(storedStatus.OrderSysID)) == 0)
                 {
-                    fmt::format_to_n(storedStatus.OrderSysID, sizeof(storedStatus.OrderSysID), "{}", pOrder->OrderSysID);
-                    fmt::format_to_n(storedStatus.OrderLocalID, sizeof(storedStatus.OrderLocalID), "{}", pOrder->OrderLocalID);
+                    XTrader::FormatToFixedBuffer(storedStatus.OrderSysID, "{}", pOrder->OrderSysID);
+                    XTrader::FormatToFixedBuffer(storedStatus.OrderLocalID, "{}", pOrder->OrderLocalID);
                     strncpy(storedStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(storedStatus.ExchangeACKTime));
                 }
                 OrderStatus = storedStatus;
@@ -930,7 +928,7 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
                 {
                     errorString = errorIt->second;
                 }
-                fmt::format_to_n(storedStatus.ErrorMsg, sizeof(storedStatus.ErrorMsg), "{}", errorString);
+                XTrader::FormatToFixedBuffer(storedStatus.ErrorMsg, "{}", errorString);
             }
             if(YD_ODT_Limit == pOrder->OrderType)
             {
@@ -979,8 +977,8 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
             }
             if(strnlen(storedStatus.OrderSysID, sizeof(storedStatus.OrderSysID)) == 0)
             {
-                fmt::format_to_n(storedStatus.OrderSysID, sizeof(storedStatus.OrderSysID), "{}", pOrder->OrderSysID);
-                fmt::format_to_n(storedStatus.OrderLocalID, sizeof(storedStatus.OrderLocalID), "{}", pOrder->OrderLocalID);
+                XTrader::FormatToFixedBuffer(storedStatus.OrderSysID, "{}", pOrder->OrderSysID);
+                XTrader::FormatToFixedBuffer(storedStatus.OrderLocalID, "{}", pOrder->OrderLocalID);
                 strncpy(storedStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(storedStatus.ExchangeACKTime));
                 exchangeAckDue = true;
             }
@@ -1045,8 +1043,7 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                        "YDTrader:notifyOrder, Account:{} not found Order, InstrumentID:{} OrderRef:{} OrderLocalID:{} OrderSysID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "YDTrader:notifyOrder, Account:{} not found Order, InstrumentID:{} OrderRef:{} OrderLocalID:{} OrderSysID:{}",
                 m_YDAccount->AccountID, pInstrument->InstrumentID, pOrder->OrderRef, pOrder->OrderLocalID, pOrder->OrderSysID);
         strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
@@ -1208,8 +1205,7 @@ void YDTradeGateWay::notifyTrade(const YDTrade *pTrade, const YDInstrument *pIns
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "YDTrader:notifyTrade, Account:{} not found Order, InstrumentID:{} OrderRef:{} OrderLocalID:{} OrderSysID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "YDTrader:notifyTrade, Account:{} not found Order, InstrumentID:{} OrderRef:{} OrderLocalID:{} OrderSysID:{}",
                         m_YDAccount->AccountID, pInstrument->InstrumentID, pTrade->OrderRef, pTrade->OrderLocalID, pTrade->OrderSysID);
         strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
@@ -1245,7 +1241,7 @@ void YDTradeGateWay::notifyFailedOrder(const YDInputOrder *pFailedOrder, const Y
         [&](Message::TOrderStatus& storedStatus) {
             storedStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ERROR;
             storedStatus.ErrorID = pFailedOrder->ErrorNo;
-            fmt::format_to_n(storedStatus.ErrorMsg, sizeof(storedStatus.ErrorMsg), "{}", errorString);
+            XTrader::FormatToFixedBuffer(storedStatus.ErrorMsg, "{}", errorString);
             storedStatus.CanceledVolume = pFailedOrder->OrderVolume;
             OrderStatus = storedStatus;
         });
@@ -1301,7 +1297,7 @@ void YDTradeGateWay::notifyFailedCancelOrder(const YDFailedCancelOrder *pFailedC
                 [&](Message::TOrderStatus& storedStatus) {
                     storedStatus.OrderStatus = Message::EOrderStatusType::EACTION_ERROR;
                     storedStatus.ErrorID = pFailedCancelOrder->ErrorNo;
-                    fmt::format_to_n(storedStatus.ErrorMsg, sizeof(storedStatus.ErrorMsg), "{}", errorString);
+                    XTrader::FormatToFixedBuffer(storedStatus.ErrorMsg, "{}", errorString);
                     OrderStatus = storedStatus;
                 });
             UpdateOrderStatus(OrderStatus);

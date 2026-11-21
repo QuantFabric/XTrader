@@ -121,7 +121,7 @@ void CTPTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), "CTPTrader::ReLoadTrader Account:{} ", m_XTraderConfig.Account);
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::ReLoadTrader Account:{} ", m_XTraderConfig.Account);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
         FMTLOG(fmtlog::WRN, "CTPTrader::ReLoadTrader Account:{} ", m_XTraderConfig.Account);
@@ -267,7 +267,7 @@ void CTPTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
     strcpy(reqOrderField.ExchangeID, request.ExchangeID);
     strcpy(reqOrderField.UserID, m_UserID.c_str());
     int orderID =  FutureOrderRef(request.EngineID, m_RequestID++);
-    fmt::format_to_n(reqOrderField.OrderRef, sizeof(reqOrderField.OrderRef), "{:09}", orderID);
+    XTrader::FormatToFixedBuffer(reqOrderField.OrderRef, "{:09}", orderID);
     reqOrderField.OrderPriceType = THOST_FTDC_OPT_LimitPrice;//限价
     if(Message::EOrderDirection::EBUY == request.Direction)
     {
@@ -414,7 +414,7 @@ void CTPTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& reque
     strncpy(OrderStatus.Account, m_XTraderConfig.Account.c_str(), sizeof(OrderStatus.Account));
     strncpy(OrderStatus.ExchangeID, request.ExchangeID, sizeof(OrderStatus.ExchangeID));
     strncpy(OrderStatus.Ticker, request.Ticker, sizeof(OrderStatus.Ticker));
-    fmt::format_to_n(OrderStatus.OrderRef, sizeof(OrderStatus.OrderRef), "{:09}", orderID);
+    XTrader::FormatToFixedBuffer(OrderStatus.OrderRef, "{:09}", orderID);
     strncpy(OrderStatus.RiskID, request.RiskID, sizeof(OrderStatus.RiskID));
     OrderStatus.SendPrice = request.Price;
     OrderStatus.SendVolume = request.Volume;
@@ -659,8 +659,7 @@ void CTPTradeGateWay::OnFrontConnected()
     strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
     strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-    fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                    "CTPTrader::OnFrontConnected Account:{} TradingDay:{} Connected to Front:{}, API:{}",
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnFrontConnected Account:{} TradingDay:{} Connected to Front:{}, API:{}",
                     m_XTraderConfig.Account, m_CTPTraderAPI->GetTradingDay(), m_CTPConfig.FrontAddr, m_CTPTraderAPI->GetApiVersion());
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
     while(!m_ReportMessageQueue.Push(message));
@@ -691,8 +690,7 @@ void CTPTradeGateWay::OnFrontDisconnected(int nReason)
     strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
     strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-    fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                    "CTPTrader::OnFrontDisconnected Account:{} Code:{:#X}, Error:{}",
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnFrontDisconnected Account:{} Code:{:#X}, Error:{}",
                     m_XTraderConfig.Account, nReason, buffer);
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
     while(!m_ReportMessageQueue.Push(message));
@@ -713,8 +711,7 @@ void CTPTradeGateWay::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuth
     {
         FMTLOG(fmtlog::INF, "CTPTrader::OnRspAuthenticate Authenticate successed, BrokerID:{}, Account:{}, UserID:{}, AppID:{}",
                         pRspAuthenticateField->BrokerID,  m_XTraderConfig.Account, pRspAuthenticateField->UserID, pRspAuthenticateField->AppID);
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                        "CTPTrader::OnRspAuthenticate Authenticate successed, BrokerID:{}, Account:{}, UserID:{}, AppID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnRspAuthenticate Authenticate successed, BrokerID:{}, Account:{}, UserID:{}, AppID:{}",
                         pRspAuthenticateField->BrokerID,  m_XTraderConfig.Account, pRspAuthenticateField->UserID, pRspAuthenticateField->AppID);
         while(!m_ReportMessageQueue.Push(message));
 
@@ -727,8 +724,7 @@ void CTPTradeGateWay::OnRspAuthenticate(CThostFtdcRspAuthenticateField *pRspAuth
                        sizeof(errorBuffer), "gb2312", "utf-8");
         FMTLOG(fmtlog::WRN, "CTPTrader::OnRspAuthenticate Authenticate failed, BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
                 m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "CTPTrader::OnRspAuthenticate Authenticate failed, BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnRspAuthenticate Authenticate failed, BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
                         m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
         while(!m_ReportMessageQueue.Push(message));
     }
@@ -754,8 +750,7 @@ void CTPTradeGateWay::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
         FMTLOG(fmtlog::INF, "CTPTrader::OnRspUserLogin Login successed, BrokerID:{}, Account:{}, TradingDay:{}, LoginTime:{}, SystemName:{}, MaxOrderRef:{}, FrontID:{}, SessionID:{}",
                         pRspUserLogin->BrokerID,  m_XTraderConfig.Account, pRspUserLogin->TradingDay, pRspUserLogin->LoginTime,
                         pRspUserLogin->SystemName, pRspUserLogin->MaxOrderRef, pRspUserLogin->FrontID, pRspUserLogin->SessionID);
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "CTPTrader::OnRspUserLogin Login successed, BrokerID:{}, Account:{}, TradingDay:{}, LoginTime:{}, SystemName:{}, MaxOrderRef:{}, FrontID:{}, SessionID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnRspUserLogin Login successed, BrokerID:{}, Account:{}, TradingDay:{}, LoginTime:{}, SystemName:{}, MaxOrderRef:{}, FrontID:{}, SessionID:{}",
                         pRspUserLogin->BrokerID,  m_XTraderConfig.Account, pRspUserLogin->TradingDay, pRspUserLogin->LoginTime,
                         pRspUserLogin->SystemName, pRspUserLogin->MaxOrderRef, pRspUserLogin->FrontID, pRspUserLogin->SessionID);
         while(!m_ReportMessageQueue.Push(message));
@@ -769,8 +764,7 @@ void CTPTradeGateWay::OnRspUserLogin(CThostFtdcRspUserLoginField *pRspUserLogin,
                        sizeof(errorBuffer), "gb2312", "utf-8");
         FMTLOG(fmtlog::WRN, "CTPTrader::OnRspUserLogin Login failed, BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
                 m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "CTPTrader::OnRspUserLogin Login failed, BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnRspUserLogin Login failed, BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
                         m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
         while(!m_ReportMessageQueue.Push(message));
     }
@@ -785,8 +779,7 @@ void CTPTradeGateWay::OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CT
 
     if(!IsRspError(pRspInfo) && pUserLogout != NULL)
     {
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "CTPTrader::Logout successed BrokerID:{}, Account:{}, UserID:{}", 
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::Logout successed BrokerID:{}, Account:{}, UserID:{}",
                         pUserLogout->BrokerID, m_XTraderConfig.Account, pUserLogout->UserID);
         FMTLOG(fmtlog::INF, "CTPTrader::Logout successed, BrokerID:{}, Account:{}, UserID:{}", 
                 pUserLogout->BrokerID, m_XTraderConfig.Account, pUserLogout->UserID);
@@ -796,8 +789,7 @@ void CTPTradeGateWay::OnRspUserLogout(CThostFtdcUserLogoutField *pUserLogout, CT
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                        sizeof(errorBuffer), "gb2312", "utf-8");
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "CTPTrader::Logout failed BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}", 
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::Logout failed BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
                         pUserLogout->BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
         FMTLOG(fmtlog::WRN, "CTPTrader::Logout failed BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}", 
                 pUserLogout->BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
@@ -826,8 +818,7 @@ void CTPTradeGateWay::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfirm
         m_ConnectedStatus = Message::ELoginStatus::ELOGIN_SUCCESSED;
         FMTLOG(fmtlog::INF, "CTPTrader::OnRspSettlementInfoConfirm successed, BrokerID:{} Account:{}", 
                 pSettlementInfoConfirm->BrokerID, pSettlementInfoConfirm->InvestorID);
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                        "CTPTrader::OnRspSettlementInfoConfirm successed, BrokerID:{} Account:{}", 
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnRspSettlementInfoConfirm successed, BrokerID:{} Account:{}",
                         pSettlementInfoConfirm->BrokerID, pSettlementInfoConfirm->InvestorID);
         while(!m_ReportMessageQueue.Push(message));
         // 初始化仓位
@@ -838,8 +829,7 @@ void CTPTradeGateWay::OnRspSettlementInfoConfirm(CThostFtdcSettlementInfoConfirm
         char errorBuffer[512] = {0};
         Utils::CodeConvert(pRspInfo->ErrorMsg, sizeof(pRspInfo->ErrorMsg), errorBuffer,
                        sizeof(errorBuffer), "gb2312", "utf-8");
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "CTPTrader::OnRspSettlementInfoConfirm failed, BrokerID:{} Account:{}, ErrorID:{}, ErrorMessage:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnRspSettlementInfoConfirm failed, BrokerID:{} Account:{}, ErrorID:{}, ErrorMessage:{}",
                         m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
         FMTLOG(fmtlog::WRN, "CTPTrader::OnRspSettlementInfoConfirm failed, BrokerID:{} Account:{}, ErrorID:{}, ErrorMessage:{}",
                 m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
@@ -889,8 +879,7 @@ void CTPTradeGateWay::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, C
                 strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
                 strncpy(message.EventLog.Ticker, pInputOrder->InstrumentID, sizeof(message.EventLog.Ticker));
                 strncpy(message.EventLog.ExchangeID, pInputOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
-                fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                                "CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} ErrorID:{}, ErrorMessage:{}",
+                XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} ErrorID:{}, ErrorMessage:{}",
                                 m_XTraderConfig.BrokerID, m_XTraderConfig.Account,
                                 pInputOrder->InstrumentID, pInputOrder->OrderRef, pRspInfo->ErrorID, OrderStatus.ErrorMsg);
                 strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
@@ -915,8 +904,7 @@ void CTPTradeGateWay::OnRspOrderInsert(CThostFtdcInputOrderField *pInputOrder, C
             strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
             strncpy(message.EventLog.Ticker, pInputOrder->InstrumentID, sizeof(message.EventLog.Ticker));
             strncpy(message.EventLog.ExchangeID, pInputOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
-            fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                            "CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} not found Order, OrderRef:{}",
+            XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader:OnRspOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} not found Order, OrderRef:{}",
                             pInputOrder->BrokerID, pInputOrder->InvestorID, pInputOrder->InstrumentID, pInputOrder->OrderRef);
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
             while(!m_ReportMessageQueue.Push(message));
@@ -978,8 +966,7 @@ void CTPTradeGateWay::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder
                 strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
                 strncpy(message.EventLog.Ticker, pInputOrder->InstrumentID, sizeof(message.EventLog.Ticker));
                 strncpy(message.EventLog.ExchangeID, pInputOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
-                fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                                "CTPTrader:OnErrRtnOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} ErrorID:{}, ErrorMessage:{}",
+                XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader:OnErrRtnOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} ErrorID:{}, ErrorMessage:{}",
                                 m_XTraderConfig.BrokerID, m_XTraderConfig.Account,
                                 pInputOrder->InstrumentID, pInputOrder->OrderRef, pRspInfo->ErrorID, OrderStatus.ErrorMsg);
                 strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
@@ -1004,8 +991,7 @@ void CTPTradeGateWay::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder
             strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
             strncpy(message.EventLog.Ticker, pInputOrder->InstrumentID, sizeof(message.EventLog.Ticker));
             strncpy(message.EventLog.ExchangeID, pInputOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
-            fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                            "CTPTrader:OnErrRtnOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} not found Order, OrderRef:{}",
+            XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader:OnErrRtnOrderInsert, BrokerID:{}, Account:{} InstrumentID:{} not found Order, OrderRef:{}",
                             pInputOrder->BrokerID, pInputOrder->InvestorID, pInputOrder->InstrumentID, pInputOrder->OrderRef);
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
             while(!m_ReportMessageQueue.Push(message));
@@ -1091,8 +1077,7 @@ void CTPTradeGateWay::OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderActi
                 strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
                 strncpy(message.EventLog.Ticker, pOrderAction->InstrumentID, sizeof(message.EventLog.Ticker));
                 strncpy(message.EventLog.ExchangeID, pOrderAction->ExchangeID, sizeof(message.EventLog.ExchangeID));
-                fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                                "CTPTrader:OnErrRtnOrderAction, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} OrderActionRef:{} OrderSysID:{} OrderLocalID:{} ErrorID:{}, ErrorMessage:{}",
+                XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader:OnErrRtnOrderAction, BrokerID:{}, Account:{} InstrumentID:{} OrderRef:{} OrderActionRef:{} OrderSysID:{} OrderLocalID:{} ErrorID:{}, ErrorMessage:{}",
                                 m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pOrderAction->InstrumentID,
                                 pOrderAction->OrderRef, pOrderAction->OrderActionRef, pOrderAction->OrderSysID,  pOrderAction->OrderLocalID,
                                 pRspInfo->ErrorID, OrderStatus.ErrorMsg);
@@ -1118,8 +1103,7 @@ void CTPTradeGateWay::OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderActi
             strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
             strncpy(message.EventLog.Ticker, pOrderAction->InstrumentID, sizeof(message.EventLog.Ticker));
             strncpy(message.EventLog.ExchangeID, pOrderAction->ExchangeID, sizeof(message.EventLog.ExchangeID));
-            fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                            "CTPTrader:OnErrRtnOrderAction, BrokerID:{}, Account:{} InstrumentID:{} not found Order, OrderRef:{}",
+            XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader:OnErrRtnOrderAction, BrokerID:{}, Account:{} InstrumentID:{} not found Order, OrderRef:{}",
                             m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pOrderAction->InstrumentID, pOrderAction->OrderRef);
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
             while(!m_ReportMessageQueue.Push(message));
@@ -1331,8 +1315,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
             strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
             strncpy(message.EventLog.Ticker, pOrder->InstrumentID, sizeof(message.EventLog.Ticker));
             strncpy(message.EventLog.ExchangeID, pOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
-            fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                            "CTPTrader:OnRtnOrder, BrokerID:{}, Account:{} Ticker:{} Order OrderRef:{} OrderSysID:{} Cancel Rejected",
+            XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader:OnRtnOrder, BrokerID:{}, Account:{} Ticker:{} Order OrderRef:{} OrderSysID:{} Cancel Rejected",
                             pOrder->BrokerID, pOrder->InvestorID, pOrder->InstrumentID, pOrder->OrderRef, pOrder->OrderSysID);
             strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
             while(!m_ReportMessageQueue.Push(message));
@@ -1394,8 +1377,7 @@ void CTPTradeGateWay::OnRtnOrder(CThostFtdcOrderField *pOrder)
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Ticker, pOrder->InstrumentID, sizeof(message.EventLog.Ticker));
         strncpy(message.EventLog.ExchangeID, pOrder->ExchangeID, sizeof(message.EventLog.ExchangeID));
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                        "CTPTrader:OnRtnOrder, BrokerID:{}, Account:{} Ticker:{} not found Order, OrderRef:{} OrderSysID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader:OnRtnOrder, BrokerID:{}, Account:{} Ticker:{} not found Order, OrderRef:{} OrderSysID:{}",
                         pOrder->BrokerID, pOrder->InvestorID, pOrder->InstrumentID, pOrder->OrderRef, pOrder->OrderSysID);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
@@ -1549,8 +1531,7 @@ void CTPTradeGateWay::OnRtnTrade(CThostFtdcTradeField *pTrade)
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
         strncpy(message.EventLog.Ticker, pTrade->InstrumentID, sizeof(message.EventLog.Ticker));
         strncpy(message.EventLog.ExchangeID,  pTrade->ExchangeID, sizeof(message.EventLog.ExchangeID));
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                        "CTPTrader:OnRtnTrade, BrokerID:{}, Account:{} Ticker:{} not found Order, OrderRef:{} OrderSysID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader:OnRtnTrade, BrokerID:{}, Account:{} Ticker:{} not found Order, OrderRef:{} OrderSysID:{}",
                         pTrade->BrokerID, pTrade->InvestorID, pTrade->InstrumentID, pTrade->OrderRef, pTrade->OrderSysID);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));

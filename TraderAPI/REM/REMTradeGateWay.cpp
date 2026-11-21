@@ -79,8 +79,7 @@ void REMTradeGateWay::CreateTraderAPI()
     m_TraderAPI = m_CreateTraderAPIFunc();
     if (NULL == m_TraderAPI)
     {
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                        "REMTrader::CreateTraderAPI Broker:{} InvestorID:{} create Trader API object failed",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::CreateTraderAPI Broker:{} InvestorID:{} create Trader API object failed",
                         m_XTraderConfig.Broker, m_XTraderConfig.Account);
         while(!m_ReportMessageQueue.Push(message));
         FMTLOG(fmtlog::WRN, "REMTrader::CreateTraderAPI Broker:{} InvestorID:{} create Trader API object failed",
@@ -89,8 +88,7 @@ void REMTradeGateWay::CreateTraderAPI()
         exit(-1);
     }
     m_TraderAPI->SetLoggerSwitch(true);
-    fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event), 
-                    "REMTrader::CreateTraderAPI Broker:{} InvestorID:{} create Trader API object successed {}",
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::CreateTraderAPI Broker:{} InvestorID:{} create Trader API object successed {}",
                     m_XTraderConfig.Broker, m_XTraderConfig.Account, m_APISoPath);
     while(!m_ReportMessageQueue.Push(message));
 
@@ -129,8 +127,7 @@ void REMTradeGateWay::ReLoadTrader()
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader::ReLoadTrader InvestorID:{}", m_XTraderConfig.Account);
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::ReLoadTrader InvestorID:{}", m_XTraderConfig.Account);
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
 
@@ -464,8 +461,7 @@ void REMTradeGateWay::ConnectServer()
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
         message.EventLog.Level = Message::EEventLogLevel::EERROR;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader::ConnectServer Broker:{} InvestorID:{} Connected to TradeServer:{}:{} QueryServer:{}:{} failed, code:{}, {}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::ConnectServer Broker:{} InvestorID:{} Connected to TradeServer:{}:{} QueryServer:{}:{} failed, code:{}, {}",
                         m_XTraderConfig.Broker, m_XTraderConfig.Account,
                         m_REMConfig.TradeServerIP, m_REMConfig.TradeServerPort,
                         m_REMConfig.QueryServerIP, m_REMConfig.QueryServerPort,
@@ -489,8 +485,7 @@ void REMTradeGateWay::ConnectServer()
     memset(&message, 0, sizeof(message));
     message.MessageType = Message::EMessageType::EEventLog;
     message.EventLog.Level = Message::EEventLogLevel::EINFO;
-    fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                    "REMTrader::ConnectServer Broker:{} InvestorID:{} Connected to TradeServer:{}:{} QueryServer:{}:{} succssed",
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::ConnectServer Broker:{} InvestorID:{} Connected to TradeServer:{}:{} QueryServer:{}:{} succssed",
                     m_XTraderConfig.Broker, m_XTraderConfig.Account,
                     m_REMConfig.TradeServerIP, m_REMConfig.TradeServerPort,
                     m_REMConfig.QueryServerIP, m_REMConfig.QueryServerPort);
@@ -524,8 +519,7 @@ bool REMTradeGateWay::LoadEESTrader()
     m_TraderHandle = dlopen(m_APISoPath.c_str(), RTLD_NOW | RTLD_DEEPBIND);
     if (NULL == m_TraderHandle)
     {
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader::LoadEESTrader Broker:{} InvestorID:{} load library({}) failed, {}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::LoadEESTrader Broker:{} InvestorID:{} load library({}) failed, {}",
                         m_XTraderConfig.Broker, m_XTraderConfig.Account,
                         m_APISoPath, dlerror());
         while(!m_ReportMessageQueue.Push(message));
@@ -538,8 +532,7 @@ bool REMTradeGateWay::LoadEESTrader()
     m_CreateTraderAPIFunc = (funcCreateEESTraderApi)dlsym(m_TraderHandle, CREATE_EES_TRADER_API_NAME);
     if (NULL == m_CreateTraderAPIFunc)
     {
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader::LoadEESTrader Broker:{} InvestorID:{} load CreateTraderAPIFunc({}) failed, {}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::LoadEESTrader Broker:{} InvestorID:{} load CreateTraderAPIFunc({}) failed, {}",
                         m_XTraderConfig.Broker, m_XTraderConfig.Account,
                         CREATE_EES_TRADER_API_NAME, dlerror());
         while(!m_ReportMessageQueue.Push(message));
@@ -552,8 +545,7 @@ bool REMTradeGateWay::LoadEESTrader()
     m_DestroyFunc = (funcDestroyEESTraderApi)dlsym(m_TraderHandle, DESTROY_EES_TRADER_API_NAME);
     if (NULL == m_CreateTraderAPIFunc)
     {
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader::LoadEESTrader Broker:{} InvestorID:{} load DestroyFunc({}) failed, {}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::LoadEESTrader Broker:{} InvestorID:{} load DestroyFunc({}) failed, {}",
                         m_XTraderConfig.Broker, m_XTraderConfig.Account,
                         DESTROY_EES_TRADER_API_NAME, dlerror());
         while(!m_ReportMessageQueue.Push(message));
@@ -837,8 +829,7 @@ void REMTradeGateWay::OnConnection(ERR_NO errNo, const char* pErrStr)
 
     if (NO_ERROR != errNo)
     {
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server failed, {}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server failed, {}",
                         m_XTraderConfig.Broker, m_XTraderConfig.Account, pErrStr);
         message.EventLog.Level = Message::EEventLogLevel::EERROR;
         while(!m_ReportMessageQueue.Push(message));
@@ -848,8 +839,7 @@ void REMTradeGateWay::OnConnection(ERR_NO errNo, const char* pErrStr)
         return;
     }
     m_ConnectedStatus = Message::ELoginStatus::ELOGIN_CONNECTED;
-    fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                    "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server successed",
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server successed",
                     m_XTraderConfig.Broker, m_XTraderConfig.Account);
     message.EventLog.Level = Message::EEventLogLevel::EINFO;
     while(!m_ReportMessageQueue.Push(message));
@@ -868,8 +858,7 @@ void REMTradeGateWay::OnDisConnection(ERR_NO errNo, const char* pErrStr )
     message.EventLog.Level = Message::EEventLogLevel::EERROR;
 
     std::string errorBuffer = m_CodeErrorMap[errNo];
-    fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                    "REMTrader::OnDisConnection Broker:{} InvestorID:{} disconnect to Server, {} {}",
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnDisConnection Broker:{} InvestorID:{} disconnect to Server, {} {}",
                     m_XTraderConfig.Broker, m_XTraderConfig.Account, pErrStr, errorBuffer);
     strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
     strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
@@ -893,16 +882,14 @@ void REMTradeGateWay::OnUserLogon(EES_LogonResponse* pLogon)
     HandleLoginResult(pLogon->m_Result, errorBuffer);
     if(Message::ELoginStatus::ELOGIN_SUCCESSED == m_ConnectedStatus)
     {
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader::OnUserLogon Broker:{} InvestorID:{} logon successed, TradingDay:{} Max Token:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnUserLogon Broker:{} InvestorID:{} logon successed, TradingDay:{} Max Token:{}",
                         m_XTraderConfig.Broker, m_XTraderConfig.Account, pLogon->m_TradingDate, pLogon->m_MaxToken);
         FMTLOG(fmtlog::INF, "REMTrader::OnUserLogon Broker:{} InvestorID:{} logon successed, TradingDay:{} Max Token:{}",
                 m_XTraderConfig.Broker, m_XTraderConfig.Account, pLogon->m_TradingDate, pLogon->m_MaxToken);
     }
     else if(Message::ELoginStatus::ELOGIN_FAILED == m_ConnectedStatus)
     {
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader::OnUserLogon Broker:{} InvestorID:{} logon failed, code:{} errMsg:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnUserLogon Broker:{} InvestorID:{} logon failed, code:{} errMsg:{}",
                         m_XTraderConfig.Broker, m_XTraderConfig.Account, pLogon->m_Result, errorBuffer);
         FMTLOG(fmtlog::WRN, "REMTrader::OnUserLogon Broker:{} InvestorID:{} logon failed, code:{} errMsg:{}",
                 m_XTraderConfig.Broker, m_XTraderConfig.Account, pLogon->m_Result, errorBuffer);
@@ -961,7 +948,7 @@ void REMTradeGateWay::OnOrderAccept(EES_OrderAcceptField* pAccept )
         m_OrderStatusMap, OrderRef,
         [&](Message::TOrderStatus& storedStatus) {
             // Update OrderStatus
-            fmt::format_to_n(storedStatus.OrderLocalID, sizeof(storedStatus.OrderLocalID), "{}", pAccept->m_MarketOrderToken);
+            XTrader::FormatToFixedBuffer(storedStatus.OrderLocalID, "{}", pAccept->m_MarketOrderToken);
             storedStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ACK;
             storedStatus.OrderSide = orderSide;
             strncpy(storedStatus.BrokerACKTime, Utils::getCurrentTimeUs(), sizeof(storedStatus.BrokerACKTime));
@@ -990,8 +977,7 @@ void REMTradeGateWay::OnOrderAccept(EES_OrderAcceptField* pAccept )
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader:OnOrderMarketAccept, UserID:{} Account:{} not found Order, Ticker:{} OrderRef:{}  OrderLocalID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader:OnOrderMarketAccept, UserID:{} Account:{} not found Order, Ticker:{} OrderRef:{}  OrderLocalID:{}",
                         pAccept->m_UserID, pAccept->m_Account, pAccept->m_Symbol, pAccept->m_ClientOrderToken, pAccept->m_MarketOrderToken);
         strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
@@ -1071,8 +1057,7 @@ void REMTradeGateWay::OnOrderReject(EES_OrderRejectField* pReject )
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader:OnOrderReject, UserID:{} Account:{} not found Order, OrderRef:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader:OnOrderReject, UserID:{} Account:{} not found Order, OrderRef:{}",
                         pReject->m_Userid, m_XTraderConfig.Account, pReject->m_ClientOrderToken);
         strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
@@ -1099,7 +1084,7 @@ void REMTradeGateWay::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
     bool found = XTrader::ModifyParallelMapEntry(
         m_OrderStatusMap, OrderRef,
         [&](Message::TOrderStatus& storedStatus) {
-            fmt::format_to_n(storedStatus.OrderSysID, sizeof(storedStatus.OrderSysID), "{}", pAccept->m_MarketOrderId);
+            XTrader::FormatToFixedBuffer(storedStatus.OrderSysID, "{}", pAccept->m_MarketOrderId);
             storedStatus.OrderStatus = Message::EOrderStatusType::EEXCHANGE_ACK;
             strncpy(storedStatus.ExchangeACKTime, Utils::getCurrentTimeUs(), sizeof(storedStatus.ExchangeACKTime));
             OrderStatus = storedStatus;
@@ -1117,8 +1102,7 @@ void REMTradeGateWay::OnOrderMarketAccept(EES_OrderMarketAcceptField* pAccept)
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader:OnOrderMarketAccept, UserID:{} Account:{} not found Order, OrderRef:{} OrderSysID:{} OrderLocalID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader:OnOrderMarketAccept, UserID:{} Account:{} not found Order, OrderRef:{} OrderSysID:{} OrderLocalID:{}",
                         pAccept->m_UserID, pAccept->m_Account, pAccept->m_ClientOrderToken, pAccept->m_MarketOrderId, pAccept->m_MarketOrderToken);
         strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
@@ -1180,8 +1164,7 @@ void REMTradeGateWay::OnOrderMarketReject(EES_OrderMarketRejectField* pReject)
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader:OnOrderMarketReject, UserID:{} Account:{} not found Order, OrderRef:{} OrderLocalID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader:OnOrderMarketReject, UserID:{} Account:{} not found Order, OrderRef:{} OrderLocalID:{}",
                         pReject->m_UserID, pReject->m_Account, pReject->m_ClientOrderToken, pReject->m_MarketOrderToken);
         strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
@@ -1253,8 +1236,7 @@ void REMTradeGateWay::OnOrderExecution(EES_OrderExecutionField* pExec )
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader:OnOrderExecution, UserID:{} Account:{} not found Order, OrderRef:{} OrderLocalID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader:OnOrderExecution, UserID:{} Account:{} not found Order, OrderRef:{} OrderLocalID:{}",
                         pExec->m_Userid, m_XTraderConfig.Account, pExec->m_ClientOrderToken, pExec->m_MarketOrderToken);
         strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
@@ -1319,8 +1301,7 @@ void REMTradeGateWay::OnOrderCxled(EES_OrderCxled* pCxled )
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader:OnOrderCxled, UserID:{} Account:{} not found Order, OrderRef:{} OrderLocalID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader:OnOrderCxled, UserID:{} Account:{} not found Order, OrderRef:{} OrderLocalID:{}",
                         pCxled->m_Userid, m_XTraderConfig.Account, pCxled->m_ClientOrderToken, pCxled->m_MarketOrderToken);
         strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
@@ -1357,8 +1338,7 @@ void REMTradeGateWay::OnCxlOrderReject(EES_CxlOrderRej* pReject )
             memset(&message, 0, sizeof(message));
             message.MessageType = Message::EMessageType::EEventLog;
             message.EventLog.Level = Message::EEventLogLevel::EERROR;
-            fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                            "REMTrader:OnCxlOrderReject, Broker:{}, Account:{} Ticker:{} OrderRef:{} OrderSysID:{} OrderLocalID:{} ErrorID:{}, ErrorMessage:{}",
+            XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader:OnCxlOrderReject, Broker:{}, Account:{} Ticker:{} OrderRef:{} OrderSysID:{} OrderLocalID:{} ErrorID:{}, ErrorMessage:{}",
                             m_XTraderConfig.Broker, pReject->m_account, OrderStatus.Ticker, OrderStatus.OrderRef, 
                             OrderStatus.OrderSysID, OrderStatus.OrderLocalID, OrderStatus.ErrorID, OrderStatus.ErrorMsg);
             strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
@@ -1381,8 +1361,7 @@ void REMTradeGateWay::OnCxlOrderReject(EES_CxlOrderRej* pReject )
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
         message.EventLog.Level = Message::EEventLogLevel::EWARNING;
-        fmt::format_to_n(message.EventLog.Event, sizeof(message.EventLog.Event),
-                        "REMTrader:OnCxlOrderReject, UserID:{} Account:{} not found Order, OrderRef:{} OrderLocalID:{}",
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader:OnCxlOrderReject, UserID:{} Account:{} not found Order, OrderRef:{} OrderLocalID:{}",
                         pReject->m_UserID, pReject->m_account, pReject->m_ClientOrderToken, pReject->m_MarketOrderToken);
         strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));

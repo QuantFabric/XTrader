@@ -52,10 +52,12 @@ void TestFixedBufferFormatting()
     char shortBuffer[16] = "xxxxxxxxxxxxxxx";
     XTrader::FormatToFixedBuffer(shortBuffer, "{}", "abc");
     Check(std::strcmp(shortBuffer, "abc") == 0, "short format result");
+    Check(shortBuffer[3] == '\0', "short format terminator");
 
     char exactBuffer[5] = "xxxx";
     XTrader::FormatToFixedBuffer(exactBuffer, "{}", "1234");
     Check(std::strcmp(exactBuffer, "1234") == 0, "exact format result");
+    Check(exactBuffer[4] == '\0', "exact format terminator");
 
     char longBuffer[5] = "xxxx";
     XTrader::FormatToFixedBuffer(longBuffer, "{}", "123456789");

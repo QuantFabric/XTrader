@@ -59,7 +59,7 @@ public:
 protected:
     virtual void Push_Init_Data(uint16_t ChannelID)
     {
-        SHMIPC::TChannelMsg<Message::PackMessage> Msg;
+        SHMIPC::TDataMsg<Message::PackMessage> Msg;
         Msg.MsgType = SHMIPC::EMsgType::EMSG_TYPE_DATA;
         Msg.ChannelID = ChannelID;
         {

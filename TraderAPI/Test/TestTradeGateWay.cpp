@@ -133,7 +133,7 @@ void TestTradeGateWay::ReqInsertOrderRejected(const Message::TOrderRequest& requ
     strncpy(OrderStatus.Account, m_XTraderConfig.Account.c_str(), sizeof(OrderStatus.Account));
     strncpy(OrderStatus.ExchangeID, request.ExchangeID, sizeof(OrderStatus.ExchangeID));
     strncpy(OrderStatus.Ticker, request.Ticker, sizeof(OrderStatus.Ticker));
-    fmt::format_to_n(OrderStatus.OrderRef, sizeof(OrderStatus.OrderRef), "{:09d}", orderID);
+    XTrader::FormatToFixedBuffer(OrderStatus.OrderRef, "{:09d}", orderID);
     strncpy(OrderStatus.RiskID, request.RiskID, sizeof(OrderStatus.RiskID));
     OrderStatus.SendPrice = request.Price;
     OrderStatus.SendVolume = request.Volume;

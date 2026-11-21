@@ -294,7 +294,6 @@ void TraderEngine::HandleRequestMessage()
 void TraderEngine::HandleRiskResponse()
 {
     static Message::PackMessage message;
-    m_RiskClient->HandleMsg();
     // 处理风控检查结果
     while(true)
     {
@@ -351,7 +350,6 @@ void TraderEngine::HandleExecuteReport()
                 case Message::EMessageType::EOrderStatus:
                 {
                     m_RiskClient->Push(report);
-                    m_RiskClient->HandleMsg();
                     m_ReportMessageQueue.Push(report);
                     m_MonitorMessageQueue.Push(report);
 
@@ -360,7 +358,6 @@ void TraderEngine::HandleExecuteReport()
                 case Message::EMessageType::EAccountFund:
                 {
                     m_RiskClient->Push(report);
-                    m_RiskClient->HandleMsg();
                     m_ReportMessageQueue.Push(report);
                     m_MonitorMessageQueue.Push(report);
                     m_pOrderServer->UpdateAccountFund(report);
@@ -369,7 +366,6 @@ void TraderEngine::HandleExecuteReport()
                 case Message::EMessageType::EAccountPosition:
                 {
                     m_RiskClient->Push(report);
-                    m_RiskClient->HandleMsg();
                     m_ReportMessageQueue.Push(report);
                     m_MonitorMessageQueue.Push(report);
                     m_pOrderServer->UpdateAccountPosition(report);
@@ -547,7 +543,6 @@ void TraderEngine::SendRequest(Message::PackMessage& request)
 void TraderEngine::SendRiskCheckReqeust(const Message::PackMessage& request)
 {
     m_RiskClient->Push(request);
-    m_RiskClient->HandleMsg();
 }
 
 void TraderEngine::SendMonitorMessage(const Message::PackMessage& message)
