@@ -301,10 +301,10 @@ void REMTradeGateWay::ReqInsertOrder(const Message::TOrderRequest& request)
             });
         UpdateOrderStatus(OrderStatus);
         FMTLOG(fmtlog::INF, "REMTrader:ReqInsertOrder, m_Account:{} m_Side:{} m_Exchange:{} m_Symbol:{} m_SecType:{} m_Price:{} "
-                            "m_Qty:{} m_OptExecFlag:{} m_ClientOrderToken:{} m_Tif:{} m_MinQty:{} m_MarketSessionId:{} m_HedgeFlag:{} "
+                            "m_Qty:{} m_ClientOrderToken:{} m_Tif:{} m_MinQty:{} m_MarketSessionId:{} m_HedgeFlag:{} "
                             "m_ForceMarketSessionId:{} m_DoNotAdjustCoverSide:{} MaxToken:{}",
                 reqOrderField.m_Account, reqOrderField.m_Side, reqOrderField.m_Exchange, reqOrderField.m_Symbol, 
-                reqOrderField.m_SecType, reqOrderField.m_Price, reqOrderField.m_Qty, reqOrderField.m_OptExecFlag, 
+                reqOrderField.m_SecType, reqOrderField.m_Price, reqOrderField.m_Qty, 
                 reqOrderField.m_ClientOrderToken, reqOrderField.m_Tif, reqOrderField.m_MinQty, reqOrderField.m_MarketSessionId, 
                 reqOrderField.m_HedgeFlag, reqOrderField.m_ForceMarketSessionId, reqOrderField.m_DoNotAdjustCoverSide, order_token);
     }
@@ -993,12 +993,12 @@ void REMTradeGateWay::OnOrderAccept(EES_OrderAcceptField* pAccept )
     FMTLOG(fmtlog::INF, "REMTrader:OnOrderAccept, Broker:{}, InvestorID:{} m_Symbol:{} "
                         "m_ClientOrderToken:{} m_MarketOrderToken:{} m_OrderState:{} m_UserID:{} m_AcceptTime:{} "
                         "m_Account:{} m_Side:{} m_Exchange:{} m_SecType:{} m_Price:{} m_Qty:{} "
-                        "m_OptExecFlag:{} m_Tif:{} m_MinQty:{} m_CustomField:{} m_MarketSessionId:{} m_HedgeFlag:{}",
+                        "m_Tif:{} m_MinQty:{} m_CustomField:{} m_MarketSessionId:{} m_HedgeFlag:{}",
             m_XTraderConfig.Broker, m_XTraderConfig.Account,pAccept->m_Symbol,
             pAccept->m_ClientOrderToken, pAccept->m_MarketOrderToken, pAccept->m_OrderState,
             pAccept->m_UserID, pAccept->m_AcceptTime, pAccept->m_Account, pAccept->m_Side,
             pAccept->m_Exchange, pAccept->m_SecType, pAccept->m_Price, pAccept->m_Qty,
-            pAccept->m_OptExecFlag, pAccept->m_Tif, pAccept->m_MinQty, pAccept->m_CustomField,
+            pAccept->m_Tif, pAccept->m_MinQty, pAccept->m_CustomField,
             pAccept->m_MarketSessionId, pAccept->m_HedgeFlag);
 }
 
@@ -1606,14 +1606,14 @@ void REMTradeGateWay::OnQueryTradeOrder(const char* pAccount, EES_QueryAccountOr
     }
     FMTLOG(fmtlog::INF, "REMTrader:OnQueryTradeOrder, Broker:{}, InvestorID:{} Account:{} InstrumentID:{} "
                         "m_Userid:{} m_Timestamp:{} m_ClientOrderToken:{} m_SideType:{} m_Quantity:{} "
-                        "m_InstrumentType:{} m_Price:{} m_ExchengeID:{} m_OptExecFlag:{} m_MarketOrderToken:{} "
+                        "m_InstrumentType:{} m_Price:{} m_ExchengeID:{} m_MarketOrderToken:{} "
                         "m_OrderStatus:{} m_CloseTime:{} m_FilledQty:{} m_Tif:{} m_MinQty:{} "
                         "m_CustomField:{} m_MarketOrderId:{} m_HedgeFlag:{} bFinish:{}",
                 m_XTraderConfig.Broker, m_XTraderConfig.Account,
                 pQueryOrder->m_symbol, pQueryOrder->m_account, pQueryOrder->m_Userid, pQueryOrder->m_Timestamp,
                 pQueryOrder->m_ClientOrderToken, pQueryOrder->m_SideType, pQueryOrder->m_Quantity,
                 pQueryOrder->m_InstrumentType, pQueryOrder->m_Price, pQueryOrder->m_ExchengeID,
-                pQueryOrder->m_OptExecFlag, pQueryOrder->m_MarketOrderToken, pQueryOrder->m_OrderStatus,
+                pQueryOrder->m_MarketOrderToken, pQueryOrder->m_OrderStatus,
                 pQueryOrder->m_CloseTime,  pQueryOrder->m_FilledQty,  pQueryOrder->m_Tif,  pQueryOrder->m_MinQty,
                 pQueryOrder->m_CustomField, pQueryOrder->m_MarketOrderId, pQueryOrder->m_HedgeFlag, bFinish);
 }
@@ -1635,9 +1635,9 @@ void REMTradeGateWay::OnQueryAccountTradeMargin(const char* pAccount, EES_Accoun
     auto it = m_TickerSet.find(pSymbolMargin->m_symbol);
     if(it != m_TickerSet.end())
     {
-        FMTLOG(fmtlog::INF, "REMTrader:OnQueryAccountTradeMargin, Account:{} m_SecType:{} m_symbol:{} "
+        FMTLOG(fmtlog::INF, "REMTrader:OnQueryAccountTradeMargin, Account:{} m_symbol:{} "
                             "m_ExchangeID:{} m_ProdID:{} m_LongMarginRatio:{} m_ShortMarginRatio:{} bFinish:{}",
-                pAccount, pSymbolMargin->m_SecType, pSymbolMargin->m_symbol, pSymbolMargin->m_ExchangeID, 
+                pAccount, pSymbolMargin->m_symbol, pSymbolMargin->m_ExchangeID, 
                 pSymbolMargin->m_ProdID, pSymbolMargin->m_LongMarginRatio, pSymbolMargin->m_ShortMarginRatio, bFinish);
     }
 }
@@ -1647,10 +1647,10 @@ void REMTradeGateWay::OnQueryAccountTradeFee(const char* pAccount, EES_AccountFe
     auto it = m_TickerSet.find(pSymbolFee->m_symbol);
     if(it != m_TickerSet.end())
     {
-        FMTLOG(fmtlog::INF, "REMTrader:OnQueryAccountTradeFee, Account:{}, m_SecType:{} m_ExchangeID:{} m_ProdID:{} m_symbol:{} "
+        FMTLOG(fmtlog::INF, "REMTrader:OnQueryAccountTradeFee, Account:{}  m_ExchangeID:{} m_ProdID:{} m_symbol:{} "
                             "m_OpenRatioByMoney:{} m_OpenRatioByVolume:{} m_CloseYesterdayRatioByMoney:{} "
                             "m_CloseYesterdayRatioByVolume:{} m_CloseTodayRatioByMoney:{} m_CloseTodayRatioByVolume:{} m_PositionDir:{}",
-                pAccount, pSymbolFee->m_SecType, pSymbolFee->m_ExchangeID, pSymbolFee->m_ProdID, pSymbolFee->m_symbol, 
+                pAccount, pSymbolFee->m_ExchangeID, pSymbolFee->m_ProdID, pSymbolFee->m_symbol, 
                 pSymbolFee->m_OpenRatioByMoney, pSymbolFee->m_OpenRatioByVolume, pSymbolFee->m_CloseYesterdayRatioByMoney, 
                 pSymbolFee->m_CloseYesterdayRatioByVolume, pSymbolFee->m_CloseTodayRatioByMoney, pSymbolFee->m_CloseTodayRatioByVolume, 
                 pSymbolFee->m_PositionDir);

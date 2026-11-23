@@ -5,7 +5,7 @@ set(CMAKE_CXX_FLAGS "-fPIC")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 SET(AppVersion 0.6.0)
-SET(APIVersion REM3.1.3.49)
+SET(APIVersion REM4.2.4.79)
 SET(TradeGateWay_Version ${PROJECT_NAME}_${AppVersion})
 
 # 默认输出debug版
@@ -60,6 +60,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../Utils/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../TraderAPI/)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
+
 # FMTLogger
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/lib)
@@ -67,8 +68,9 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/lib)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.9.0/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.9.0/lib)
 # REM
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/3.1.3.49/include/)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/3.1.3.49/lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/4.2.4.79/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/4.2.4.79/lib)
+link_directories(/usr/local/compat-libs/)
 
 # Parallel HashMap
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/parallel_hashmap/)
@@ -76,4 +78,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/parallel_hashmap/)
 set(SOURCES REMTradeGateWay.cpp)
 add_library(${TradeGateWay_Version} SHARED ${SOURCES})
 
-target_link_libraries(${TradeGateWay_Version} yaml-cpp EESTraderApi dl)   
+target_link_options(${TradeGateWay_Version} PRIVATE
+    # 强制使用 RPATH 而不是 RUNPATH（可选，取决于具体需求）
+    "-Wl,--disable-new-dtags" 
+    # 直接指定 rpath 路径
+    "-Wl,-rpath,/usr/local/compat-libs/"
+)
+
+target_link_libraries(${TradeGateWay_Version} yaml-cpp EESTraderApi_ef dl)
