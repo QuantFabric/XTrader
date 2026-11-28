@@ -67,9 +67,9 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/FMTLogger/lib)
 # YAML-CPP
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.9.0/include/)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../XAPI/YAML-CPP/0.9.0/lib)
-# REM
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/4.2.4.79/include/)
-link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/4.2.4.79/lib)
+# REM 5.2.4.67
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/5.2.4.67/include/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../XAPI/REM/5.2.4.67/lib)
 link_directories(/usr/local/compat-libs/)
 
 # Parallel HashMap
@@ -85,4 +85,4 @@ target_link_options(${TradeGateWay_Version} PRIVATE
     "-Wl,-rpath,/usr/local/compat-libs/"
 )
 
-target_link_libraries(${TradeGateWay_Version} yaml-cpp EESTraderApi_ef dl)
+target_link_libraries(${TradeGateWay_Version} yaml-cpp EESTraderApi_ef_5-4 dl)

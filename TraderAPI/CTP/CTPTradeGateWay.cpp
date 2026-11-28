@@ -649,7 +649,7 @@ bool CTPTradeGateWay::IsRspError(CThostFtdcRspInfoField *pRspInfo)
 void CTPTradeGateWay::OnFrontConnected()
 {
     m_ConnectedStatus = Message::ELoginStatus::ELOGIN_CONNECTED;
-    FMTLOG(fmtlog::INF, "CTPTrader::OnFrontConnected Account:{} TradingDay:{} Connected to Front:{}, API:{}",
+    FMTLOG(fmtlog::INF, "CTPTrader::OnFrontConnected Account:{} TradingDay:{} Connected to Front:{} API:{}",
             m_XTraderConfig.Account, m_CTPTraderAPI->GetTradingDay(), m_CTPConfig.FrontAddr, m_CTPTraderAPI->GetApiVersion());
     Message::PackMessage message;
     memset(&message, 0, sizeof(message));
@@ -659,7 +659,7 @@ void CTPTradeGateWay::OnFrontConnected()
     strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
     strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-    XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnFrontConnected Account:{} TradingDay:{} Connected to Front:{}, API:{}",
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnFrontConnected Account:{} TradingDay:{} Connected to Front:{} API:{}",
                     m_XTraderConfig.Account, m_CTPTraderAPI->GetTradingDay(), m_CTPConfig.FrontAddr, m_CTPTraderAPI->GetApiVersion());
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
     while(!m_ReportMessageQueue.Push(message));
@@ -680,7 +680,7 @@ void CTPTradeGateWay::OnFrontDisconnected(int nReason)
     {
         buffer = "Unkown Error";
     }
-    FMTLOG(fmtlog::WRN, "CTPTrader::OnFrontDisconnected Account:{} Code:{:#X}, Error:{}",
+    FMTLOG(fmtlog::WRN, "CTPTrader::OnFrontDisconnected Account:{} Code:{:#X} Error:{}",
             m_XTraderConfig.Account, nReason, buffer);
     Message::PackMessage message;
     memset(&message, 0, sizeof(message));
@@ -690,7 +690,7 @@ void CTPTradeGateWay::OnFrontDisconnected(int nReason)
     strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
     strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-    XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnFrontDisconnected Account:{} Code:{:#X}, Error:{}",
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader::OnFrontDisconnected Account:{} Code:{:#X} Error:{}",
                     m_XTraderConfig.Account, nReason, buffer);
     strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
     while(!m_ReportMessageQueue.Push(message));
@@ -1131,6 +1131,22 @@ void CTPTradeGateWay::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestI
                         sizeof(errorBuffer), "gb2312", "utf-8");
         FMTLOG(fmtlog::INF, "CTPTrader:OnRspError, BrokerID:{}, Account:{}, ErrorID:{}, ErrorMessage:{}",
                 m_XTraderConfig.BrokerID, m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
+
+        Message::PackMessage message;
+        memset(&message, 0, sizeof(message));
+        message.MessageType = Message::EMessageType::EEventLog;
+        message.EventLog.Level = Message::EEventLogLevel::EWARNING;
+        strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
+        strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
+        strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
+        strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
+        strncpy(message.EventLog.Ticker, pOrderAction->InstrumentID, sizeof(message.EventLog.Ticker));
+        strncpy(message.EventLog.ExchangeID, pOrderAction->ExchangeID, sizeof(message.EventLog.ExchangeID));
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "CTPTrader:OnRspError Account:{} ErrorID:{}, ErrorMessage:{}",
+                        m_XTraderConfig.Account, pRspInfo->ErrorID, errorBuffer);
+        strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
+        while(!m_ReportMessageQueue.Push(message));
+
     }
 }
 

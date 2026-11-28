@@ -564,17 +564,27 @@ void YDTradeGateWay::UpdateQueryPosition(const Message::TOrderStatus& OrderStatu
 
 void YDTradeGateWay::notifyEvent(int apiEvent)
 {
+    Message::PackMessage message;
+    memset(&message, 0, sizeof(message));
+    message.MessageType = Message::EMessageType::EEventLog;
+    message.EventLog.Level = Message::EEventLogLevel::EWARNING;
+    strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
+    strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
+    strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
+    strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
     std::string ErrorString;
     switch (apiEvent)
     {
     case YD_AE_TCPTradeConnected:
         ErrorString = "TCP Trade Connected";
+        message.EventLog.Level = Message::EEventLogLevel::EINFO;
         break;
     case YD_AE_TCPTradeDisconnected:
         ErrorString = "TCP Trade Disconnected";
         break;
     case YD_AE_TCPMarketDataConnected:
         ErrorString = "TCP Market Data Connected";
+        message.EventLog.Level = Message::EEventLogLevel::EINFO;
         break;
     case YD_AE_TCPMarketDataDisconnected:
         ErrorString = "TCP Market Data Disconnected";
@@ -586,6 +596,11 @@ void YDTradeGateWay::notifyEvent(int apiEvent)
         ErrorString = "Unkown API Event";
         break;
     }
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "YDTrader::notifyEvent Account:{} apiEvent:{} Event:{}", 
+                                m_XTraderConfig.Account, apiEvent, ErrorString);
+    strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
+    while(!m_ReportMessageQueue.Push(message));
+
     FMTLOG(fmtlog::INF, "YDTrader::notifyEvent Account:{} apiEvent:{} Event:{}", m_XTraderConfig.Account, apiEvent, ErrorString);
 }
 
@@ -606,7 +621,7 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
     if(0 == errorNo)
     {
         m_MaxOrderRef = maxOrderRef;
-        FMTLOG(fmtlog::INF, "YDTrader::notifyLogin {} login successed. maxOrderRef:{}", m_XTraderConfig.Account, maxOrderRef);
+        FMTLOG(fmtlog::INF, "YDTrader::notifyLogin {} login successed. maxOrderRef:{} API:{}", m_XTraderConfig.Account, maxOrderRef, m_YDAPI->getVersion());
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -615,7 +630,8 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        XTrader::FormatToFixedBuffer(message.EventLog.Event, "YDTrader::notifyLogin Account:{} login successed, maxOrderRef:{}", m_XTraderConfig.Account, maxOrderRef);
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "YDTrader::notifyLogin Account:{} login successed, maxOrderRef:{} API:{}", 
+                                    m_XTraderConfig.Account, maxOrderRef, m_YDAPI->getVersion());
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
@@ -632,7 +648,7 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
         {
             errorString = "Unkown Error.";
         }
-        FMTLOG(fmtlog::INF, "YDTrader::notifyLogin {} login failed. ErrorNo:{} ErrorMsg:{}", m_XTraderConfig.Account, errorNo, errorString);
+        FMTLOG(fmtlog::INF, "YDTrader::notifyLogin {} login failed. ErrorNo:{} ErrorMsg:{} API:{}", m_XTraderConfig.Account, errorNo, errorString, m_YDAPI->getVersion());
         Message::PackMessage message;
         memset(&message, 0, sizeof(message));
         message.MessageType = Message::EMessageType::EEventLog;
@@ -641,8 +657,8 @@ void YDTradeGateWay::notifyLogin(int errorNo, int maxOrderRef, bool isMonitor)
         strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
         strncpy(message.EventLog.App, APP_NAME, sizeof(message.EventLog.App));
         strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
-        XTrader::FormatToFixedBuffer(message.EventLog.Event, "YDTrader::notifyLogin Account:{} login failed, ErrorNo:{} ErrorMsg:{}",
-                        m_XTraderConfig.Account, errorNo, errorString);
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "YDTrader::notifyLogin Account:{} login failed, ErrorNo:{} ErrorMsg:{} API:{}",
+                        m_XTraderConfig.Account, errorNo, errorString, m_YDAPI->getVersion());
         strncpy(message.EventLog.UpdateTime, Utils::getCurrentTimeUs(), sizeof(message.EventLog.UpdateTime));
         while(!m_ReportMessageQueue.Push(message));
     }
@@ -780,7 +796,12 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
                 }
                 storedStatus.OrderSide = orderSide;
                 // Order Status
-                if(YD_OS_Queuing == pOrder->OrderStatus)
+                if(YD_OS_Accepted == pOrder->OrderStatus)
+                {
+                    storedStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ACK;
+                    strncpy(storedStatus.BrokerACKTime, Utils::getCurrentTimeUs(), sizeof(storedStatus.BrokerACKTime));
+                }
+                else if(YD_OS_Queuing == pOrder->OrderStatus)
                 {
                     if(0 == pOrder->TradeVolume)
                     {
@@ -943,6 +964,11 @@ void YDTradeGateWay::notifyOrder(const YDOrder *pOrder, const YDInstrument *pIns
                 storedStatus.OrderType = Message::EOrderType::EFOK;
             }
             // Order Status
+            if(YD_OS_Accepted == pOrder->OrderStatus)
+            {
+                storedStatus.OrderStatus = Message::EOrderStatusType::EBROKER_ACK;
+                strncpy(storedStatus.BrokerACKTime, Utils::getCurrentTimeUs(), sizeof(storedStatus.BrokerACKTime));
+            }
             if(YD_OS_Queuing == pOrder->OrderStatus)
             {
                 if(0 == pOrder->TradeVolume)

@@ -630,8 +630,8 @@ void REMTradeGateWay::HandleLoginResult(int code, std::string& errorString)
         errorString = "未知错误";
         break;
     }
-    errorString = fmt::format("REMTrader::ReqUserLogin Broker:{} InvestorID:{} UserLogon, Password:{} AppID:{} AuthCode:{} ErrorMsg:{}",
-                                m_XTraderConfig.Broker, m_XTraderConfig.Account, m_XTraderConfig.Password, 
+    errorString = fmt::format("REMTrader::ReqUserLogin Broker:{} InvestorID:{} UserLogon, AppID:{} AuthCode:{} ErrorMsg:{}",
+                                m_XTraderConfig.Broker, m_XTraderConfig.Account, 
                                 m_XTraderConfig.AppID, m_XTraderConfig.AuthCode, errorString);
 }
 
@@ -829,23 +829,23 @@ void REMTradeGateWay::OnConnection(ERR_NO errNo, const char* pErrStr)
 
     if (NO_ERROR != errNo)
     {
-        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server failed, {}",
-                        m_XTraderConfig.Broker, m_XTraderConfig.Account, pErrStr);
+        XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server failed:{} API:{}",
+                        m_XTraderConfig.Broker, m_XTraderConfig.Account, pErrStr, m_TraderAPI->GetTradeApiVersion());
         message.EventLog.Level = Message::EEventLogLevel::EERROR;
         while(!m_ReportMessageQueue.Push(message));
 
-        FMTLOG(fmtlog::WRN, "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server failed, {}",
-                m_XTraderConfig.Broker, m_XTraderConfig.Account, pErrStr);
+        FMTLOG(fmtlog::WRN, "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server failed:{} API:{}",
+                m_XTraderConfig.Broker, m_XTraderConfig.Account, pErrStr, m_TraderAPI->GetTradeApiVersion());
         return;
     }
     m_ConnectedStatus = Message::ELoginStatus::ELOGIN_CONNECTED;
-    XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server successed",
-                    m_XTraderConfig.Broker, m_XTraderConfig.Account);
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server successed API:{}",
+                    m_XTraderConfig.Broker, m_XTraderConfig.Account, m_TraderAPI->GetTradeApiVersion());
     message.EventLog.Level = Message::EEventLogLevel::EINFO;
     while(!m_ReportMessageQueue.Push(message));
 
-    FMTLOG(fmtlog::INF, "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server successed",
-            m_XTraderConfig.Broker, m_XTraderConfig.Account);
+    FMTLOG(fmtlog::INF, "REMTrader::OnConnection Broker:{} InvestorID:{} connected to Server successed API:{}",
+            m_XTraderConfig.Broker, m_XTraderConfig.Account, m_TraderAPI->GetTradeApiVersion());
 
     ReqUserLogin();
 }
@@ -858,8 +858,8 @@ void REMTradeGateWay::OnDisConnection(ERR_NO errNo, const char* pErrStr )
     message.EventLog.Level = Message::EEventLogLevel::EERROR;
 
     std::string errorBuffer = m_CodeErrorMap[errNo];
-    XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnDisConnection Broker:{} InvestorID:{} disconnect to Server, {} {}",
-                    m_XTraderConfig.Broker, m_XTraderConfig.Account, pErrStr, errorBuffer);
+    XTrader::FormatToFixedBuffer(message.EventLog.Event, "REMTrader::OnDisConnection Broker:{} InvestorID:{} disconnect to Server:{} API:{}",
+                    m_XTraderConfig.Broker, m_XTraderConfig.Account, pErrStr, m_TraderAPI->GetTradeApiVersion());
     strncpy(message.EventLog.Product, m_XTraderConfig.Product.c_str(), sizeof(message.EventLog.Product));
     strncpy(message.EventLog.Broker, m_XTraderConfig.Broker.c_str(), sizeof(message.EventLog.Broker));
     strncpy(message.EventLog.Account, m_XTraderConfig.Account.c_str(), sizeof(message.EventLog.Account));
@@ -868,8 +868,8 @@ void REMTradeGateWay::OnDisConnection(ERR_NO errNo, const char* pErrStr )
     while(!m_ReportMessageQueue.Push(message));
 
     m_ConnectedStatus = Message::ELoginStatus::ELOGIN_FAILED;
-    FMTLOG(fmtlog::WRN, "REMTrader::OnDisConnection Broker:{} InvestorID:{} disconnect to Server, {} {}",
-            m_XTraderConfig.Broker, m_XTraderConfig.Account, pErrStr, errorBuffer);
+    FMTLOG(fmtlog::WRN, "REMTrader::OnDisConnection Broker:{} InvestorID:{} disconnect to Server:{} API:{}",
+            m_XTraderConfig.Broker, m_XTraderConfig.Account, pErrStr, m_TraderAPI->GetTradeApiVersion());
 }
 
 void REMTradeGateWay::OnUserLogon(EES_LogonResponse* pLogon)
